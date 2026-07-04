@@ -6,4 +6,12 @@
 
 @theme {
   --color-primary: #3b82f6;
+  --color-primary-light: #60a5fa;
+  --color-primary-dimmed: rgba(59, 130, 246, 0.08);
+  --color-surface: #f0ede7;
+  --color-surface-dark: #1a1815;
+  --color-muted: #6b6560;
+  --color-muted-dark: #8a8480;
+  --color-bg-warm: #f8f6f3;
+  --color-bg-warm-dark: #11100e;
 }
