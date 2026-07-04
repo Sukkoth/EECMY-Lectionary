@@ -40,7 +40,7 @@ export default function ReadingScreen() {
         <View className="mb-6 px-6">
           <Text
             className="text-[32px] leading-[40px] text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "Lora-Bold" }}
+            style={{ fontFamily: "Poppins-SemiBold" }}
           >
             {reading.book} {reading.chapter}
           </Text>
@@ -54,7 +54,7 @@ export default function ReadingScreen() {
           <View className="px-6">
             <Text
               className="text-[17px] leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
-              style={{ fontFamily: "Lora-Regular" }}
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
               {reading.text}
             </Text>

@@ -13,10 +13,12 @@ export default function RootLayout() {
   const isDark = colorScheme === "dark";
 
   const [loaded, error] = useFonts({
-    "Lora-Regular": require("../assets/fonts/Lora/Lora-Regular.ttf"),
-    "Lora-Bold": require("../assets/fonts/Lora/Lora-Bold.ttf"),
-    "Lora-Italic": require("../assets/fonts/Lora/Lora-Italic.ttf"),
-    "Lora-BoldItalic": require("../assets/fonts/Lora/Lora-BoldItalic.ttf"),
+    // UI / headings font
+    "Poppins-Regular": require("../assets/fonts/Poppins/Poppins-Regular.ttf"),
+    "Poppins-Medium": require("../assets/fonts/Poppins/Poppins-Medium.ttf"),
+    "Poppins-SemiBold": require("../assets/fonts/Poppins/Poppins-SemiBold.ttf"),
+    // Reading / body font (variable font — use fontWeight to select weight)
+    "ReadingFont": require("../assets/fonts/Nunito/Nunito-Variable.ttf"),
   });
 
   useEffect(() => {

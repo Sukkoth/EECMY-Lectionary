@@ -42,7 +42,7 @@ export default function HomeScreen() {
         <View className="mb-7 mt-4 flex-row items-center justify-between">
           <Text
             className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "Lora-Bold" }}
+            style={{ fontFamily: "Poppins-SemiBold" }}
           >
             Daily Readings
           </Text>
@@ -77,7 +77,7 @@ export default function HomeScreen() {
           >
             <Text
               className="text-center text-lg leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
-              style={{ fontFamily: "Lora-Regular" }}
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
               {reading.passage}
             </Text>
@@ -102,7 +102,7 @@ export default function HomeScreen() {
             <View className="items-end">
               <Text
                 className="text-primary text-3xl font-bold leading-tight"
-                style={{ fontFamily: "Lora-Bold" }}
+                style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
               >
                 {streak.current}
               </Text>
