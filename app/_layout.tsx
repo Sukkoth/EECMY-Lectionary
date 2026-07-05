@@ -37,21 +37,14 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
+          headerShown: false, // ❌ No navigation headers — all screens use custom headers
           contentStyle: {
             backgroundColor: isDark ? "#11100E" : "#F8F6F3",
           },
-          headerStyle: {
-            backgroundColor: isDark ? "#171717" : "#ffffff",
-          },
-          headerTintColor: isDark ? "#ffffff" : "#000000",
-          headerTitleStyle: {
-            fontFamily: "ReadingFont",
-            fontWeight: "600",
-          },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="reading" options={{ headerShown: true, title: "Reading" }} />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="reading" />
       </Stack>
     </>
   );

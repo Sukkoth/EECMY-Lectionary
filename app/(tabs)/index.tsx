@@ -79,8 +79,9 @@ export default function HomeScreen() {
             router.push({
               pathname: "/reading",
               params: {
-                passage: reading.passage,
-                reference: reading.reference,
+                year: reading.date.getFullYear(),
+                month: reading.date.getMonth() + 1,
+                day: reading.date.getDate(),
               },
             })
           }

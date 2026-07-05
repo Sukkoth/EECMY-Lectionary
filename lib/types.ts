@@ -104,6 +104,7 @@ export type DailyReading = {
   date: Date;
   passage: string;
   reference: string;
+  season: string;
 };
 
 export type ReadingStreak = {
@@ -117,6 +118,7 @@ export const MOCK_READING: DailyReading = {
   passage:
     '"Blessed are the poor in spirit, for theirs is the kingdom of heaven. Blessed are they who mourn, for they will be comforted. Blessed are the meek, for they will inherit the land. Blessed are they who hunger and thirst for righteousness, for they will be satisfied. Blessed are the merciful, for they will be shown mercy. Blessed are the clean of heart, for they will see God. Blessed are the peacemakers, for they will be called children of God. Blessed are they who are persecuted for the sake of righteousness, for theirs is the kingdom of heaven."',
   reference: "Matthew 5:1–12",
+  season: "Ordinary Time",
 };
 
 export const MOCK_STREAK: ReadingStreak = {
