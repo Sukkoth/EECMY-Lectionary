@@ -44,7 +44,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="reading" />
+        <Stack.Screen name="reading/index" />
       </Stack>
     </>
   );

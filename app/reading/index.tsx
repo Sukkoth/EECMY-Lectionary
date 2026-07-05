@@ -2,10 +2,10 @@ import { useMemo } from "react";
 import { Text, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { getReadingForDate, getMultiReadingForDate } from "../../data/mock_reading";
-import ReadingHeader from "./_components/ReadingHeader";
-import ReadingPassage from "./_components/ReadingPassage";
-import ReadingFooter from "./_components/ReadingFooter";
-import ExpandedView from "./_components/ExpandedView";
+import ReadingHeader from "../../components/reading/ReadingHeader";
+import ReadingPassage from "../../components/reading/ReadingPassage";
+import ReadingFooter from "../../components/reading/ReadingFooter";
+import ExpandedView from "../../components/reading/ExpandedView";
 
 export default function ReadingScreen() {
   const params = useLocalSearchParams<{
