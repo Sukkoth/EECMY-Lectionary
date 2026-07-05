@@ -107,41 +107,6 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* ═══ FULL READINGS CARD (expanded view) ═══ */}
-        <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: "/reading",
-              params: {
-                year: reading.date.getFullYear(),
-                month: reading.date.getMonth() + 1,
-                day: reading.date.getDate(),
-                expanded: "true",
-              },
-            })
-          }
-          activeOpacity={0.7}
-          className="bg-surface dark:bg-surface-dark mb-7 rounded-2xl px-6 py-4"
-        >
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text
-                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-              >
-                Full Readings
-              </Text>
-              <Text
-                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-              >
-                View all 3 readings for today
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#6B6560" />
-          </View>
-        </TouchableOpacity>
-
         {/* ═══ READING STREAK CARD ═══ */}
         <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl px-5 py-5">
           {/* Streak header */}

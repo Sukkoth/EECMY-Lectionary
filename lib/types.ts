@@ -166,7 +166,7 @@ export const MOCK_FAVOURITES: FavouriteReading[] = [
 ];
 
 export type ReadingEntry = {
-  section: "old-testament" | "epistles" | "gospel";
+  section: "old-testament" | "psalm" | "epistles" | "gospel";
   sectionLabel: string; // "Old Testament", "Epistles", "Gospel"
   reference: string; // "Amos 9:11–15"
   text: string;

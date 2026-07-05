@@ -1,46 +1,59 @@
-import { useMemo } from "react";
-import { Text, View } from "react-native";
+import { useState, useMemo, useCallback } from "react";
+import { View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { getReadingForDate, getMultiReadingForDate } from "../../data/mock_reading";
 import ReadingHeader from "../../components/reading/ReadingHeader";
-import ReadingPassage from "../../components/reading/ReadingPassage";
-import ReadingFooter from "../../components/reading/ReadingFooter";
-import ExpandedView from "../../components/reading/ExpandedView";
+import { ReadingSwiper } from "../../components/reading/ReadingSwiper";
 
 export default function ReadingScreen() {
   const params = useLocalSearchParams<{
     year?: string;
     month?: string;
     day?: string;
-    expanded?: string;
   }>();
 
-  const isExpanded = params.expanded === "true";
+  // Build a date range centered on the navigation target
+  const dateRange = useMemo(() => {
+    const centerDate =
+      params.year && params.month && params.day
+        ? new Date(
+            parseInt(params.year, 10),
+            parseInt(params.month, 10) - 1,
+            parseInt(params.day, 10),
+          )
+        : new Date(2026, 6, 5); // fallback to Jul 5
 
-  const y = params.year ? parseInt(params.year, 10) : 0;
-  const m = params.month ? parseInt(params.month, 10) : 0;
-  const d = params.day ? parseInt(params.day, 10) : 0;
+    const dates: Date[] = [];
+    for (let i = -5; i <= 5; i++) {
+      const d = new Date(centerDate);
+      d.setDate(centerDate.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  }, [params.year, params.month, params.day]);
 
-  const singleReading = useMemo(
-    () => (!isExpanded && y && m && d ? getReadingForDate(y, m, d) : null),
-    [y, m, d, isExpanded],
-  );
+  // The initially requested date is always the middle (index 5)
+  const initialIndex = 5;
 
-  const multiReading = useMemo(
-    () => (isExpanded && y && m && d ? getMultiReadingForDate(y, m, d) : null),
-    [y, m, d, isExpanded],
-  );
+  const [currentDate, setCurrentDate] = useState(dateRange[initialIndex]);
 
-  const hasData = isExpanded ? multiReading !== null : singleReading !== null;
+  const handlePageChange = useCallback((date: Date) => {
+    setCurrentDate(date);
+  }, []);
 
-  const dateForHeader = multiReading?.date ?? singleReading?.date ?? new Date();
-  const season = multiReading?.season ?? singleReading?.season ?? "";
+  // Derive header info from current date
+  const y = currentDate.getFullYear();
+  const m = currentDate.getMonth() + 1;
+  const d = currentDate.getDate();
+  const single = getReadingForDate(y, m, d);
+  const multi = getMultiReadingForDate(y, m, d);
 
-  const weekday = dateForHeader.toLocaleDateString("en-US", { weekday: "long" });
-  const formattedDate = dateForHeader.toLocaleDateString("en-US", {
+  const weekday = currentDate.toLocaleDateString("en-US", { weekday: "long" });
+  const formattedDate = currentDate.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
   });
+  const season = multi?.season ?? single?.season ?? "";
 
   return (
     <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
@@ -50,24 +63,11 @@ export default function ReadingScreen() {
         season={season}
         onClose={() => router.back()}
       />
-
-      {!hasData ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Text
-            className="text-muted dark:text-muted-dark text-center"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-          >
-            {isExpanded ? "No readings found for this date" : "Reading not found for this date"}
-          </Text>
-        </View>
-      ) : isExpanded && multiReading ? (
-        <ExpandedView readings={multiReading.readings} />
-      ) : singleReading ? (
-        <View className="flex-1 justify-center px-8">
-          <ReadingPassage text={singleReading.passage} />
-          <ReadingFooter reference={singleReading.reference} />
-        </View>
-      ) : null}
+      <ReadingSwiper
+        dates={dateRange}
+        initialIndex={initialIndex}
+        onPageChange={handlePageChange}
+      />
     </View>
   );
 }
