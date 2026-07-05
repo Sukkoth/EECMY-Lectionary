@@ -41,7 +41,7 @@ export const MOCK_TODAY: DailyReadings = {
       chapter: 85,
       verseRange: "9, 11–12, 13–14",
       isLongReading: false,
-      text: 'The Lord speaks of peace to his people. / Near indeed is his salvation to those who fear him, glory dwelling in our land. / Kindness and truth shall meet; justice and peace shall kiss. / Truth shall spring out of the earth, and justice shall look down from heaven. / The Lord himself will give his benefits; our land shall yield its increase. / Justice shall walk before him, and prepare the way of his steps.',
+      text: "The Lord speaks of peace to his people. / Near indeed is his salvation to those who fear him, glory dwelling in our land. / Kindness and truth shall meet; justice and peace shall kiss. / Truth shall spring out of the earth, and justice shall look down from heaven. / The Lord himself will give his benefits; our land shall yield its increase. / Justice shall walk before him, and prepare the way of his steps.",
     },
     {
       id: "gospel-1",
@@ -124,3 +124,41 @@ export const MOCK_STREAK: ReadingStreak = {
   best: 14,
   completedDays: [true, true, true, true, true, false, false],
 };
+
+export type FavouriteReading = {
+  id: string;
+  reference: string;
+  passagePreview: string;
+  dateSaved: string;
+};
+
+export const MOCK_FAVOURITES: FavouriteReading[] = [
+  {
+    id: "fav-1",
+    reference: "Matthew 5:1–12",
+    passagePreview:
+      "Blessed are the poor in spirit, for theirs is the kingdom of heaven. Blessed are they who mourn, for they will be comforted.",
+    dateSaved: "Jul 3, 2026",
+  },
+  {
+    id: "fav-2",
+    reference: "Psalm 23:1–6",
+    passagePreview:
+      "The Lord is my shepherd; I shall not want. In verdant pastures he gives me repose; beside restful waters he leads me.",
+    dateSaved: "Jul 1, 2026",
+  },
+  {
+    id: "fav-3",
+    reference: "Romans 8:31–39",
+    passagePreview:
+      "If God is for us, who can be against us? He who did not spare his own Son but handed him over for us all, how will he not also give us everything else along with him?",
+    dateSaved: "Jun 28, 2026",
+  },
+  {
+    id: "fav-4",
+    reference: "John 1:1–5",
+    passagePreview:
+      "In the beginning was the Word, and the Word was with God, and the Word was God. He was in the beginning with God. All things came to be through him.",
+    dateSaved: "Jun 25, 2026",
+  },
+];

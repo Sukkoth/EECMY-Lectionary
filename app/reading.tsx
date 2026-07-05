@@ -3,7 +3,6 @@ import { useLocalSearchParams } from "expo-router";
 import type { Reading } from "@/lib/types";
 
 export default function ReadingScreen() {
-  const isDark = useColorScheme() === "dark";
   const params = useLocalSearchParams<{ reading: string }>();
 
   let reading: Reading | null = null;
@@ -16,7 +15,12 @@ export default function ReadingScreen() {
   if (!reading) {
     return (
       <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1 items-center justify-center">
-        <Text className="text-muted dark:text-muted-dark" style={{ fontFamily: "ReadingFont", fontWeight: "400" }}>Reading not found</Text>
+        <Text
+          className="text-muted dark:text-muted-dark"
+          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        >
+          Reading not found
+        </Text>
       </View>
     );
   }
