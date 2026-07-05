@@ -5,7 +5,7 @@ type ReadingFooterProps = {
   reference: string;
 };
 
-export function ReadingFooter({ reference }: ReadingFooterProps) {
+export default function ReadingFooter({ reference }: ReadingFooterProps) {
   return (
     <View className="items-center">
       {/* Reference */}

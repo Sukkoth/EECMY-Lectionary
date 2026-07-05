@@ -9,7 +9,12 @@ type ReadingHeaderProps = {
   onClose: () => void;
 };
 
-export function ReadingHeader({ weekday, formattedDate, season, onClose }: ReadingHeaderProps) {
+export default function ReadingHeader({
+  weekday,
+  formattedDate,
+  season,
+  onClose,
+}: ReadingHeaderProps) {
   return (
     <View className="border-b border-stone-200 px-6 pb-4 pt-10 dark:border-stone-800">
       <View className="flex-row items-start justify-between">

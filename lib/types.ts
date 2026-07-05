@@ -164,3 +164,16 @@ export const MOCK_FAVOURITES: FavouriteReading[] = [
     dateSaved: "Jun 25, 2026",
   },
 ];
+
+export type ReadingEntry = {
+  section: "old-testament" | "epistles" | "gospel";
+  sectionLabel: string; // "Old Testament", "Epistles", "Gospel"
+  reference: string; // "Amos 9:11–15"
+  text: string;
+};
+
+export type MultiReadingDay = {
+  date: Date;
+  season: string;
+  readings: ReadingEntry[];
+};

@@ -4,7 +4,7 @@ type ReadingPassageProps = {
   text: string;
 };
 
-export function ReadingPassage({ text }: ReadingPassageProps) {
+export default function ReadingPassage({ text }: ReadingPassageProps) {
   return (
     <View className="mb-8">
       <Text
