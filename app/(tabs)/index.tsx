@@ -8,6 +8,7 @@ import {
   Appearance,
   type DimensionValue,
 } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MOCK_READING, MOCK_STREAK } from "@/lib/types";
 
@@ -42,7 +43,7 @@ export default function HomeScreen() {
         <View className="mb-7 mt-4 flex-row items-center justify-between">
           <Text
             className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "Poppins-SemiBold" }}
+            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             Daily Readings
           </Text>
@@ -64,13 +65,28 @@ export default function HomeScreen() {
           <View className="bg-primary-dimmed rounded-lg p-2">
             <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
           </View>
-          <Text className="ml-3 text-base text-[#2D2A24] dark:text-[#E8E4DC]">
+          <Text
+            className="ml-3 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          >
             {formatDate(reading.date)}
           </Text>
         </View>
 
         {/* ═══ DAILY READING CARD ═══ */}
-        <View className="bg-surface dark:bg-surface-dark mb-7 flex-1 justify-center rounded-2xl px-6 py-8">
+        <TouchableOpacity
+          onPress={() =>
+            router.push({
+              pathname: "/reading",
+              params: {
+                passage: reading.passage,
+                reference: reading.reference,
+              },
+            })
+          }
+          activeOpacity={0.7}
+          className="bg-surface dark:bg-surface-dark mb-7 flex-1 justify-center rounded-2xl px-6 py-8"
+        >
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
@@ -82,20 +98,29 @@ export default function HomeScreen() {
               {reading.passage}
             </Text>
           </ScrollView>
-          <Text className="text-muted dark:text-muted-dark mt-6 text-center text-sm leading-tight">
+          <Text
+            className="text-muted dark:text-muted-dark mt-6 text-center text-sm leading-tight"
+            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          >
             {reading.reference}
           </Text>
-        </View>
+        </TouchableOpacity>
 
         {/* ═══ READING STREAK CARD ═══ */}
         <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl px-5 py-5">
           {/* Streak header */}
           <View className="flex-row items-start justify-between">
             <View className="flex-1">
-              <Text className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]">
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
                 Reading Streak
               </Text>
-              <Text className="text-muted dark:text-muted-dark mt-0.5 text-sm">
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
                 Best record: {streak.best} days
               </Text>
             </View>
@@ -106,7 +131,12 @@ export default function HomeScreen() {
               >
                 {streak.current}
               </Text>
-              <Text className="text-muted dark:text-muted-dark text-xs">days</Text>
+              <Text
+                className="text-muted dark:text-muted-dark text-xs"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                days
+              </Text>
             </View>
           </View>
 
@@ -129,7 +159,10 @@ export default function HomeScreen() {
                 >
                   {completed && <Ionicons name="checkmark" size={16} color="white" />}
                 </View>
-                <Text className="text-muted dark:text-muted-dark mt-1.5 text-xs">
+                <Text
+                  className="text-muted dark:text-muted-dark mt-1.5 text-xs"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                >
                   {DAY_LABELS[index]}
                 </Text>
               </View>

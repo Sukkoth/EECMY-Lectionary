@@ -15,22 +15,25 @@ export default function ReadingScreen() {
 
   if (!reading) {
     return (
-      <View className="flex-1 items-center justify-center bg-bg-warm dark:bg-bg-warm-dark">
-        <Text className="text-muted dark:text-muted-dark">Reading not found</Text>
+      <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1 items-center justify-center">
+        <Text className="text-muted dark:text-muted-dark" style={{ fontFamily: "ReadingFont", fontWeight: "400" }}>Reading not found</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
+    <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
         contentContainerStyle={{ paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Reading type badge */}
         <View className="mb-4 mt-6 px-6">
-          <View className="self-start rounded-full bg-primary-dimmed px-4 py-1.5">
-            <Text className="text-xs font-semibold uppercase tracking-widest text-primary">
+          <View className="bg-primary-dimmed self-start rounded-full px-4 py-1.5">
+            <Text
+              className="text-primary text-xs uppercase tracking-widest"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+            >
               {reading.label}
             </Text>
           </View>
@@ -40,11 +43,14 @@ export default function ReadingScreen() {
         <View className="mb-6 px-6">
           <Text
             className="text-[32px] leading-[40px] text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "Poppins-SemiBold" }}
+            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {reading.book} {reading.chapter}
           </Text>
-          <Text className="mt-1 text-base text-muted dark:text-muted-dark">
+          <Text
+            className="text-muted dark:text-muted-dark mt-1 text-base"
+            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          >
             {reading.chapter}:{reading.verseRange}
           </Text>
         </View>
@@ -61,7 +67,10 @@ export default function ReadingScreen() {
           </View>
         ) : (
           <View className="px-6">
-            <Text className="text-base italic leading-relaxed text-muted dark:text-muted-dark">
+            <Text
+              className="text-muted dark:text-muted-dark text-base italic leading-relaxed"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
               Full text for this reading will be available in a future update.
             </Text>
           </View>
