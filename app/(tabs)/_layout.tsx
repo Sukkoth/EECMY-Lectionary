@@ -15,6 +15,9 @@ export default function TabLayout() {
           borderTopColor: isDark ? "#262626" : "#e5e5e5",
           borderTopWidth: 1,
         },
+        tabBarLabelStyle: {
+          fontFamily: "ReadingFont",
+        },
         tabBarActiveTintColor: "#3b82f6",
         tabBarInactiveTintColor: isDark ? "#737373" : "#a3a3a3",
       }}

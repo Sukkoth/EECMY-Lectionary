@@ -3,31 +3,36 @@ import type { DailyReading, MultiReadingDay } from "@/lib/types";
 const MOCK_READINGS: DailyReading[] = [
   {
     date: new Date(2026, 6, 2),
-    passage: '"The Lord is my light and my salvation; whom should I fear? The Lord is the refuge of my life; of whom should I be afraid? One thing I ask of the Lord; this I seek: to dwell in the house of the Lord all the days of my life, to gaze on the Lords beauty."',
+    passage:
+      '"The Lord is my light and my salvation; whom should I fear? The Lord is the refuge of my life; of whom should I be afraid? One thing I ask of the Lord; this I seek: to dwell in the house of the Lord all the days of my life, to gaze on the Lords beauty."',
     reference: "Psalm 27:1, 4",
     season: "Ordinary Time",
   },
   {
     date: new Date(2026, 6, 4),
-    passage: '"Come, let us sing joyfully to the Lord; let us acclaim the rock of our salvation. Let us greet him with thanksgiving; let us joyfully sing psalms to him. For the Lord is a great God, and a great king above all gods."',
+    passage:
+      '"Come, let us sing joyfully to the Lord; let us acclaim the rock of our salvation. Let us greet him with thanksgiving; let us joyfully sing psalms to him. For the Lord is a great God, and a great king above all gods."',
     reference: "Psalm 95:1–3",
     season: "Ordinary Time",
   },
   {
     date: new Date(2026, 6, 6),
-    passage: '"I will bless the Lord at all times; his praise shall be ever in my mouth. Let my soul glory in the Lord; the lowly will hear and be glad. Glorify the Lord with me, let us together extol his name. Taste and see that the Lord is good; blessed is the one who takes refuge in him."',
+    passage:
+      '"I will bless the Lord at all times; his praise shall be ever in my mouth. Let my soul glory in the Lord; the lowly will hear and be glad. Glorify the Lord with me, let us together extol his name. Taste and see that the Lord is good; blessed is the one who takes refuge in him."',
     reference: "Psalm 34:2–4, 9",
     season: "Ordinary Time",
   },
   {
     date: new Date(2026, 6, 8),
-    passage: '"Lord, you have probed me and you know me; you know when I sit and when I stand; you understand my thoughts from afar. Where can I go from your spirit? Where can I flee from your presence? If I ascend to the heavens, you are there; if I lie down in Sheol, you are there."',
+    passage:
+      '"Lord, you have probed me and you know me; you know when I sit and when I stand; you understand my thoughts from afar. Where can I go from your spirit? Where can I flee from your presence? If I ascend to the heavens, you are there; if I lie down in Sheol, you are there."',
     reference: "Psalm 139:1–2, 7–8",
     season: "Ordinary Time",
   },
   {
     date: new Date(2026, 6, 10),
-    passage: '"Blessed is the one who follows not the counsel of the wicked nor walks in the way of sinners, nor sits in the company of the insolent, but delights in the law of the Lord and meditates on his law day and night. He is like a tree planted near streams of water, that yields its fruit in season and whose leaves never fade."',
+    passage:
+      '"Blessed is the one who follows not the counsel of the wicked nor walks in the way of sinners, nor sits in the company of the insolent, but delights in the law of the Lord and meditates on his law day and night. He is like a tree planted near streams of water, that yields its fruit in season and whose leaves never fade."',
     reference: "Psalm 1:1–3",
     season: "Ordinary Time",
   },
@@ -42,7 +47,7 @@ const MOCK_MULTI_READINGS: MultiReadingDay[] = [
         section: "old-testament",
         sectionLabel: "Old Testament",
         reference: "Isaiah 55:6–9",
-        text: 'Seek the Lord while he may be found, call upon him while he is near. Let the wicked forsake their ways and the sinful their thoughts. Let them turn to the Lord, who will have mercy on them, and to our God, who will richly pardon. For my thoughts are not your thoughts, nor are your ways my ways, says the Lord. As high as the heavens are above the earth, so high are my ways above your ways and my thoughts above your thoughts.',
+        text: "Seek the Lord while he may be found, call upon him while he is near. Let the wicked forsake their ways and the sinful their thoughts. Let them turn to the Lord, who will have mercy on them, and to our God, who will richly pardon. For my thoughts are not your thoughts, nor are your ways my ways, says the Lord. As high as the heavens are above the earth, so high are my ways above your ways and my thoughts above your thoughts.",
       },
       {
         section: "psalm",
@@ -120,7 +125,7 @@ const MOCK_MULTI_READINGS: MultiReadingDay[] = [
         section: "epistles",
         sectionLabel: "Epistles",
         reference: "1 John 4:7–12",
-        text: 'Beloved, let us love one another, because love is of God; everyone who loves is begotten by God and knows God. Whoever is without love does not know God, for God is love. In this way the love of God was revealed to us: God sent his only-begotten Son into the world so that we might have life through him. In this is love: not that we have loved God, but that he loved us and sent his Son as expiation for our sins. Beloved, if God so loved us, we also must love one another. No one has ever seen God. Yet, if we love one another, God remains in us, and his love is brought to perfection in us.',
+        text: "Beloved, let us love one another, because love is of God; everyone who loves is begotten by God and knows God. Whoever is without love does not know God, for God is love. In this way the love of God was revealed to us: God sent his only-begotten Son into the world so that we might have life through him. In this is love: not that we have loved God, but that he loved us and sent his Son as expiation for our sins. Beloved, if God so loved us, we also must love one another. No one has ever seen God. Yet, if we love one another, God remains in us, and his love is brought to perfection in us.",
       },
       {
         section: "gospel",
@@ -141,7 +146,11 @@ export function getReadingForDate(year: number, month: number, day: number): Dai
   );
 }
 
-export function getMultiReadingForDate(year: number, month: number, day: number): MultiReadingDay | null {
+export function getMultiReadingForDate(
+  year: number,
+  month: number,
+  day: number,
+): MultiReadingDay | null {
   return (
     MOCK_MULTI_READINGS.find((r) => {
       const d = r.date;

@@ -11,10 +11,7 @@ type ReadingSwiperProps = {
 };
 
 export function ReadingSwiper({ dates, initialIndex, onPageChange }: ReadingSwiperProps) {
-  const renderItem: ListRenderItem<Date> = useCallback(
-    ({ item }) => <DayPage date={item} />,
-    [],
-  );
+  const renderItem: ListRenderItem<Date> = useCallback(({ item }) => <DayPage date={item} />, []);
 
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {

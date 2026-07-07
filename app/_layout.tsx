@@ -35,8 +35,8 @@ export default function RootLayout() {
 
   return (
     <SQLiteProvider
-      databaseName="dev.db"
-      assetSource={{ assetId: require("../assets/db/dev.db") }}
+      databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME!}
+      assetSource={{ assetId: require("../assets/db/readings.db") }}
     >
       <StatusBar style="auto" />
       <Stack

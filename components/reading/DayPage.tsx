@@ -39,7 +39,7 @@ export function DayPage({ date }: DayPageProps) {
   return (
     <View className="flex-1 items-center justify-center px-8" style={{ width: SCREEN_WIDTH }}>
       <Text
-        className="text-muted dark:text-muted-dark leading-relaxed text-center"
+        className="text-muted dark:text-muted-dark text-center leading-relaxed"
         style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
       >
         No readings available for{" "}
