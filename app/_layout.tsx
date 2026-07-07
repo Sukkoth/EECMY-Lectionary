@@ -5,6 +5,7 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { setBackgroundColorAsync } from "expo-system-ui";
+import { SQLiteProvider } from "expo-sqlite";
 import "./global.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -33,7 +34,10 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <SQLiteProvider
+      databaseName="dev.db"
+      assetSource={{ assetId: require("../assets/db/dev.db") }}
+    >
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
@@ -46,6 +50,6 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="reading/index" />
       </Stack>
-    </>
+    </SQLiteProvider>
   );
 }
