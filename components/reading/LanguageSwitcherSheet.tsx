@@ -7,7 +7,11 @@ import {
 import ReadingSettingsContent from "./ReadingSettingsContent";
 import { useSettings, SettingsContext } from "@/lib/SettingsContext";
 
-const LanguageSwitcherSheet = forwardRef<BottomSheetModal>((_props, ref) => {
+type LanguageSwitcherSheetProps = {
+  onChange?: (index: number) => void;
+};
+
+const LanguageSwitcherSheet = forwardRef<BottomSheetModal, LanguageSwitcherSheetProps>(({ onChange }, ref) => {
   const isDark = useColorScheme() === "dark";
   const ctx = useSettings();
 
@@ -15,6 +19,7 @@ const LanguageSwitcherSheet = forwardRef<BottomSheetModal>((_props, ref) => {
     <BottomSheetModal
       ref={ref}
       snapPoints={["75%"]}
+      onChange={onChange}
       backgroundStyle={{
         backgroundColor: isDark ? "#1C1C1C" : "#FFFFFF",
       }}

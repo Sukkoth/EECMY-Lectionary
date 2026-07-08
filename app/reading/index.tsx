@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams, useNavigation, router } from "expo-router";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useSQLiteContext } from "expo-sqlite";
-import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import {
   ReadingRepository,
   generateWindow,
@@ -46,6 +46,7 @@ export default function ReadingScreen() {
   const settingsRef = useRef(settings);
   const [rebuildKey, setRebuildKey] = useState(0);
   const sheetRef = useRef<BottomSheetModal>(null);
+  const [sheetIndex, setSheetIndex] = useState(-1);
 
   // Re-create repo when language/version changes
   if (settingsRef.current.language !== settings.language || settingsRef.current.version !== settings.version) {
@@ -128,6 +129,32 @@ export default function ReadingScreen() {
   });
   const liturgicalDay = currentDayData?.dayInfo?.title ?? null;
 
+  // ── Back handler: dismiss sheet first, then navigate back ──
+  const handleBack = useCallback(() => {
+    if (sheetIndex >= 0) {
+      sheetRef.current?.dismiss();
+    } else {
+      router.back();
+    }
+  }, [sheetIndex]);
+
+  const handleSheetChange = useCallback((index: number) => {
+    setSheetIndex(index);
+  }, []);
+
+  const navigation = useNavigation();
+
+  // ── Intercept system back to dismiss sheet first ──
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (sheetIndex >= 0) {
+        e.preventDefault();
+        sheetRef.current?.dismiss();
+      }
+    });
+    return unsubscribe;
+  }, [navigation, sheetIndex]);
+
   // ── Loading state (only on initial load) ──
   if (loading) {
     return (
@@ -171,7 +198,7 @@ export default function ReadingScreen() {
         weekday={weekday}
         formattedDate={formattedDate}
         title={liturgicalDay}
-        onClose={() => router.back()}
+        onClose={handleBack}
       />
       <ReadingSwiper
         data={swiperData}
@@ -179,7 +206,7 @@ export default function ReadingScreen() {
         onPageChange={handlePageChange}
         rebuildKey={rebuildKey}
       />
-      <LanguageSwitcherSheet ref={sheetRef} />
+      <LanguageSwitcherSheet ref={sheetRef} onChange={handleSheetChange} />
     </View>
   );
 }
