@@ -1,12 +1,16 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
-import { ReadingsDB, type DayData, toDateString } from "@/lib/database";
+import {
+  ReadingRepository,
+  generateWindow,
+  HALF_WINDOW,
+  WINDOW_SIZE,
+  REBUILD_THRESHOLD,
+} from "@/lib/ReadingRepository";
 import ReadingHeader from "@/components/reading/ReadingHeader";
 import { ReadingSwiper } from "@/components/reading/ReadingSwiper";
-
-const RANGE_HALF = 200;
 
 export default function ReadingScreen() {
   const params = useLocalSearchParams<{
@@ -15,75 +19,78 @@ export default function ReadingScreen() {
     day?: string;
   }>();
 
-  // Build a date range centered on the navigation target
-  const dateRange = useMemo(() => {
-    const centerDate =
-      params.year && params.month && params.day
-        ? new Date(
-            parseInt(params.year, 10),
-            parseInt(params.month, 10) - 1,
-            parseInt(params.day, 10),
-          )
-        : new Date(); // fallback to today
-
-    const dates: Date[] = [];
-    for (let i = -RANGE_HALF; i <= RANGE_HALF; i++) {
-      const d = new Date(centerDate);
-      d.setDate(centerDate.getDate() + i);
-      dates.push(d);
-    }
-    return dates;
+  // ── Single source of truth: the currently viewed date ──
+  const initialDate = useMemo(() => {
+    return params.year && params.month && params.day
+      ? new Date(
+          parseInt(params.year, 10),
+          parseInt(params.month, 10) - 1,
+          parseInt(params.day, 10),
+        )
+      : new Date();
   }, [params.year, params.month, params.day]);
 
-  const initialIndex = RANGE_HALF;
-  const [currentDate, setCurrentDate] = useState(dateRange[initialIndex]);
-  const [dataMap, setDataMap] = useState<Map<string, DayData>>(new Map());
+  const [currentDate, setCurrentDate] = useState(initialDate);
+  const [windowCenter, setWindowCenter] = useState(initialDate);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [cacheVersion, setCacheVersion] = useState(0);
 
   const db = useSQLiteContext();
+  const repoRef = useRef<ReadingRepository | null>(null);
+  const [rebuildKey, setRebuildKey] = useState(0);
 
-  // Fetch readings for the entire date range
+  // Initialise repo once (not state — no re-render needed)
+  if (!repoRef.current) {
+    repoRef.current = new ReadingRepository(db);
+  }
+
+  // ── Derive the 21-page window from windowCenter ──
+  const windowDates = useMemo(() => generateWindow(windowCenter), [windowCenter]);
+
+  // ── Fetch data for the current window ──
   useEffect(() => {
-    const startDate = dateRange[0];
-    const endDate = dateRange[dateRange.length - 1];
-
-    const readingsDB = new ReadingsDB(db);
+    setLoading(true);
     setError(null);
-
-    readingsDB
-      .getReadingsForDateRange(startDate, endDate)
-      .then((days) => {
-        const map = new Map<string, DayData>();
-        for (const day of days) {
-          const key = toDateString(day.date);
-          map.set(key, day);
-        }
-        setDataMap(map);
+    repoRef
+      .current!.prefetch(windowDates)
+      .then(() => {
+        setCacheVersion((v) => v + 1);
+        setLoading(false);
       })
-      .catch((err) => {
+      .catch((err: Error) => {
         setError(err?.message ?? "Failed to load readings.");
-      })
-      .finally(() => {
         setLoading(false);
       });
-  }, [db, dateRange, retryCount]);
+  }, [windowDates, retryCount]);
 
-  const handlePageChange = useCallback((date: Date) => {
+  // ── Prune distant cache entries when window moves ──
+  useEffect(() => {
+    repoRef.current?.prune(windowCenter);
+  }, [windowCenter]);
+
+  // ── Swipe handler: update current date, rebuild window at edges ──
+  const handlePageChange = useCallback((date: Date, position: number) => {
     setCurrentDate(date);
+
+    if (position <= REBUILD_THRESHOLD || position >= WINDOW_SIZE - 1 - REBUILD_THRESHOLD) {
+      setWindowCenter(date);
+      setRebuildKey((k) => k + 1);
+    }
   }, []);
 
-  // Build the swiper data: combine dates with their DayData
+  // ── Build swiper data from cache ──
   const swiperData = useMemo(() => {
-    return dateRange.map((date) => ({
+    return windowDates.map((date) => ({
       date,
-      dayData: dataMap.get(toDateString(date)) ?? null,
+      dayData: repoRef.current?.getCached(date) ?? null,
     }));
-  }, [dateRange, dataMap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [windowDates, cacheVersion]);
 
-  // Derive header info from current date
-  const currentDayData = dataMap.get(toDateString(currentDate)) ?? null;
+  // ── Header info from current date ──
+  const currentDayData = repoRef.current?.getCached(currentDate) ?? null;
   const weekday = currentDate.toLocaleDateString("en-US", { weekday: "long" });
   const formattedDate = currentDate.toLocaleDateString("en-US", {
     month: "long",
@@ -91,7 +98,7 @@ export default function ReadingScreen() {
   });
   const liturgicalDay = currentDayData?.dayInfo?.title ?? null;
 
-  // Loading state
+  // ── Loading state (only on initial load) ──
   if (loading) {
     return (
       <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1 items-center justify-center">
@@ -100,7 +107,7 @@ export default function ReadingScreen() {
     );
   }
 
-  // Error state
+  // ── Error state ──
   if (error) {
     return (
       <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1 items-center justify-center px-6">
@@ -126,6 +133,7 @@ export default function ReadingScreen() {
     );
   }
 
+  // ── Content ──
   return (
     <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ReadingHeader
@@ -136,8 +144,9 @@ export default function ReadingScreen() {
       />
       <ReadingSwiper
         data={swiperData}
-        initialIndex={initialIndex}
+        initialIndex={HALF_WINDOW}
         onPageChange={handlePageChange}
+        rebuildKey={rebuildKey}
       />
     </View>
   );
