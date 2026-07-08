@@ -36,8 +36,15 @@ export default function ReadingHeader({
           ) : null}
         </View>
 
-        {/* Right: settings + close */}
+        {/* Right: language switch + settings + close */}
         <View className="flex-row items-center gap-3">
+          <TouchableOpacity
+            onPress={() => console.log("Language switch pressed")}
+            activeOpacity={0.7}
+            className="bg-surface dark:bg-surface-dark rounded-full p-2.5"
+          >
+            <Ionicons name="language-outline" size={20} color="#6B6560" />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/settings")}
             activeOpacity={0.7}
