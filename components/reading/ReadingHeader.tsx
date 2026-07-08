@@ -1,7 +1,6 @@
 import { forwardRef } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View, useColorScheme, Appearance } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 type ReadingHeaderProps = {
@@ -13,6 +12,12 @@ type ReadingHeaderProps = {
 
 const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
   ({ weekday, formattedDate, title, onClose }, ref) => {
+    const isDark = useColorScheme() === "dark";
+
+    const toggleTheme = () => {
+      Appearance.setColorScheme(isDark ? "light" : "dark");
+    };
+
     return (
       <View className="border-b border-stone-200 px-6 pb-4 pt-10 dark:border-stone-800">
         <View className="flex-row items-start justify-between">
@@ -34,7 +39,7 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
             ) : null}
           </View>
 
-          {/* Right: language switch + settings + close */}
+          {/* Right: language switch + theme toggle + close */}
           <View className="flex-row items-center gap-3">
             <TouchableOpacity
               onPress={() => (ref as React.RefObject<BottomSheetModal>).current?.present()}
@@ -44,11 +49,11 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
               <Ionicons name="language-outline" size={20} color="#6B6560" />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => router.push("/settings")}
+              onPress={toggleTheme}
               activeOpacity={0.7}
               className="bg-surface dark:bg-surface-dark rounded-full p-2.5"
             >
-              <Ionicons name="settings-outline" size={20} color="#6B6560" />
+              <Ionicons name={isDark ? "moon-outline" : "sunny-outline"} size={20} color="#6B6560" />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onClose}
