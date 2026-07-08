@@ -15,6 +15,7 @@ import { MOCK_STREAK } from "@/lib/types";
 import { useSQLiteContext } from "expo-sqlite";
 import { useEffect, useMemo, useState } from "react";
 import { ReadingsDB, type DayData } from "@/lib/database";
+import { useSettings } from "@/lib/SettingsContext";
 
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const streak = MOCK_STREAK;
   const db = useSQLiteContext();
   const readingDate = useMemo(() => new Date(), []);
+  const { settings } = useSettings();
 
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const readingsDB = new ReadingsDB(db);
     readingsDB
-      .getReadingsForDate(readingDate)
+      .getReadingsForDate(readingDate, settings.language, settings.version)
       .then((result) => {
         setDayData(result);
       })
@@ -48,7 +50,7 @@ export default function HomeScreen() {
       .finally(() => {
         setLoading(false);
       });
-  }, [db, readingDate]);
+  }, [db, readingDate, settings.language, settings.version]);
 
   const isMulti = dayData && dayData.readings.length > 1;
 

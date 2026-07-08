@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { isValidVersion, getLanguage, LANGUAGES } from "./languages";
 
 const KEYS = {
   language: "yeilet_language",
@@ -16,11 +17,20 @@ export async function loadLanguageSetting(): Promise<LanguageSetting | null> {
     SecureStore.getItemAsync(KEYS.version),
   ]);
 
-  if (language && version) {
-    return { language, version };
+  if (!language || !version) return null;
+
+  // Normalize display-name to code (e.g. "English" → "en")
+  const lang = getLanguage(language) ?? getLanguageByDisplayName(language);
+  if (!lang) return null;
+
+  // Normalize version — if not valid for the language, use default
+  const ver = isValidVersion(lang.code, version) ? version : lang.versions[0].code;
+
+  if (lang.code !== language || ver !== version) {
+    await saveLanguageSetting({ language: lang.code, version: ver });
   }
 
-  return null;
+  return { language: lang.code, version: ver };
 }
 
 export async function saveLanguageSetting(setting: LanguageSetting): Promise<void> {
@@ -28,4 +38,8 @@ export async function saveLanguageSetting(setting: LanguageSetting): Promise<voi
     SecureStore.setItemAsync(KEYS.language, setting.language),
     SecureStore.setItemAsync(KEYS.version, setting.version),
   ]);
+}
+
+function getLanguageByDisplayName(name: string) {
+  return LANGUAGES.find((l) => l.language === name);
 }

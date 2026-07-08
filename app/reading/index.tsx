@@ -13,6 +13,7 @@ import {
 import ReadingHeader from "@/components/reading/ReadingHeader";
 import LanguageSwitcherSheet from "@/components/reading/LanguageSwitcherSheet";
 import { ReadingSwiper } from "@/components/reading/ReadingSwiper";
+import { useSettings } from "@/lib/SettingsContext";
 
 export default function ReadingScreen() {
   const params = useLocalSearchParams<{
@@ -40,13 +41,21 @@ export default function ReadingScreen() {
   const [cacheVersion, setCacheVersion] = useState(0);
 
   const db = useSQLiteContext();
+  const { settings } = useSettings();
   const repoRef = useRef<ReadingRepository | null>(null);
+  const settingsRef = useRef(settings);
   const [rebuildKey, setRebuildKey] = useState(0);
   const sheetRef = useRef<BottomSheetModal>(null);
 
-  // Initialise repo once (not state — no re-render needed)
+  // Re-create repo when language/version changes
+  if (settingsRef.current.language !== settings.language || settingsRef.current.version !== settings.version) {
+    settingsRef.current = settings;
+    repoRef.current = new ReadingRepository(db, settings.language, settings.version);
+  }
+
+  // Initialise repo with current language/version
   if (!repoRef.current) {
-    repoRef.current = new ReadingRepository(db);
+    repoRef.current = new ReadingRepository(db, settings.language, settings.version);
   }
 
   // ── Derive the 21-page window from windowCenter ──
