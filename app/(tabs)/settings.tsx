@@ -13,11 +13,11 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6">
+    <SafeAreaView className="bg-bg-warm  dark:bg-bg-warm-dark flex-1">
+      <View className="flex-1 px-6 mt-6">
         {/* Title */}
         <Text
-          className="mt-8 mb-8 text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
+          className="mt-8 mb-8 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
           Settings
@@ -116,6 +116,44 @@ export default function SettingsScreen() {
             </Text>
           </Pressable>
         </View>
+
+        {/* Check for Updates */}
+        <Text
+          className="text-primary mb-3 ml-1 mt-6 text-xs uppercase tracking-widest"
+          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+        >
+          Updates
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push("/settings/check-updates")}
+          activeOpacity={0.7}
+          className="bg-surface dark:bg-surface-dark mb-8 flex-row items-center justify-between rounded-2xl px-5 py-4"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="rounded-lg p-2" style={{ backgroundColor: isDark ? "#16a34a20" : "#DCFCE7" }}>
+              <Ionicons name="cloud-download-outline" size={20} color="#16a34a" />
+            </View>
+            <View>
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                Check for Updates
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                App & content updates
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={isDark ? "#737373" : "#A3A3A3"}
+          />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
