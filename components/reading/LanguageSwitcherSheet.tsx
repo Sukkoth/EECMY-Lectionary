@@ -4,7 +4,7 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
-import LanguagePickerContent from "./LanguagePickerContent";
+import ReadingSettingsContent from "./ReadingSettingsContent";
 import { useSettings, SettingsContext } from "@/lib/SettingsContext";
 
 const LanguageSwitcherSheet = forwardRef<BottomSheetModal>((_props, ref) => {
@@ -14,7 +14,7 @@ const LanguageSwitcherSheet = forwardRef<BottomSheetModal>((_props, ref) => {
   return (
     <BottomSheetModal
       ref={ref}
-      snapPoints={["50%"]}
+      snapPoints={["75%"]}
       backgroundStyle={{
         backgroundColor: isDark ? "#1C1C1C" : "#FFFFFF",
       }}
@@ -27,9 +27,7 @@ const LanguageSwitcherSheet = forwardRef<BottomSheetModal>((_props, ref) => {
         showsVerticalScrollIndicator={false}
       >
         <SettingsContext.Provider value={ctx}>
-          <LanguagePickerContent
-            onVersionSelect={() => (ref as React.RefObject<BottomSheetModal>).current?.dismiss()}
-          />
+          <ReadingSettingsContent />
         </SettingsContext.Provider>
       </BottomSheetScrollView>
     </BottomSheetModal>

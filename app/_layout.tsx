@@ -56,6 +56,7 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="reading/index" />
               <Stack.Screen name="settings/language" />
+              <Stack.Screen name="settings/font-alignment" />
             </Stack>
           </SettingsProvider>
         </BottomSheetModalProvider>

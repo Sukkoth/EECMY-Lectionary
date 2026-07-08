@@ -1,10 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { loadLanguageSetting, saveLanguageSetting } from "./settings";
-
-export type AppSettings = {
-  language: string;
-  version: string;
-};
+import { loadSettings, saveSettings, type AppSettings, type TextAlignment } from "./settings";
 
 type SettingsContextValue = {
   settings: AppSettings;
@@ -15,6 +10,10 @@ type SettingsContextValue = {
 const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
   version: "niv",
+  fontSizeSimple: 20,
+  fontSizeExpanded: 18,
+  alignSimple: "center",
+  alignExpanded: "justify",
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -24,10 +23,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    loadLanguageSetting().then((saved) => {
-      if (saved) {
-        setSettings(saved);
-      }
+    loadSettings().then((saved) => {
+      setSettings(saved);
       setLoaded(true);
     });
   }, []);
@@ -35,12 +32,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     const next = { ...settings, [key]: value };
     setSettings(next);
-    await saveLanguageSetting(next);
+    await saveSettings(next);
   };
 
   const setAllSettings = async (next: AppSettings) => {
     setSettings(next);
-    await saveLanguageSetting(next);
+    await saveSettings(next);
   };
 
   if (!loaded) {

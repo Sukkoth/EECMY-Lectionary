@@ -55,6 +55,38 @@ export default function SettingsScreen() {
           />
         </TouchableOpacity>
 
+        {/* Font & Alignment */}
+        <TouchableOpacity
+          onPress={() => router.push("/settings/font-alignment")}
+          activeOpacity={0.7}
+          className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="text-outline" size={20} color="#3b82f6" />
+            </View>
+            <View>
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                Font & Alignment
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {settings.fontSizeSimple}/{settings.fontSizeExpanded}px — {settings.alignSimple}/{settings.alignExpanded}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={isDark ? "#737373" : "#A3A3A3"}
+          />
+        </TouchableOpacity>
+
         {/* Appearance */}
         <View className="bg-surface dark:bg-surface-dark rounded-2xl px-5 py-4">
           <Pressable

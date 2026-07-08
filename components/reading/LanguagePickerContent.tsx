@@ -18,7 +18,7 @@ export default function LanguagePickerContent({ onVersionSelect }: LanguagePicke
   };
 
   const handleVersionSelect = async (langCode: string, versionCode: string) => {
-    await setAllSettings({ language: langCode, version: versionCode });
+    await setAllSettings({ ...settings, language: langCode, version: versionCode });
     onVersionSelect?.();
   };
 

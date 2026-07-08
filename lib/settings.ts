@@ -1,45 +1,97 @@
 import * as SecureStore from "expo-secure-store";
 import { isValidVersion, getLanguage, LANGUAGES } from "./languages";
 
+export type TextAlignment = "left" | "center" | "justify";
+
+export type AppSettings = {
+  language: string;
+  version: string;
+  fontSizeSimple: number;
+  fontSizeExpanded: number;
+  alignSimple: TextAlignment;
+  alignExpanded: TextAlignment;
+};
+
 const KEYS = {
   language: "yeilet_language",
   version: "yeilet_version",
+  fontSizeSimple: "yeilet_font_size_simple",
+  fontSizeExpanded: "yeilet_font_size_expanded",
+  alignSimple: "yeilet_align_simple",
+  alignExpanded: "yeilet_align_expanded",
 };
 
-export type LanguageSetting = {
-  language: string;
-  version: string;
+const DEFAULTS: AppSettings = {
+  language: "en",
+  version: "niv",
+  fontSizeSimple: 20,
+  fontSizeExpanded: 18,
+  alignSimple: "center",
+  alignExpanded: "justify",
 };
 
-export async function loadLanguageSetting(): Promise<LanguageSetting | null> {
-  const [language, version] = await Promise.all([
-    SecureStore.getItemAsync(KEYS.language),
-    SecureStore.getItemAsync(KEYS.version),
-  ]);
+export async function loadSettings(): Promise<AppSettings> {
+  const [language, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded] =
+    await Promise.all([
+      SecureStore.getItemAsync(KEYS.language),
+      SecureStore.getItemAsync(KEYS.version),
+      SecureStore.getItemAsync(KEYS.fontSizeSimple),
+      SecureStore.getItemAsync(KEYS.fontSizeExpanded),
+      SecureStore.getItemAsync(KEYS.alignSimple),
+      SecureStore.getItemAsync(KEYS.alignExpanded),
+    ]);
 
-  if (!language || !version) return null;
+  const lang = language
+    ? getLanguage(language) ?? getLanguageByDisplayName(language)
+    : null;
 
-  // Normalize display-name to code (e.g. "English" → "en")
-  const lang = getLanguage(language) ?? getLanguageByDisplayName(language);
-  if (!lang) return null;
+  const ver =
+    lang && version && isValidVersion(lang.code, version)
+      ? version
+      : lang
+        ? lang.versions[0].code
+        : DEFAULTS.version;
 
-  // Normalize version — if not valid for the language, use default
-  const ver = isValidVersion(lang.code, version) ? version : lang.versions[0].code;
+  const result: AppSettings = {
+    language: lang?.code ?? DEFAULTS.language,
+    version: ver,
+    fontSizeSimple: fontSizeSimple ? safeParseInt(fontSizeSimple, DEFAULTS.fontSizeSimple) : DEFAULTS.fontSizeSimple,
+    fontSizeExpanded: fontSizeExpanded ? safeParseInt(fontSizeExpanded, DEFAULTS.fontSizeExpanded) : DEFAULTS.fontSizeExpanded,
+    alignSimple: parseAlignment(alignSimple, DEFAULTS.alignSimple),
+    alignExpanded: parseAlignment(alignExpanded, DEFAULTS.alignExpanded),
+  };
 
-  if (lang.code !== language || ver !== version) {
-    await saveLanguageSetting({ language: lang.code, version: ver });
+  // Persist any normalization
+  if (lang && (lang.code !== language || ver !== version)) {
+    await saveSettings(result);
   }
 
-  return { language: lang.code, version: ver };
+  return result;
 }
 
-export async function saveLanguageSetting(setting: LanguageSetting): Promise<void> {
+export async function saveSettings(settings: AppSettings): Promise<void> {
   await Promise.all([
-    SecureStore.setItemAsync(KEYS.language, setting.language),
-    SecureStore.setItemAsync(KEYS.version, setting.version),
+    SecureStore.setItemAsync(KEYS.language, settings.language),
+    SecureStore.setItemAsync(KEYS.version, settings.version),
+    SecureStore.setItemAsync(KEYS.fontSizeSimple, String(settings.fontSizeSimple)),
+    SecureStore.setItemAsync(KEYS.fontSizeExpanded, String(settings.fontSizeExpanded)),
+    SecureStore.setItemAsync(KEYS.alignSimple, settings.alignSimple),
+    SecureStore.setItemAsync(KEYS.alignExpanded, settings.alignExpanded),
   ]);
+}
+
+function safeParseInt(value: string, fallback: number): number {
+  const n = parseInt(value, 10);
+  return isNaN(n) ? fallback : n;
+}
+
+function parseAlignment(value: string | null, fallback: TextAlignment): TextAlignment {
+  if (value === "left" || value === "center" || value === "justify") return value;
+  return fallback;
 }
 
 function getLanguageByDisplayName(name: string) {
   return LANGUAGES.find((l) => l.language === name);
 }
+
+

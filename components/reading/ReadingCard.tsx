@@ -5,9 +5,11 @@ import type { ReadingRow } from "@/lib/database";
 type ReadingCardProps = {
   reading: ReadingRow;
   sectionLabel: string;
+  fontSize: number;
+  align: "left" | "center" | "justify";
 };
 
-export default function ReadingCard({ reading, sectionLabel }: ReadingCardProps) {
+export default function ReadingCard({ reading, sectionLabel, fontSize, align }: ReadingCardProps) {
   return (
     <View className="px-6 py-5">
       {/* Header row: section (left) + actions (right) */}
@@ -40,8 +42,8 @@ export default function ReadingCard({ reading, sectionLabel }: ReadingCardProps)
 
       {/* Verse text */}
       <Text
-        className="text-justify text-[18px] leading-7 text-[#2D2A24] dark:text-[#E8E4DC]"
-        style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        className="text-[#2D2A24] dark:text-[#E8E4DC]"
+        style={{ fontFamily: "ReadingFont", fontWeight: "400", fontSize, textAlign: align, lineHeight: fontSize * 1.75 }}
       >
         {reading.text}
       </Text>
