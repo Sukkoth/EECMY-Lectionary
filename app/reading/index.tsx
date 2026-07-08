@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import {
   ReadingRepository,
   generateWindow,
@@ -10,6 +11,7 @@ import {
   REBUILD_THRESHOLD,
 } from "@/lib/ReadingRepository";
 import ReadingHeader from "@/components/reading/ReadingHeader";
+import LanguageSwitcherSheet from "@/components/reading/LanguageSwitcherSheet";
 import { ReadingSwiper } from "@/components/reading/ReadingSwiper";
 
 export default function ReadingScreen() {
@@ -40,6 +42,7 @@ export default function ReadingScreen() {
   const db = useSQLiteContext();
   const repoRef = useRef<ReadingRepository | null>(null);
   const [rebuildKey, setRebuildKey] = useState(0);
+  const sheetRef = useRef<BottomSheetModal>(null);
 
   // Initialise repo once (not state — no re-render needed)
   if (!repoRef.current) {
@@ -156,6 +159,7 @@ export default function ReadingScreen() {
   return (
     <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ReadingHeader
+        ref={sheetRef}
         weekday={weekday}
         formattedDate={formattedDate}
         title={liturgicalDay}
@@ -167,6 +171,7 @@ export default function ReadingScreen() {
         onPageChange={handlePageChange}
         rebuildKey={rebuildKey}
       />
+      <LanguageSwitcherSheet ref={sheetRef} />
     </View>
   );
 }

@@ -6,6 +6,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { setBackgroundColorAsync } from "expo-system-ui";
 import { SQLiteProvider } from "expo-sqlite";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "./global.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -34,22 +36,26 @@ export default function RootLayout() {
   }
 
   return (
-    <SQLiteProvider
-      databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME!}
-      assetSource={{ assetId: require("../assets/db/readings.db") }}
-    >
-      <StatusBar style="auto" />
-      <Stack
-        screenOptions={{
-          headerShown: false, // ❌ No navigation headers — all screens use custom headers
-          contentStyle: {
-            backgroundColor: isDark ? "#11100E" : "#F8F6F3",
-          },
-        }}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SQLiteProvider
+        databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME!}
+        assetSource={{ assetId: require("../assets/db/readings.db") }}
       >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="reading/index" />
-      </Stack>
-    </SQLiteProvider>
+        <BottomSheetModalProvider>
+          <StatusBar style="auto" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: isDark ? "#11100E" : "#F8F6F3",
+              },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="reading/index" />
+          </Stack>
+        </BottomSheetModalProvider>
+      </SQLiteProvider>
+    </GestureHandlerRootView>
   );
 }
