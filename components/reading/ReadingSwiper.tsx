@@ -1,9 +1,7 @@
-import { useCallback } from "react";
-import { Dimensions, FlatList, type ListRenderItem, type ViewToken } from "react-native";
+import { View } from "react-native";
+import PagerView from "react-native-pager-view";
 import { DayPage } from "./DayPage";
-import type { DayData } from "@/lib/database";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import { toDateString, type DayData } from "@/lib/database";
 
 type SwiperItem = {
   date: Date;
@@ -17,36 +15,17 @@ type ReadingSwiperProps = {
 };
 
 export function ReadingSwiper({ data, initialIndex, onPageChange }: ReadingSwiperProps) {
-  const renderItem: ListRenderItem<SwiperItem> = useCallback(
-    ({ item }) => <DayPage date={item.date} dayData={item.dayData} />,
-    [],
-  );
-
-  const handleViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0) {
-        onPageChange((viewableItems[0].item as SwiperItem).date);
-      }
-    },
-    [onPageChange],
-  );
-
   return (
-    <FlatList
-      data={data}
-      horizontal
-      pagingEnabled
-      showsHorizontalScrollIndicator={false}
-      initialScrollIndex={initialIndex}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.date.toISOString().split("T")[0]}
-      onViewableItemsChanged={handleViewableItemsChanged}
-      viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-      getItemLayout={(_, index) => ({
-        length: SCREEN_WIDTH,
-        offset: SCREEN_WIDTH * index,
-        index,
-      })}
-    />
+    <PagerView
+      style={{ flex: 1 }}
+      initialPage={initialIndex}
+      onPageSelected={(e) => onPageChange(data[e.nativeEvent.position].date)}
+    >
+      {data.map((item) => (
+        <View key={toDateString(item.date)} style={{ flex: 1 }}>
+          <DayPage date={item.date} dayData={item.dayData} />
+        </View>
+      ))}
+    </PagerView>
   );
 }

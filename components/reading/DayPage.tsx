@@ -1,10 +1,8 @@
-import { Dimensions, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import type { DayData } from "@/lib/database";
 import ReadingPassage from "./ReadingPassage";
 import ReadingFooter from "./ReadingFooter";
 import ExpandedView from "./ExpandedView";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 type DayPageProps = {
   date: Date;
@@ -15,7 +13,7 @@ export function DayPage({ date, dayData }: DayPageProps) {
   // No readings available
   if (!dayData || dayData.readings.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center px-8" style={{ width: SCREEN_WIDTH }}>
+      <View className="flex-1 items-center justify-center px-8">
         <Text
           className="text-muted dark:text-muted-dark text-center leading-relaxed"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
@@ -35,7 +33,7 @@ export function DayPage({ date, dayData }: DayPageProps) {
   if (dayData.readings.length === 1) {
     const reading = dayData.readings[0];
     return (
-      <View className="flex-1 justify-center px-8" style={{ width: SCREEN_WIDTH }}>
+      <View className="flex-1 justify-center px-8">
         <ReadingPassage text={reading.text} />
         <ReadingFooter reference={reading.reference} />
       </View>
@@ -44,7 +42,7 @@ export function DayPage({ date, dayData }: DayPageProps) {
 
   // Multiple readings — show expanded view
   return (
-    <View className="flex-1" style={{ width: SCREEN_WIDTH }}>
+    <View className="flex-1">
       <ExpandedView readings={dayData.readings} />
     </View>
   );
