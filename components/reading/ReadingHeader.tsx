@@ -5,20 +5,20 @@ import { router } from "expo-router";
 type ReadingHeaderProps = {
   weekday: string;
   formattedDate: string;
-  season: string;
+  title: string | null;
   onClose: () => void;
 };
 
 export default function ReadingHeader({
   weekday,
   formattedDate,
-  season,
+  title,
   onClose,
 }: ReadingHeaderProps) {
   return (
     <View className="border-b border-stone-200 px-6 pb-4 pt-10 dark:border-stone-800">
       <View className="flex-row items-start justify-between">
-        {/* Left: weekday + date + season */}
+        {/* Left: weekday + date + liturgical day title */}
         <View className="flex-1">
           <Text
             className="text-[22px] leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -26,12 +26,12 @@ export default function ReadingHeader({
           >
             {weekday}, {formattedDate}
           </Text>
-          {season ? (
+          {title ? (
             <Text
               className="text-muted dark:text-muted-dark mt-0.5 text-xs uppercase tracking-widest"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
-              {season}
+              {title}
             </Text>
           ) : null}
         </View>

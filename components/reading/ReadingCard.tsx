@@ -1,12 +1,13 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { ReadingEntry } from "@/lib/types";
+import type { ReadingRow } from "@/lib/database";
 
 type ReadingCardProps = {
-  reading: ReadingEntry;
+  reading: ReadingRow;
+  sectionLabel: string;
 };
 
-export default function ReadingCard({ reading }: ReadingCardProps) {
+export default function ReadingCard({ reading, sectionLabel }: ReadingCardProps) {
   return (
     <View className="px-6 py-5">
       {/* Header row: section (left) + actions (right) */}
@@ -16,7 +17,7 @@ export default function ReadingCard({ reading }: ReadingCardProps) {
             className="text-muted dark:text-muted-dark text-xs uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
-            {reading.sectionLabel}
+            {sectionLabel}
           </Text>
           <Text
             className="text-primary text-3xl"
@@ -39,7 +40,7 @@ export default function ReadingCard({ reading }: ReadingCardProps) {
 
       {/* Verse text */}
       <Text
-        className="text-justify text-[18px] leading-7  text-[#2D2A24] dark:text-[#E8E4DC]"
+        className="text-justify text-[18px] leading-7 text-[#2D2A24] dark:text-[#E8E4DC]"
         style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
       >
         {reading.text}
