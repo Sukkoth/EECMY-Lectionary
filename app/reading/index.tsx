@@ -61,7 +61,7 @@ export default function ReadingScreen() {
   // ── Derive the 21-page window from windowCenter ──
   const windowDates = useMemo(() => generateWindow(windowCenter), [windowCenter]);
 
-  // ── Initial / retry fetch (shows loading spinner) ──
+  // ── Initial / retry / language-change fetch (shows loading spinner) ──
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -76,8 +76,7 @@ export default function ReadingScreen() {
       .finally(() => {
         setLoading(false);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [retryCount]);
+  }, [retryCount, settings.language, settings.version]);
 
   // ── Silent background prefetch on window rebuild (no spinner) ──
   const isFirstRender = useRef(true);

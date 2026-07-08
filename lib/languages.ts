@@ -17,7 +17,7 @@ export const LANGUAGES: LanguageEntry[] = [
     language: "አማርኛ",
     code: "am",
     versions: [
-      { code: "am54", label: "አማርኛ 1954" },
+      { code: "am95", label: "አማርኛ 1954" },
       { code: "nasv", label: "NASV" },
     ],
   },
