@@ -64,7 +64,7 @@ export const HALF_WINDOW = 10;
 /** Total number of pages in the pager. */
 export const WINDOW_SIZE = HALF_WINDOW * 2 + 1; // 21
 /** Rebuild the window when the user reaches this close to either edge. */
-export const REBUILD_THRESHOLD = 1;
+export const REBUILD_THRESHOLD = 5;
 
 /** Generate a 21-day window centered on the given date. */
 export function generateWindow(center: Date): Date[] {

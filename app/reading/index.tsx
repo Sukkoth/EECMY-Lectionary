@@ -49,7 +49,7 @@ export default function ReadingScreen() {
   // ── Derive the 21-page window from windowCenter ──
   const windowDates = useMemo(() => generateWindow(windowCenter), [windowCenter]);
 
-  // ── Fetch data for the current window ──
+  // ── Initial / retry fetch (shows loading spinner) ──
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -57,13 +57,32 @@ export default function ReadingScreen() {
       .current!.prefetch(windowDates)
       .then(() => {
         setCacheVersion((v) => v + 1);
-        setLoading(false);
       })
       .catch((err: Error) => {
         setError(err?.message ?? "Failed to load readings.");
+      })
+      .finally(() => {
         setLoading(false);
       });
-  }, [windowDates, retryCount]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retryCount]);
+
+  // ── Silent background prefetch on window rebuild (no spinner) ──
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    repoRef
+      .current!.prefetch(windowDates)
+      .then(() => {
+        setCacheVersion((v) => v + 1);
+      })
+      .catch(() => {
+        // Silently ignore background errors — user already sees content
+      });
+  }, [windowDates]);
 
   // ── Prune distant cache entries when window moves ──
   useEffect(() => {
