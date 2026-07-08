@@ -9,11 +9,11 @@ import {
   ActivityIndicator,
   type DimensionValue,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MOCK_STREAK } from "@/lib/types";
 import { useSQLiteContext } from "expo-sqlite";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ReadingsDB, type DayData } from "@/lib/database";
 import { useSettings } from "@/lib/SettingsContext";
 
@@ -36,7 +36,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchReadings = useCallback(() => {
     const readingsDB = new ReadingsDB(db);
     readingsDB
       .getReadingsForDate(readingDate, settings.language, settings.version)
@@ -51,6 +51,13 @@ export default function HomeScreen() {
         setLoading(false);
       });
   }, [db, readingDate, settings.language, settings.version]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchReadings();
+    }, [fetchReadings]),
+  );
 
   const isMulti = dayData && dayData.readings.length > 1;
 
