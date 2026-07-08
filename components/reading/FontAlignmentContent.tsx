@@ -135,6 +135,21 @@ export default function FontAlignmentContent({ compact }: FontAlignmentContentPr
 
   return (
     <View className={compact ? "" : "px-6"}>
+      <View className="px-6 pb-4">
+        <Text
+          className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+        >
+          Select Font Size & Indent
+        </Text>
+        <Text
+          className="text-muted dark:text-muted-dark mt-1 text-center text-sm"
+          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        >
+          Choose how you want the fonts to be displayed
+        </Text>
+      </View>
+
       {/* Font Size */}
       <View className={compact ? "px-6 pt-2" : "pt-2"}>
         <Text

@@ -6,7 +6,7 @@ export default function ReadingSettingsContent() {
   return (
     <View>
       <LanguagePickerContent />
-      <View className="mx-6 my-2 h-px bg-stone-200 dark:bg-stone-700" />
+      <View className="my-5" />
       <FontAlignmentContent compact />
     </View>
   );
