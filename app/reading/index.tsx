@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, useNavigation, router } from "expo-router";
+import { useLocalSearchParams, useNavigation } from "expo-router";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useSQLiteContext } from "expo-sqlite";
 import {
@@ -129,15 +129,6 @@ export default function ReadingScreen() {
   });
   const liturgicalDay = currentDayData?.dayInfo?.title ?? null;
 
-  // ── Back handler: dismiss sheet first, then navigate back ──
-  const handleBack = useCallback(() => {
-    if (sheetIndex >= 0) {
-      sheetRef.current?.dismiss();
-    } else {
-      router.back();
-    }
-  }, [sheetIndex]);
-
   const handleSheetChange = useCallback((index: number) => {
     setSheetIndex(index);
   }, []);
@@ -198,7 +189,6 @@ export default function ReadingScreen() {
         weekday={weekday}
         formattedDate={formattedDate}
         title={liturgicalDay}
-        onClose={handleBack}
       />
       <ReadingSwiper
         data={swiperData}

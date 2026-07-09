@@ -7,11 +7,10 @@ type ReadingHeaderProps = {
   weekday: string;
   formattedDate: string;
   title: string | null;
-  onClose: () => void;
 };
 
 const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
-  ({ weekday, formattedDate, title, onClose }, ref) => {
+  ({ weekday, formattedDate, title }, ref) => {
     const isDark = useColorScheme() === "dark";
 
     const toggleTheme = () => {
@@ -54,13 +53,6 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
               className="bg-surface dark:bg-surface-dark rounded-full p-2.5"
             >
               <Ionicons name={isDark ? "moon-outline" : "sunny-outline"} size={20} color="#6B6560" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onClose}
-              activeOpacity={0.7}
-              className="bg-surface dark:bg-surface-dark rounded-full p-2.5"
-            >
-              <Ionicons name="close" size={20} color="#6B6560" />
             </TouchableOpacity>
           </View>
         </View>
