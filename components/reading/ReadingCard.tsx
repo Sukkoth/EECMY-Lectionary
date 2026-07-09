@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { Share, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { ReadingRow } from "@/lib/database";
 
@@ -10,6 +10,12 @@ type ReadingCardProps = {
 };
 
 export default function ReadingCard({ reading, sectionLabel, fontSize, align }: ReadingCardProps) {
+  const handleShare = () => {
+    Share.share({
+      message: `${reading.text}\n\n${reading.reference} (${reading.version.toUpperCase()})`,
+    });
+  };
+
   return (
     <View className="px-6 py-5">
       {/* Header row: section (left) + actions (right) */}
@@ -34,8 +40,8 @@ export default function ReadingCard({ reading, sectionLabel, fontSize, align }: 
           <TouchableOpacity activeOpacity={0.7}>
             <Ionicons name="star-outline" size={20} color="#3b82f6" />
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Ionicons name="share-outline" size={20} color="#3b82f6" />
+          <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
+            <Ionicons name="open-outline" size={20} color="#3b82f6" />
           </TouchableOpacity>
         </View>
       </View>

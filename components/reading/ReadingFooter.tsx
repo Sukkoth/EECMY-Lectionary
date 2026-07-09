@@ -1,11 +1,19 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { Share, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 type ReadingFooterProps = {
   reference: string;
+  text: string;
+  version: string;
 };
 
-export default function ReadingFooter({ reference }: ReadingFooterProps) {
+export default function ReadingFooter({ reference, text, version }: ReadingFooterProps) {
+  const handleShare = () => {
+    Share.share({
+      message: `${text}\n\n${reference} (${version.toUpperCase()})`,
+    });
+  };
+
   return (
     <View className="items-center">
       {/* Reference */}
@@ -21,8 +29,8 @@ export default function ReadingFooter({ reference }: ReadingFooterProps) {
         <TouchableOpacity activeOpacity={0.7} className="items-center">
           <Ionicons name="star-outline" size={26} color="#3b82f6" />
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.7} className="items-center">
-          <Ionicons name="share-outline" size={26} color="#3b82f6" />
+        <TouchableOpacity onPress={handleShare} activeOpacity={0.7} className="items-center">
+          <Ionicons name="open-outline" size={26} color="#3b82f6" />
         </TouchableOpacity>
       </View>
     </View>

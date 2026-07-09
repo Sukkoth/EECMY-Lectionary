@@ -38,7 +38,7 @@ export function DayPage({ date, dayData }: DayPageProps) {
     return (
       <View className="flex-1 justify-center px-8">
         <ReadingPassage text={reading.text} fontSize={settings.fontSizeSimple} align={settings.alignSimple} />
-        <ReadingFooter reference={reading.reference} />
+        <ReadingFooter reference={reading.reference} text={reading.text} version={reading.version} />
       </View>
     );
   }
