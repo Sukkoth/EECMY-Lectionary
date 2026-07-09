@@ -1,5 +1,4 @@
 import * as SecureStore from "expo-secure-store";
-import { isValidVersion, getLanguage, LANGUAGES } from "./languages";
 
 export type TextAlignment = "left" | "center" | "justify";
 
@@ -31,42 +30,28 @@ const DEFAULTS: AppSettings = {
 };
 
 export async function loadSettings(): Promise<AppSettings> {
-  const [language, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded] =
-    await Promise.all([
-      SecureStore.getItemAsync(KEYS.language),
-      SecureStore.getItemAsync(KEYS.version),
-      SecureStore.getItemAsync(KEYS.fontSizeSimple),
-      SecureStore.getItemAsync(KEYS.fontSizeExpanded),
-      SecureStore.getItemAsync(KEYS.alignSimple),
-      SecureStore.getItemAsync(KEYS.alignExpanded),
-    ]);
+  try {
+    const [language, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded] =
+      await Promise.all([
+        SecureStore.getItemAsync(KEYS.language),
+        SecureStore.getItemAsync(KEYS.version),
+        SecureStore.getItemAsync(KEYS.fontSizeSimple),
+        SecureStore.getItemAsync(KEYS.fontSizeExpanded),
+        SecureStore.getItemAsync(KEYS.alignSimple),
+        SecureStore.getItemAsync(KEYS.alignExpanded),
+      ]);
 
-  const lang = language
-    ? getLanguage(language) ?? getLanguageByDisplayName(language)
-    : null;
-
-  const ver =
-    lang && version && isValidVersion(lang.code, version)
-      ? version
-      : lang
-        ? lang.versions[0].code
-        : DEFAULTS.version;
-
-  const result: AppSettings = {
-    language: lang?.code ?? DEFAULTS.language,
-    version: ver,
-    fontSizeSimple: fontSizeSimple ? safeParseInt(fontSizeSimple, DEFAULTS.fontSizeSimple) : DEFAULTS.fontSizeSimple,
-    fontSizeExpanded: fontSizeExpanded ? safeParseInt(fontSizeExpanded, DEFAULTS.fontSizeExpanded) : DEFAULTS.fontSizeExpanded,
-    alignSimple: parseAlignment(alignSimple, DEFAULTS.alignSimple),
-    alignExpanded: parseAlignment(alignExpanded, DEFAULTS.alignExpanded),
-  };
-
-  // Persist any normalization
-  if (lang && (lang.code !== language || ver !== version)) {
-    await saveSettings(result);
+    return {
+      language: language ?? DEFAULTS.language,
+      version: version ?? DEFAULTS.version,
+      fontSizeSimple: fontSizeSimple ? safeParseInt(fontSizeSimple, DEFAULTS.fontSizeSimple) : DEFAULTS.fontSizeSimple,
+      fontSizeExpanded: fontSizeExpanded ? safeParseInt(fontSizeExpanded, DEFAULTS.fontSizeExpanded) : DEFAULTS.fontSizeExpanded,
+      alignSimple: parseAlignment(alignSimple, DEFAULTS.alignSimple),
+      alignExpanded: parseAlignment(alignExpanded, DEFAULTS.alignExpanded),
+    };
+  } catch {
+    return { ...DEFAULTS };
   }
-
-  return result;
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
@@ -89,9 +74,3 @@ function parseAlignment(value: string | null, fallback: TextAlignment): TextAlig
   if (value === "left" || value === "center" || value === "justify") return value;
   return fallback;
 }
-
-function getLanguageByDisplayName(name: string) {
-  return LANGUAGES.find((l) => l.language === name);
-}
-
-

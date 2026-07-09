@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "@/lib/SettingsContext";
-import { LANGUAGES } from "@/lib/languages";
 
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
@@ -10,7 +9,7 @@ type LanguagePickerContentProps = {
 
 export default function LanguagePickerContent({ onVersionSelect }: LanguagePickerContentProps) {
   const isDark = useColorScheme() === "dark";
-  const { settings, setAllSettings } = useSettings();
+  const { settings, setAllSettings, availableLanguages, languagesError } = useSettings();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const toggleLanguage = (language: string) => {
@@ -40,8 +39,28 @@ export default function LanguagePickerContent({ onVersionSelect }: LanguagePicke
         </Text>
       </View>
 
+      {/* Error state */}
+      {languagesError && (
+        <Text
+          className="text-red-500 dark:text-red-400 mb-4 px-6 text-center text-sm"
+          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        >
+          {languagesError}
+        </Text>
+      )}
+
+      {/* Empty state */}
+      {!languagesError && availableLanguages.length === 0 && (
+        <Text
+          className="text-muted dark:text-muted-dark mb-4 px-6 text-center text-sm"
+          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        >
+          No translations available
+        </Text>
+      )}
+
       {/* Language groups */}
-      {LANGUAGES.map((lang) => {
+      {availableLanguages.map((lang) => {
         const isExpanded = expanded[lang.language] ?? false;
 
         return (
