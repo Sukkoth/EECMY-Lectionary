@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import type { HolidayRow } from "@/lib/types";
@@ -54,7 +54,7 @@ function isToday(year: number, month: number, day: number): boolean {
   );
 }
 
-export default function MonthGrid({ year, month, holidays, width }: MonthGridProps) {
+export default memo(function MonthGrid({ year, month, holidays, width }: MonthGridProps) {
   const weeks = useMemo(() => getWeeks(year, month), [year, month]);
   const cellWidth = Math.floor(width / 7);
 
@@ -66,7 +66,7 @@ export default function MonthGrid({ year, month, holidays, width }: MonthGridPro
           <View key={index} style={{ width: cellWidth }} className="items-center">
             <Text style={{
               fontFamily: "ReadingFont"
-            }} className="text-muted dark:text-muted-dark text-md font-bold">
+            }} className="text-muted dark:text-muted-dark text-sm font-bold">
               {label}
             </Text>
           </View>
@@ -143,4 +143,4 @@ export default function MonthGrid({ year, month, holidays, width }: MonthGridPro
       ))}
     </View>
   );
-}
+});

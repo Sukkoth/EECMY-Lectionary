@@ -1,13 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
-import { useSQLiteContext } from "expo-sqlite";
+import { useMemo, useRef, useState } from "react";
+import {
+  PanResponder,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+  useWindowDimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ReadingsDB, toDateString } from "@/lib/database";
-import { useSettings } from "@/lib/SettingsContext";
 import MonthGrid from "@/components/calendar/MonthGrid";
-import type { HolidayRow } from "@/lib/types";
-
-const MONTHS_RANGE = 24;
+import {
+  getHolidaysForMonth,
+  getHolidaysListForMonth,
+} from "@/lib/HolidayCache";
 
 const HOLIDAY_COLORS: Record<string, string> = {
   eecmy: "#B45309",
@@ -28,163 +34,83 @@ function formatShortDate(dateStr: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function addMonths(year: number, month: number, delta: number): { year: number; month: number } {
+  const total = month + delta;
+  const newYear = year + Math.floor(total / 12);
+  const newMonth = ((total % 12) + 12) % 12;
+  return { year: newYear, month: newMonth };
+}
+
 export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
-  const db = useSQLiteContext();
-  const { settings } = useSettings();
-
-  const listRef = useRef<FlatList>(null);
-  const [holidays, setHolidays] = useState<Map<string, HolidayRow[]>>(new Map());
-  const [currentIndex, setCurrentIndex] = useState(MONTHS_RANGE);
-
-  // Build months array centered around today
   const today = useMemo(() => new Date(), []);
-  const months = useMemo(() => {
-    const items: { year: number; month: number }[] = [];
-    for (let i = -MONTHS_RANGE; i <= MONTHS_RANGE; i++) {
-      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-      items.push({ year: d.getFullYear(), month: d.getMonth() });
-    }
-    return items;
-  }, [today]);
+  const isDark = useColorScheme() === "dark";
 
-  const currentMonth = months[currentIndex];
+  const [current, setCurrent] = useState(() => ({
+    year: today.getFullYear(),
+    month: today.getMonth(),
+  }));
 
-  // Fetch holidays for the full range on mount / language change
-  useEffect(() => {
-    const startDate = new Date(months[0].year, months[0].month, 1);
-    const endDate = new Date(
-      months[months.length - 1].year,
-      months[months.length - 1].month + 1,
-      0,
-    );
+  // ── Data from cache (synchronous) ──
+  const holidayMap = useMemo(
+    () => getHolidaysForMonth(current.year, current.month),
+    [current],
+  );
+  const holidays = useMemo(
+    () => getHolidaysListForMonth(current.year, current.month),
+    [current],
+  );
 
-    const readingsDB = new ReadingsDB(db);
-    readingsDB
-      .getHolidaysForDateRange(startDate, endDate, settings.language)
-      .then((rows) => {
-        const grouped = new Map<string, HolidayRow[]>();
-        for (const row of rows) {
-          const existing = grouped.get(row.date) ?? [];
-          existing.push(row);
-          grouped.set(row.date, existing);
+  // ── PanResponder for swipe ──
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 10 && Math.abs(gs.dx) > Math.abs(gs.dy),
+      onPanResponderRelease: (_, gs) => {
+        if (Math.abs(gs.dx) > 50) {
+          setCurrent((prev) => addMonths(prev.year, prev.month, gs.dx > 0 ? 1 : -1));
         }
-        setHolidays(grouped);
-      })
-      .catch(() => {
-        // Silently ignore — calendar data is non-critical
-      });
-  }, [settings.language, db, months]);
+      },
+    })
+  ).current;
 
-  // Scroll handlers
-  const goToMonth = useCallback(
-    (index: number) => {
-      if (index >= 0 && index < months.length) {
-        listRef.current?.scrollToIndex({ index, animated: true });
-        setCurrentIndex(index);
-      }
-    },
-    [months.length],
-  );
+  return (
+    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" {...panResponder.panHandlers}>
+      {/* Header with nav buttons */}
+      <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
+        <TouchableOpacity
+          onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, -1))}
+          className="p-2"
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="chevron-back" size={24} color={isDark ? "#E8E4DC" : "#2D2A24"} />
+        </TouchableOpacity>
+        <Text
+          className="flex-1 text-center text-lg text-[#2D2A24] dark:text-[#E8E4DC]"
+          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+        >
+          {formatMonthYear(current.year, current.month)}
+        </Text>
+        <TouchableOpacity
+          onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, 1))}
+          className="p-2"
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="chevron-forward" size={24} color={isDark ? "#E8E4DC" : "#2D2A24"} />
+        </TouchableOpacity>
+      </View>
 
-  const goToPrevious = useCallback(
-    () => goToMonth(currentIndex - 1),
-    [goToMonth, currentIndex],
-  );
-  const goToNext = useCallback(
-    () => goToMonth(currentIndex + 1),
-    [goToMonth, currentIndex],
-  );
-
-  // Filter holidays for current month
-  const currentMonthHolidays = useMemo(() => {
-    if (!currentMonth) return [];
-    const result: HolidayRow[] = [];
-    for (const [, rows] of holidays) {
-      for (const h of rows) {
-        const [y, m] = h.date.split("-").map(Number);
-        if (y === currentMonth.year && m === currentMonth.month + 1) {
-          result.push(h);
-        }
-      }
-    }
-    return result.sort((a, b) => a.date.localeCompare(b.date));
-  }, [holidays, currentMonth]);
-
-  const onScrollEnd = useCallback(
-    (e: { nativeEvent: { contentOffset: { x: number } } }) => {
-      const index = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
-      setCurrentIndex(index);
-    },
-    [screenWidth],
-  );
-
-  const getItemLayout = useCallback(
-    (_: unknown, index: number) => ({
-      length: screenWidth,
-      offset: screenWidth * index,
-      index,
-    }),
-    [screenWidth],
-  );
-
-  const renderMonth = useCallback(
-    ({ item }: { item: { year: number; month: number } }) => (
-      <View style={{ width: screenWidth }}>
+      {/* Month grid — single instance, data replaced on swipe */}
+      <View>
         <MonthGrid
-          year={item.year}
-          month={item.month}
-          holidays={holidays}
+          year={current.year}
+          month={current.month}
+          holidays={holidayMap}
           width={screenWidth}
         />
       </View>
-    ),
-    [holidays, screenWidth],
-  );
-
-  if (!currentMonth) return null;
-
-  return (
-    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
-      {/* Header with navigation arrows */}
-      <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
-        <TouchableOpacity
-          onPress={goToPrevious}
-          activeOpacity={0.7}
-          className="rounded-full p-2"
-        >
-          <Ionicons name="chevron-back" size={22} color="#6B6560" />
-        </TouchableOpacity>
-        <Text
-          className="text-lg text-[#2D2A24] dark:text-[#E8E4DC]"
-          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-        >
-          {formatMonthYear(currentMonth.year, currentMonth.month)}
-        </Text>
-        <TouchableOpacity
-          onPress={goToNext}
-          activeOpacity={0.7}
-          className="rounded-full p-2"
-        >
-          <Ionicons name="chevron-forward" size={22} color="#6B6560" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Month grid (horizontal swipe) */}
-      <FlatList
-        ref={listRef}
-        data={months}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        initialScrollIndex={MONTHS_RANGE}
-        getItemLayout={getItemLayout}
-        onMomentumScrollEnd={onScrollEnd}
-        renderItem={renderMonth}
-        keyExtractor={(item) => `${item.year}-${item.month}`}
-        removeClippedSubviews
-      />
 
       {/* Divider */}
       <View className="mx-6 border-b border-stone-200 dark:border-stone-800" />
@@ -197,7 +123,7 @@ export default function CalendarScreen() {
         >
           Holidays
         </Text>
-        {currentMonthHolidays.length === 0 ? (
+        {holidays.length === 0 ? (
           <Text
             className="text-muted dark:text-muted-dark text-base"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
@@ -205,11 +131,9 @@ export default function CalendarScreen() {
             No holidays this month
           </Text>
         ) : (
-          <FlatList
-            data={currentMonthHolidays}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View className="flex-row items-start py-2">
+          <ScrollView className="flex-1">
+            {holidays.map((item, i) => (
+              <View key={i} className="flex-row items-start py-2">
                 <Text
                   className="text-muted dark:text-muted-dark w-16 text-base"
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
@@ -240,8 +164,8 @@ export default function CalendarScreen() {
                   </View>
                 </View>
               </View>
-            )}
-          />
+            ))}
+          </ScrollView>
         )}
       </View>
     </View>

@@ -1,5 +1,4 @@
 import type { SQLiteDatabase } from "expo-sqlite";
-import type { HolidayRow } from "./types";
 
 export const DEFAULT_LANG = "en";
 export const DEFAULT_VERSION = "niv";
@@ -101,18 +100,5 @@ export class ReadingsDB {
   ): Promise<DayData | null> {
     const results = await this.getReadingsForDateRange(date, date, language, version);
     return results[0] ?? null;
-  }
-
-  async getHolidaysForDateRange(
-    startDate: Date,
-    endDate: Date,
-    language: string,
-  ): Promise<HolidayRow[]> {
-    const startStr = toDateString(startDate);
-    const endStr = toDateString(endDate);
-    return this.db.getAllAsync<HolidayRow>(
-      `SELECT * FROM Holiday WHERE language = ? AND date >= ? AND date <= ? ORDER BY date`,
-      [language, startStr, endStr],
-    );
   }
 }

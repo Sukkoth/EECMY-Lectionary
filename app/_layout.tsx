@@ -5,13 +5,27 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { setBackgroundColorAsync } from "expo-system-ui";
-import { SQLiteProvider } from "expo-sqlite";
+import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SettingsProvider } from "@/lib/SettingsContext";
+import { SettingsProvider, useSettings } from "@/lib/SettingsContext";
+import { ensureHolidaysLoaded } from "@/lib/HolidayCache";
 import "./global.css";
 
 SplashScreen.preventAutoHideAsync();
+
+function HolidayDataLoader() {
+  const db = useSQLiteContext();
+  const { settings } = useSettings();
+
+  useEffect(() => {
+    ensureHolidaysLoaded(db, settings.language).catch((err) => {
+      console.warn("[HolidayCache] Failed to load holidays:", err);
+    });
+  }, [db, settings.language]);
+
+  return null;
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -44,6 +58,7 @@ export default function RootLayout() {
       >
         <BottomSheetModalProvider>
           <SettingsProvider>
+            <HolidayDataLoader />
             <StatusBar style="auto" />
             <Stack
               screenOptions={{
