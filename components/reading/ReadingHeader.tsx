@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
-import { Text, TouchableOpacity, View, useColorScheme, Appearance } from "react-native";
+import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSettings } from "@/lib/SettingsContext";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 type ReadingHeaderProps = {
@@ -12,9 +13,10 @@ type ReadingHeaderProps = {
 const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
   ({ weekday, formattedDate, title }, ref) => {
     const isDark = useColorScheme() === "dark";
+    const { updateSetting } = useSettings();
 
     const toggleTheme = () => {
-      Appearance.setColorScheme(isDark ? "light" : "dark");
+      updateSetting("theme", isDark ? "light" : "dark");
     };
 
     return (

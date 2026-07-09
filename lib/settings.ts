@@ -9,6 +9,7 @@ export type AppSettings = {
   fontSizeExpanded: number;
   alignSimple: TextAlignment;
   alignExpanded: TextAlignment;
+  theme: "light" | "dark";
 };
 
 const KEYS = {
@@ -18,6 +19,7 @@ const KEYS = {
   fontSizeExpanded: "yeilet_font_size_expanded",
   alignSimple: "yeilet_align_simple",
   alignExpanded: "yeilet_align_expanded",
+  theme: "yeilet_theme",
 };
 
 const DEFAULTS: AppSettings = {
@@ -27,11 +29,12 @@ const DEFAULTS: AppSettings = {
   fontSizeExpanded: 18,
   alignSimple: "center",
   alignExpanded: "justify",
+  theme: "light",
 };
 
 export async function loadSettings(): Promise<AppSettings> {
   try {
-    const [language, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded] =
+    const [language, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded, theme] =
       await Promise.all([
         SecureStore.getItemAsync(KEYS.language),
         SecureStore.getItemAsync(KEYS.version),
@@ -39,6 +42,7 @@ export async function loadSettings(): Promise<AppSettings> {
         SecureStore.getItemAsync(KEYS.fontSizeExpanded),
         SecureStore.getItemAsync(KEYS.alignSimple),
         SecureStore.getItemAsync(KEYS.alignExpanded),
+        SecureStore.getItemAsync(KEYS.theme),
       ]);
 
     return {
@@ -48,6 +52,7 @@ export async function loadSettings(): Promise<AppSettings> {
       fontSizeExpanded: fontSizeExpanded ? safeParseInt(fontSizeExpanded, DEFAULTS.fontSizeExpanded) : DEFAULTS.fontSizeExpanded,
       alignSimple: parseAlignment(alignSimple, DEFAULTS.alignSimple),
       alignExpanded: parseAlignment(alignExpanded, DEFAULTS.alignExpanded),
+      theme: theme === "light" || theme === "dark" ? theme : DEFAULTS.theme,
     };
   } catch {
     return { ...DEFAULTS };
@@ -62,6 +67,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     SecureStore.setItemAsync(KEYS.fontSizeExpanded, String(settings.fontSizeExpanded)),
     SecureStore.setItemAsync(KEYS.alignSimple, settings.alignSimple),
     SecureStore.setItemAsync(KEYS.alignExpanded, settings.alignExpanded),
+    SecureStore.setItemAsync(KEYS.theme, settings.theme),
   ]);
 }
 

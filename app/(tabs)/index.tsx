@@ -5,7 +5,6 @@ import {
   ScrollView,
   SafeAreaView,
   useColorScheme,
-  Appearance,
   ActivityIndicator,
   type DimensionValue,
 } from "react-native";
@@ -30,7 +29,7 @@ export default function HomeScreen() {
   const streak = MOCK_STREAK;
   const db = useSQLiteContext();
   const readingDate = useMemo(() => new Date(), []);
-  const { settings } = useSettings();
+  const { settings, updateSetting } = useSettings();
 
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +73,7 @@ export default function HomeScreen() {
   const progressPercent = `${Math.round(progress * 100)}%`;
 
   const toggleTheme = () => {
-    Appearance.setColorScheme(isDark ? "light" : "dark");
+    updateSetting("theme", isDark ? "light" : "dark");
   };
 
   return (
