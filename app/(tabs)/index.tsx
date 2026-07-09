@@ -265,6 +265,13 @@ export default function HomeScreen() {
                 </ScrollView>
               </>
             )}
+            {/* View prompt */}
+            <Text
+              className="text-primary mt-2 text-center text-sm"
+              style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+            >
+              View {"→"}
+            </Text>
           </TouchableOpacity>
         )}
 
