@@ -7,6 +7,7 @@ import {
   useColorScheme,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Octicons from "@expo/vector-icons/Octicons";
 import { MOCK_FAVOURITES, type FavouriteReading } from "@/lib/types";
 
 export default function FavouritesScreen() {
@@ -85,7 +86,7 @@ export default function FavouritesScreen() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity activeOpacity={0.7} className="mr-3 rounded-lg p-1.5">
-            <Ionicons name="share-outline" size={18} color={isDark ? "#60a5fa" : "#3b82f6"} />
+            <Octicons name="share-android" size={16} color={isDark ? "#60a5fa" : "#3b82f6"} />
           </TouchableOpacity>
           <TouchableOpacity activeOpacity={0.7} className="rounded-lg p-1.5">
             <Ionicons name="trash-outline" size={18} color={isDark ? "#ef4444" : "#dc2626"} />

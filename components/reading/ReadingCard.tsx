@@ -1,5 +1,6 @@
 import { Share, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Octicons from '@expo/vector-icons/Octicons';
 import type { ReadingRow } from "@/lib/database";
 
 type ReadingCardProps = {
@@ -41,7 +42,7 @@ export default function ReadingCard({ reading, sectionLabel, fontSize, align }: 
             <Ionicons name="star-outline" size={20} color="#3b82f6" />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
-            <Ionicons name="open-outline" size={20} color="#3b82f6" />
+            <Octicons name="share-android" size={20} color="#3b82f6" />
           </TouchableOpacity>
         </View>
       </View>
