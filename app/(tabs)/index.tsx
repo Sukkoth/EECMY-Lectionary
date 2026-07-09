@@ -265,13 +265,24 @@ export default function HomeScreen() {
                 </ScrollView>
               </>
             )}
-            {/* View prompt */}
-            <Text
-              className="text-primary mt-2 text-center text-sm"
-              style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-            >
-              View {"→"}
-            </Text>
+            {/* Tap affordance */}
+            <View className="mt-4 flex-row items-center justify-center opacity-70">
+              <View className="bg-primary/10 mr-2 rounded-full p-1.5">
+                <Ionicons name="book-outline" size={12} color="#3b82f6" />
+              </View>
+              <Text
+                className="text-primary text-xs tracking-wide"
+                style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+              >
+                Read passage
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={12}
+                color="#3b82f6"
+                style={{ marginLeft: 2, marginTop: 1 }}
+              />
+            </View>
           </TouchableOpacity>
         )}
 
