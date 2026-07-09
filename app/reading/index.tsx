@@ -14,6 +14,7 @@ import ReadingHeader from "@/components/reading/ReadingHeader";
 import LanguageSwitcherSheet from "@/components/reading/LanguageSwitcherSheet";
 import { ReadingSwiper } from "@/components/reading/ReadingSwiper";
 import { useSettings } from "@/lib/SettingsContext";
+import { markDayCompleted } from "@/lib/StreakService";
 
 export default function ReadingScreen() {
   const params = useLocalSearchParams<{
@@ -134,6 +135,21 @@ export default function ReadingScreen() {
   }, []);
 
   const navigation = useNavigation();
+
+  // ── Mark streak when viewing today's reading ──
+  useEffect(() => {
+    const today = new Date();
+    const isToday =
+      currentDate.getFullYear() === today.getFullYear() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getDate() === today.getDate();
+
+    if (isToday && currentDayData) {
+      markDayCompleted(currentDate).catch(() => {
+        // Silently ignore — streak is non-critical
+      });
+    }
+  }, [currentDate, currentDayData]);
 
   // ── Intercept system back to dismiss sheet first ──
   useEffect(() => {

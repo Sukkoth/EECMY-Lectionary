@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { MOCK_STREAK } from "@/lib/types";
+import { loadStreak } from "@/lib/StreakService";
+import type { ReadingStreak } from "@/lib/types";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useMemo, useState } from "react";
 import { ReadingsDB, type DayData } from "@/lib/database";
@@ -26,7 +27,6 @@ const SECTION_LABELS: Record<string, string> = {
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
-  const streak = MOCK_STREAK;
   const db = useSQLiteContext();
   const readingDate = useMemo(() => new Date(), []);
   const { settings, updateSetting } = useSettings();
@@ -34,6 +34,7 @@ export default function HomeScreen() {
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [streak, setStreak] = useState<ReadingStreak | null>(null);
 
   const fetchReadings = useCallback(() => {
     const readingsDB = new ReadingsDB(db);
@@ -55,6 +56,7 @@ export default function HomeScreen() {
     useCallback(() => {
       setLoading(true);
       fetchReadings();
+      loadStreak().then(setStreak);
     }, [fetchReadings]),
   );
 
@@ -69,7 +71,8 @@ export default function HomeScreen() {
     });
   };
 
-  const progress = Math.min(Math.max(streak.current / streak.best, 0), 1);
+  const safeStreak = streak ?? { current: 0, best: 0, completedDays: [false, false, false, false, false, false, false] };
+  const progress = Math.min(Math.max(safeStreak.current / safeStreak.best, 0), 1);
   const progressPercent = `${Math.round(progress * 100)}%`;
 
   const toggleTheme = () => {
@@ -280,7 +283,7 @@ export default function HomeScreen() {
                 className="text-muted dark:text-muted-dark mt-0.5 text-sm"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Best record: {streak.best} days
+                Best record: {safeStreak.best} days
               </Text>
             </View>
             <View className="items-end">
@@ -288,7 +291,7 @@ export default function HomeScreen() {
                 className="text-primary text-3xl font-bold leading-tight"
                 style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
               >
-                {streak.current}
+                {safeStreak.current}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark text-xs"
@@ -309,7 +312,7 @@ export default function HomeScreen() {
 
           {/* Weekly indicators */}
           <View className="mt-4 flex-row justify-between">
-            {streak.completedDays.map((completed, index) => (
+            {safeStreak.completedDays.map((completed, index) => (
               <View key={index} className="items-center">
                 <View
                   className={`h-7 w-7 items-center justify-center rounded-lg ${
