@@ -10,7 +10,10 @@ type LanguagePickerContentProps = {
 export default function LanguagePickerContent({ onVersionSelect }: LanguagePickerContentProps) {
   const isDark = useColorScheme() === "dark";
   const { settings, setAllSettings, availableLanguages, languagesError } = useSettings();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const selected = availableLanguages.find((l) => l.code === settings.language);
+    return selected ? { [selected.language]: true } : {};
+  });
 
   const toggleLanguage = (language: string) => {
     setExpanded((prev) => ({ ...prev, [language]: !prev[language] }));
