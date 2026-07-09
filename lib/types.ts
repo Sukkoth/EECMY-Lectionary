@@ -43,3 +43,11 @@ export const MOCK_FAVOURITES: FavouriteReading[] = [
     dateSaved: "Jun 25, 2026",
   },
 ];
+
+export type HolidayRow = {
+  id: string;
+  language: string;
+  date: string;
+  type: "eecmy" | "christian" | "others";
+  name: string;
+};
