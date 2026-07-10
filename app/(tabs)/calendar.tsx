@@ -14,6 +14,7 @@ import {
   getHolidaysForMonth,
   getHolidaysListForMonth,
 } from "@/lib/HolidayCache";
+import { useSettings } from "@/lib/SettingsContext";
 
 const HOLIDAY_COLORS: Record<string, string> = {
   eecmy: "#2563EB",
@@ -45,6 +46,7 @@ export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const today = useMemo(() => new Date(), []);
   const isDark = useColorScheme() === "dark";
+  const { settings } = useSettings();
 
   const [current, setCurrent] = useState(() => ({
     year: today.getFullYear(),
@@ -54,11 +56,11 @@ export default function CalendarScreen() {
   // ── Data from cache (synchronous) ──
   const holidayMap = useMemo(
     () => getHolidaysForMonth(current.year, current.month),
-    [current],
+    [current, settings.language],
   );
   const holidays = useMemo(
     () => getHolidaysListForMonth(current.year, current.month),
-    [current],
+    [current, settings.language],
   );
 
   // ── PanResponder for swipe ──
@@ -68,7 +70,7 @@ export default function CalendarScreen() {
         Math.abs(gs.dx) > 10 && Math.abs(gs.dx) > Math.abs(gs.dy),
       onPanResponderRelease: (_, gs) => {
         if (Math.abs(gs.dx) > 50) {
-          setCurrent((prev) => addMonths(prev.year, prev.month, gs.dx > 0 ? 1 : -1));
+          setCurrent((prev) => addMonths(prev.year, prev.month, gs.dx > 0 ? -1 : 1));
         }
       },
     })
