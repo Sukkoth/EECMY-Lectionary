@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   PanResponder,
   Text,
@@ -10,9 +10,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import {
+  ensureHolidaysLoaded,
   getHolidaysForMonth,
   getHolidaysListForMonth,
 } from "@/lib/HolidayCache";
+import { useSQLiteContext } from "expo-sqlite";
 import { useSettings } from "@/lib/SettingsContext";
 
 const HOLIDAY_COLORS: Record<string, string> = {
@@ -51,15 +53,22 @@ export default function CalendarScreen() {
     year: today.getFullYear(),
     month: today.getMonth(),
   }));
+  const db = useSQLiteContext();
+
+  useEffect(() => {
+    ensureHolidaysLoaded(db, settings.language).then(() => {
+      setCurrent((prev) => ({ ...prev }));
+    });
+  }, [settings.language, db]);
 
   // ── Data from cache (synchronous) ──
   const holidayMap = useMemo(
     () => getHolidaysForMonth(current.year, current.month),
-    [current, settings.language],
+    [current],
   );
   const holidays = useMemo(
     () => getHolidaysListForMonth(current.year, current.month),
-    [current, settings.language],
+    [current],
   );
 
   // ── PanResponder for swipe ──
