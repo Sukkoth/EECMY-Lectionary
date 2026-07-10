@@ -6,8 +6,8 @@ import type { HolidayRow } from "@/lib/types";
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"] as const;
 
 const HOLIDAY_COLORS: Record<string, string> = {
-  eecmy: "#B45309",
-  christian: "#2563EB",
+  eecmy: "#2563EB",
+  christian: "#B45309",
   others: "#16A34A",
 };
 
@@ -130,7 +130,7 @@ export default memo(function MonthGrid({ year, month, holidays, width }: MonthGr
                     {types.map((type) => (
                       <View
                         key={type}
-                        className="h-1.5 w-1.5 rounded-full"
+                        className="h-2 w-2 rounded-full"
                         style={{ backgroundColor: HOLIDAY_COLORS[type] ?? "#9CA3AF" }}
                       />
                     ))}

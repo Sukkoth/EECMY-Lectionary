@@ -16,8 +16,8 @@ import {
 } from "@/lib/HolidayCache";
 
 const HOLIDAY_COLORS: Record<string, string> = {
-  eecmy: "#B45309",
-  christian: "#2563EB",
+  eecmy: "#2563EB",
+  christian: "#B45309",
   others: "#16A34A",
 };
 

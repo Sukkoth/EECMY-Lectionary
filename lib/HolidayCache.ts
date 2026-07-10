@@ -22,7 +22,7 @@ export async function ensureHolidaysLoaded(
       [language],
     )
     .then((rows) => {
-      cache = rows;
+      cache = rows.map((row) => ({ ...row, type: row.type.toLowerCase() as HolidayRow["type"] }));
       cacheLanguage = language;
       loadPromises.delete(language);
     })
