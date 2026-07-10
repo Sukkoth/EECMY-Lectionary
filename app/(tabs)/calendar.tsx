@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import {
   PanResponder,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -77,7 +76,7 @@ export default function CalendarScreen() {
   ).current;
 
   return (
-    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" {...panResponder.panHandlers}>
+    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" >
       {/* Header with nav buttons */}
       <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
         <TouchableOpacity
@@ -105,7 +104,7 @@ export default function CalendarScreen() {
       </View>
 
       {/* Month grid — single instance, data replaced on swipe */}
-      <View>
+      <View {...panResponder.panHandlers}>
         <MonthGrid
           year={current.year}
           month={current.month}
@@ -133,7 +132,7 @@ export default function CalendarScreen() {
             No holidays this month
           </Text>
         ) : (
-          <ScrollView className="flex-1">
+          <View className="flex-1">
             {holidays.map((item, i) => (
               <View key={i} className="flex-row items-start py-2">
                 <Text
@@ -167,7 +166,7 @@ export default function CalendarScreen() {
                 </View>
               </View>
             ))}
-          </ScrollView>
+          </View>
         )}
       </View>
     </View>
