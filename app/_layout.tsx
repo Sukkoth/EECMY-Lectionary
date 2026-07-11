@@ -9,6 +9,7 @@ import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SettingsProvider, useSettings } from "@/lib/SettingsContext";
+import { FavouriteProvider } from "@/lib/FavouriteContext";
 import { ensureHolidaysLoaded } from "@/lib/HolidayCache";
 import "./global.css";
 
@@ -58,22 +59,24 @@ export default function RootLayout() {
       >
         <BottomSheetModalProvider>
           <SettingsProvider>
-            <HolidayDataLoader />
-            <StatusBar style="auto" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: {
-                  backgroundColor: isDark ? "#11100E" : "#F8F6F3",
-                },
-              }}
-            >
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="reading/index" />
-              <Stack.Screen name="settings/language" />
-              <Stack.Screen name="settings/font-alignment" />
-              <Stack.Screen name="settings/check-updates" />
-            </Stack>
+            <FavouriteProvider>
+              <HolidayDataLoader />
+              <StatusBar style="auto" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: {
+                    backgroundColor: isDark ? "#11100E" : "#F8F6F3",
+                  },
+                }}
+              >
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="reading/index" />
+                <Stack.Screen name="settings/language" />
+                <Stack.Screen name="settings/font-alignment" />
+                <Stack.Screen name="settings/check-updates" />
+              </Stack>
+            </FavouriteProvider>
           </SettingsProvider>
         </BottomSheetModalProvider>
       </SQLiteProvider>

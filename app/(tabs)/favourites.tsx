@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import {
   Text,
   View,
@@ -5,23 +6,107 @@ import {
   ScrollView,
   SafeAreaView,
   useColorScheme,
+  Share,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from "@expo/vector-icons/Octicons";
-import { MOCK_FAVOURITES, type FavouriteReading } from "@/lib/types";
+import { useFocusEffect, router } from "expo-router";
+import { useSQLiteContext } from "expo-sqlite";
+import { useFavourite } from "@/lib/FavouriteContext";
+import { useSettings } from "@/lib/SettingsContext";
+
+type HydratedFavourite = {
+  date: string;
+  order: number;
+  createdAt: string;
+  reference: string;
+  text: string;
+};
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 export default function FavouritesScreen() {
   const isDark = useColorScheme() === "dark";
+  const { favourites, removeFavourite, clearAll } = useFavourite();
+  const db = useSQLiteContext();
+  const { settings } = useSettings();
 
-  // Toggle this to false to see empty state
-  const hasFavourites = true;
+  const [hydratedFavourites, setHydratedFavourites] = useState<HydratedFavourite[]>([]);
 
-  if (!hasFavourites) {
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+
+      async function hydrate() {
+        if (favourites.length === 0) {
+          if (!cancelled) setHydratedFavourites([]);
+          return;
+        }
+
+        const whereParts: string[] = [];
+        const params: (string | number)[] = [];
+        // JOIN params first (they appear first in the SQL)
+        params.push(settings.language, settings.version);
+        // WHERE params after (one pair per favourite)
+        for (const fav of favourites) {
+          whereParts.push('(f.date = ? AND f."order" = ?)');
+          params.push(fav.date, fav.order);
+        }
+
+        const rows = await db.getAllAsync<HydratedFavourite>(
+          `SELECT f.date, f."order", f.createdAt, r.reference, r.text
+           FROM Favourite f
+           LEFT JOIN Reading r ON r.date = f.date AND r."order" = f."order" AND r.language = ? AND r.version = ?
+           WHERE ${whereParts.join(" OR ")}
+           ORDER BY f.createdAt DESC`,
+          params,
+        );
+
+        if (!cancelled) setHydratedFavourites(rows);
+      }
+
+      hydrate().catch((err) => console.warn("[Favourites] Hydration failed:", err));
+      return () => {
+        cancelled = true;
+      };
+    }, [favourites, settings.language, settings.version, db]),
+  );
+
+  function handleClearAll() {
+    Alert.alert("Clear All", "Remove all favourites?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Clear", style: "destructive", onPress: () => clearAll() },
+    ]);
+  }
+
+  function handleRead(fav: HydratedFavourite) {
+    const [year, month, day] = fav.date.split("-");
+    router.push(`/reading?year=${year}&month=${month}&day=${day}`);
+  }
+
+  function handleShare(fav: HydratedFavourite) {
+    Share.share({ message: `${fav.text}\n\n${fav.reference}` });
+  }
+
+  function handleDelete(fav: HydratedFavourite) {
+    removeFavourite(fav.date, fav.order);
+  }
+
+  // ─── Empty state ────────────────────────────────────────────
+  if (favourites.length === 0) {
     return (
-      <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark mt-8 flex-1">
+      <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" >
         <View className="mt-8 flex-1 items-center justify-center px-8">
           <View className="bg-surface dark:bg-surface-dark mb-6 rounded-full p-5">
-            <Ionicons name="bookmark-outline" size={36} color={isDark ? "#8A8480" : "#6B6560"} />
+            <Ionicons
+              name="bookmark-outline"
+              size={36}
+              color={isDark ? "#8A8480" : "#6B6560"}
+            />
           </View>
           <Text
             className="mb-2 text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -33,10 +118,14 @@ export default function FavouritesScreen() {
             className="text-muted dark:text-muted-dark mb-8 text-center text-sm leading-5"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
-            Save your favourite passages to revisit them later. Start by exploring today&rsquo;s
-            readings.
+            Save your favourite passages to revisit them later. Start by exploring
+            today&rsquo;s readings.
           </Text>
-          <TouchableOpacity activeOpacity={0.7} className="bg-primary rounded-xl px-5 py-2.5">
+          <TouchableOpacity
+            activeOpacity={0.7}
+            className="bg-primary rounded-xl px-5 py-2.5"
+            onPress={() => router.push("/reading")}
+          >
             <Text
               className="text-center text-base text-white"
               style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
@@ -45,61 +134,15 @@ export default function FavouritesScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
-  const renderFavourite = (fav: FavouriteReading) => (
-    <View key={fav.id} className="bg-surface dark:bg-surface-dark mb-4 rounded-2xl p-5">
-      {/* Reference heading */}
-      <Text
-        className="mb-2 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-      >
-        {fav.reference}
-      </Text>
-
-      {/* Passage preview — 2 lines max */}
-      <Text
-        className="text-muted dark:text-muted-dark mb-4 text-sm leading-5"
-        style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-        numberOfLines={2}
-      >
-        {fav.passagePreview}
-      </Text>
-
-      {/* Footer row: date | actions */}
-      <View className="flex-row items-center justify-between">
-        <Text
-          className="text-muted dark:text-muted-dark text-xs"
-          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-        >
-          Saved {fav.dateSaved}
-        </Text>
-        <View className="flex-row items-center">
-          <TouchableOpacity activeOpacity={0.7} className="mr-3 rounded-xl px-3 py-1.5">
-            <Text
-              className="text-sm text-[#3b82f6]"
-              style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-            >
-              Read
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} className="mr-3 rounded-lg p-1.5">
-            <Octicons name="share-android" size={16} color={isDark ? "#60a5fa" : "#3b82f6"} />
-          </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} className="rounded-lg p-1.5">
-            <Ionicons name="trash-outline" size={18} color={isDark ? "#ef4444" : "#dc2626"} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-
+  // ─── Favourites list ────────────────────────────────────────
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" >
       <ScrollView className="mt-6 flex-1 px-6 pt-2">
-        {/* Header*/}
+        {/* Header */}
         <View className="mb-4 mt-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Text
@@ -113,17 +156,18 @@ export default function FavouritesScreen() {
                 className="text-xs text-[#3b82f6]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
-                {MOCK_FAVOURITES.length}
+                {favourites.length}
               </Text>
             </View>
           </View>
         </View>
 
-        {/*Action bar*/}
+        {/* Action bar */}
         <View className="mb-4 flex-row items-center">
           <TouchableOpacity
             activeOpacity={0.7}
             className="mr-3 rounded-xl border border-red-400 px-5 py-2.5 dark:border-red-500"
+            onPress={handleClearAll}
           >
             <Text
               className="text-center text-sm text-red-600 dark:text-red-400"
@@ -136,9 +180,77 @@ export default function FavouritesScreen() {
 
         <View className="mb-5 h-px bg-gray-200 dark:bg-gray-700" />
 
-        {/* Favourites list */}
-        {MOCK_FAVOURITES.map(renderFavourite)}
+        {/* Favourite cards */}
+        {hydratedFavourites.map((fav) => (
+          <View
+            key={`${fav.date}-${fav.order}`}
+            className="bg-surface dark:bg-surface-dark mb-4 rounded-2xl p-5"
+          >
+            {/* Reference heading */}
+            <Text
+              className="mb-2 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+            >
+              {fav.reference || "Reading"}
+            </Text>
+
+            {/* Passage preview — 2 lines max */}
+            <Text
+              className="text-muted dark:text-muted-dark mb-4 text-sm leading-5"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              numberOfLines={2}
+            >
+              {fav.text}
+            </Text>
+
+            {/* Footer row: date | actions */}
+            <View className="flex-row items-center justify-between">
+              <Text
+                className="text-muted dark:text-muted-dark text-xs"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                Saved {formatDate(fav.createdAt)}
+              </Text>
+              <View className="flex-row items-center">
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="mr-3 rounded-xl px-3 py-1.5"
+                  onPress={() => handleRead(fav)}
+                >
+                  <Text
+                    className="text-sm text-[#3b82f6]"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+                  >
+                    Read
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="mr-3 rounded-lg p-1.5"
+                  onPress={() => handleShare(fav)}
+                >
+                  <Octicons
+                    name="share-android"
+                    size={16}
+                    color={isDark ? "#60a5fa" : "#3b82f6"}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="rounded-lg p-1.5"
+                  onPress={() => handleDelete(fav)}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={18}
+                    color={isDark ? "#ef4444" : "#dc2626"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

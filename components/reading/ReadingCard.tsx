@@ -2,15 +2,28 @@ import { Share, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from '@expo/vector-icons/Octicons';
 import type { ReadingRow } from "@/lib/database";
+import { useFavourite } from "@/lib/FavouriteContext";
 
 type ReadingCardProps = {
+  date: string;
   reading: ReadingRow;
   sectionLabel: string;
   fontSize: number;
   align: "left" | "center" | "justify";
 };
 
-export default function ReadingCard({ reading, sectionLabel, fontSize, align }: ReadingCardProps) {
+export default function ReadingCard({ date, reading, sectionLabel, fontSize, align }: ReadingCardProps) {
+  const { isFavourite, addFavourite, removeFavourite } = useFavourite();
+  const favourited = isFavourite(date, reading.order);
+
+  const handleToggleFavourite = () => {
+    if (favourited) {
+      removeFavourite(date, reading.order).catch(console.warn);
+    } else {
+      addFavourite(date, reading.order).catch(console.warn);
+    }
+  };
+
   const handleShare = () => {
     Share.share({
       message: `${reading.text}\n\n${reading.reference} (${reading.version.toUpperCase()})`,
@@ -38,8 +51,8 @@ export default function ReadingCard({ reading, sectionLabel, fontSize, align }: 
 
         {/* Actions */}
         <View className="flex-row items-center gap-3">
-          <TouchableOpacity activeOpacity={0.7}>
-            <Ionicons name="star-outline" size={20} color="#3b82f6" />
+          <TouchableOpacity onPress={handleToggleFavourite} activeOpacity={0.7}>
+            <Ionicons name={favourited ? "star" : "star-outline"} size={20} color="#3b82f6" />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
             <Octicons name="share-android" size={20} color="#3b82f6" />
