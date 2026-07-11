@@ -54,6 +54,8 @@ export default function CalendarScreen() {
   useEffect(() => {
     ensureHolidaysLoaded(db, settings.language).then(() => {
       setCurrent((prev) => ({ ...prev }));
+    }).catch((err) => {
+      console.warn("[Calendar] Failed to load holidays:", err);
     });
   }, [settings.language, db]);
 

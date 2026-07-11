@@ -101,7 +101,7 @@ export default memo(function MonthGrid({ year, month, holidays, width }: MonthGr
               >
                 {/* Day number */}
                 {today ? (
-                  <View className="bg-primary h-8 w-8 items-center justify-center rounded-full">
+                  <View className="bg-primary h-8 w-8 items-center justify-center rounded-l-full rounded-r-full">
                     <Text
                       className="text-xl font-semibold text-white"
                       style={{ fontFamily: "ReadingFont" }}
