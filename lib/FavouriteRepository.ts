@@ -53,6 +53,24 @@ export async function removeFavourite(
   await reloadCache(db);
 }
 
+/**
+ * Optimistically add to the in-memory cache (no DB operation).
+ * Used for instant UI feedback before the async DB write completes.
+ */
+export function optimisticAdd(date: string, order: number): void {
+  if (!favourites.some((f) => f.date === date && f.order === order)) {
+    favourites = [{ date, order, createdAt: new Date().toISOString() }, ...favourites];
+  }
+}
+
+/**
+ * Optimistically remove from the in-memory cache (no DB operation).
+ * Used for instant UI feedback before the async DB delete completes.
+ */
+export function optimisticRemove(date: string, order: number): void {
+  favourites = favourites.filter((f) => !(f.date === date && f.order === order));
+}
+
 export function isFavourite(date: string, order: number): boolean {
   return favourites.some((f) => f.date === date && f.order === order);
 }

@@ -9,6 +9,8 @@ import {
   isFavourite as repoIsFavourite,
   getFavourites,
   clearAll as repoClearAll,
+  optimisticAdd as repoOptimisticAdd,
+  optimisticRemove as repoOptimisticRemove,
 } from "./FavouriteRepository";
 
 type FavouriteContextType = {
@@ -17,6 +19,8 @@ type FavouriteContextType = {
   removeFavourite: (date: string, order: number) => Promise<void>;
   isFavourite: (date: string, order: number) => boolean;
   clearAll: () => Promise<void>;
+  optimisticAdd: (date: string, order: number) => void;
+  optimisticRemove: (date: string, order: number) => void;
 };
 
 const FavouriteContext = createContext<FavouriteContextType | null>(null);
@@ -47,6 +51,22 @@ export function FavouriteProvider({ children }: { children: React.ReactNode }) {
     };
   }, [db]);
 
+  const optimisticAdd = useCallback(
+    (date: string, order: number) => {
+      repoOptimisticAdd(date, order);
+      setFavourites([...getFavourites()]);
+    },
+    [],
+  );
+
+  const optimisticRemove = useCallback(
+    (date: string, order: number) => {
+      repoOptimisticRemove(date, order);
+      setFavourites([...getFavourites()]);
+    },
+    [],
+  );
+
   const addFavourite = useCallback(
     async (date: string, order: number) => {
       await repoAddFavourite(db, date, order);
@@ -75,7 +95,7 @@ export function FavouriteProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <FavouriteContext.Provider
-      value={{ favourites, addFavourite, removeFavourite, isFavourite, clearAll }}
+      value={{ favourites, addFavourite, removeFavourite, isFavourite, clearAll, optimisticAdd, optimisticRemove }}
     >
       {children}
     </FavouriteContext.Provider>

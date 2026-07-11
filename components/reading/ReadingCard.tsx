@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Share, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from '@expo/vector-icons/Octicons';
 import type { ReadingRow } from "@/lib/database";
 import { useFavourite } from "@/lib/FavouriteContext";
+import { isFavourite as checkFavourite } from "@/lib/FavouriteRepository";
 
 type ReadingCardProps = {
   date: string;
@@ -13,13 +15,21 @@ type ReadingCardProps = {
 };
 
 export default function ReadingCard({ date, reading, sectionLabel, fontSize, align }: ReadingCardProps) {
-  const { isFavourite, addFavourite, removeFavourite } = useFavourite();
-  const favourited = isFavourite(date, reading.order);
+  const { addFavourite, removeFavourite, optimisticAdd, optimisticRemove } = useFavourite();
+  const [favourited, setFavourited] = useState(() => checkFavourite(date, reading.order));
+
+  useEffect(() => {
+    setFavourited(checkFavourite(date, reading.order));
+  }, [date, reading.order]);
 
   const handleToggleFavourite = () => {
     if (favourited) {
+      setFavourited(false);
+      optimisticRemove(date, reading.order);
       removeFavourite(date, reading.order).catch(console.warn);
     } else {
+      setFavourited(true);
+      optimisticAdd(date, reading.order);
       addFavourite(date, reading.order).catch(console.warn);
     }
   };
