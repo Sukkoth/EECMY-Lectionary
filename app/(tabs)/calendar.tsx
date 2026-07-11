@@ -16,12 +16,8 @@ import {
 } from "@/lib/HolidayCache";
 import { useSQLiteContext } from "expo-sqlite";
 import { useSettings } from "@/lib/SettingsContext";
+import { HOLIDAY_COLORS } from "@/constants";
 
-const HOLIDAY_COLORS: Record<string, string> = {
-  eecmy: "#2563EB",
-  christian: "#B45309",
-  others: "#16A34A",
-};
 
 function formatMonthYear(year: number, month: number): string {
   return new Date(year, month).toLocaleDateString("en-US", {

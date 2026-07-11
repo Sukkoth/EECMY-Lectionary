@@ -2,14 +2,10 @@ import { memo, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import type { HolidayRow } from "@/lib/types";
+import { HOLIDAY_COLORS } from "@/constants";
 
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"] as const;
 
-const HOLIDAY_COLORS: Record<string, string> = {
-  eecmy: "#2563EB",
-  christian: "#B45309",
-  others: "#16A34A",
-};
 
 type MonthGridProps = {
   year: number;
