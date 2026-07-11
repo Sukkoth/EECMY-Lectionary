@@ -4,9 +4,9 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
+  Modal,
   useColorScheme,
   Share,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from "@expo/vector-icons/Octicons";
@@ -28,6 +28,7 @@ export default function FavouritesScreen() {
   const { settings } = useSettings();
 
   const [hydratedFavourites, setHydratedFavourites] = useState<HydratedFavourite[]>([]);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,10 +47,7 @@ export default function FavouritesScreen() {
   );
 
   function handleClearAll() {
-    Alert.alert("Clear All", "Remove all favourites?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Clear", style: "destructive", onPress: () => clearAll() },
-    ]);
+    setShowClearConfirm(true);
   }
 
   function handleRead(fav: HydratedFavourite) {
@@ -183,15 +181,14 @@ export default function FavouritesScreen() {
               <View className="flex-row items-center">
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  className="mr-3 rounded-xl px-3 py-1.5"
+                  className="mr-3 rounded-lg p-1.5"
                   onPress={() => handleRead(fav)}
                 >
-                  <Text
-                    className="text-sm text-[#3b82f6]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-                  >
-                    Read
-                  </Text>
+                  <Ionicons
+                    name="book-outline"
+                    size={18}
+                    color={isDark ? "#60a5fa" : "#3b82f6"}
+                  />
                 </TouchableOpacity>
                 <TouchableOpacity
                   activeOpacity={0.7}
@@ -220,6 +217,55 @@ export default function FavouritesScreen() {
           </View>
         ))}
       </ScrollView>
+
+      {/* Clear All Confirmation Modal */}
+      <Modal visible={showClearConfirm} transparent animationType="fade" onRequestClose={() => setShowClearConfirm(false)}>
+        <View className="flex-1 items-center justify-center bg-black/50 px-8">
+          <View className="w-full max-w-sm rounded-2xl bg-white p-6 dark:bg-[#1C1C1C]">
+            <Text
+              className="mb-2 text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+            >
+              Clear All
+            </Text>
+            <Text
+              className="mb-6 text-base text-[#2D2A24]/70 dark:text-[#E8E4DC]/70"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              Remove all favourites? This action cannot be undone.
+            </Text>
+            <View className="flex-row justify-end gap-3">
+              <TouchableOpacity
+                activeOpacity={0.7}
+                className="rounded-xl bg-gray-100 px-5 py-2.5 dark:bg-[#2A2A2A]"
+                onPress={() => setShowClearConfirm(false)}
+              >
+                <Text
+                  className="text-center text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                className="rounded-xl bg-red-500 px-5 py-2.5"
+                onPress={() => {
+                  setShowClearConfirm(false);
+                  clearAll();
+                }}
+              >
+                <Text
+                  className="text-center text-base text-white"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+                >
+                  Clear
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
