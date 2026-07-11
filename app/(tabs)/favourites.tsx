@@ -4,7 +4,6 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   useColorScheme,
   Share,
   Alert,
@@ -15,14 +14,7 @@ import { useFocusEffect, router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useFavourite } from "@/lib/FavouriteContext";
 import { useSettings } from "@/lib/SettingsContext";
-
-type HydratedFavourite = {
-  date: string;
-  order: number;
-  createdAt: string;
-  reference: string;
-  text: string;
-};
+import { type HydratedFavourite, hydrateFavourites } from "@/lib/FavouriteRepository";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -42,30 +34,7 @@ export default function FavouritesScreen() {
       let cancelled = false;
 
       async function hydrate() {
-        if (favourites.length === 0) {
-          if (!cancelled) setHydratedFavourites([]);
-          return;
-        }
-
-        const whereParts: string[] = [];
-        const params: (string | number)[] = [];
-        // JOIN params first (they appear first in the SQL)
-        params.push(settings.language, settings.version);
-        // WHERE params after (one pair per favourite)
-        for (const fav of favourites) {
-          whereParts.push('(f.date = ? AND f."order" = ?)');
-          params.push(fav.date, fav.order);
-        }
-
-        const rows = await db.getAllAsync<HydratedFavourite>(
-          `SELECT f.date, f."order", f.createdAt, r.reference, r.text
-           FROM Favourite f
-           LEFT JOIN Reading r ON r.date = f.date AND r."order" = f."order" AND r.language = ? AND r.version = ?
-           WHERE ${whereParts.join(" OR ")}
-           ORDER BY f.createdAt DESC`,
-          params,
-        );
-
+        const rows = await hydrateFavourites(db, favourites, settings.language, settings.version);
         if (!cancelled) setHydratedFavourites(rows);
       }
 
