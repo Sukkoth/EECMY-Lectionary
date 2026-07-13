@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Appearance } from "react-native";
 import { useSQLiteContext } from "expo-sqlite";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import { getAvailableLanguages, getLanguage, type LanguageEntry } from "./languages";
@@ -84,12 +83,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     };
   }, [db]);
 
-  // Sync theme to visual appearance whenever it changes
-  useEffect(() => {
-    if (loaded) {
-      Appearance.setColorScheme(settings.theme === "dark" ? "dark" : "light");
-    }
-  }, [settings.theme, loaded]);
 
   const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     const next = { ...settings, [key]: value };

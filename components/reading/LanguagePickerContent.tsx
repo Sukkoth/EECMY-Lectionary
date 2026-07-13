@@ -5,9 +5,10 @@ import { useSettings } from "@/lib/SettingsContext";
 
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
+  hideHeader?: boolean;
 };
 
-export default function LanguagePickerContent({ onVersionSelect }: LanguagePickerContentProps) {
+export default function LanguagePickerContent({ onVersionSelect, hideHeader }: LanguagePickerContentProps) {
   const isDark = useColorScheme() === "dark";
   const { settings, setAllSettings, availableLanguages, languagesError } = useSettings();
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -27,20 +28,22 @@ export default function LanguagePickerContent({ onVersionSelect }: LanguagePicke
   return (
     <>
       {/* Header */}
-      <View className="px-6 pb-4">
-        <Text
-          className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
-          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-        >
-          Select Language & Version
-        </Text>
-        <Text
-          className="text-muted dark:text-muted-dark mt-1 text-center text-sm"
-          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-        >
-          Choose your preferred Bible translation
-        </Text>
-      </View>
+      {!hideHeader && (
+        <View className="px-6 pb-4">
+          <Text
+            className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+          >
+            Select Language & Version
+          </Text>
+          <Text
+            className="text-muted dark:text-muted-dark mt-1 text-center text-sm"
+            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          >
+            Choose your preferred Bible translation
+          </Text>
+        </View>
+      )}
 
       {/* Error state */}
       {languagesError && (

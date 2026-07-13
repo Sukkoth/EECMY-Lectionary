@@ -20,6 +20,7 @@ const KEYS = {
   alignSimple: "yeilet_align_simple",
   alignExpanded: "yeilet_align_expanded",
   theme: "yeilet_theme",
+  onboardingComplete: "yeilet_onboarding_complete",
 };
 
 const DEFAULTS: AppSettings = {
@@ -79,4 +80,17 @@ function safeParseInt(value: string, fallback: number): number {
 function parseAlignment(value: string | null, fallback: TextAlignment): TextAlignment {
   if (value === "left" || value === "center" || value === "justify") return value;
   return fallback;
+}
+
+export async function loadOnboardingComplete(): Promise<boolean> {
+  try {
+    const value = await SecureStore.getItemAsync(KEYS.onboardingComplete);
+    return value === "true";
+  } catch {
+    return false;
+  }
+}
+
+export async function saveOnboardingComplete(complete: boolean): Promise<void> {
+  await SecureStore.setItemAsync(KEYS.onboardingComplete, String(complete));
 }

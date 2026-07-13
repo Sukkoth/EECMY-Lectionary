@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   useColorScheme,
   ActivityIndicator,
+  Appearance,
   type DimensionValue,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
@@ -93,7 +94,9 @@ export default function HomeScreen() {
   const progressPercent = `${Math.round(progress * 100)}%`;
 
   const toggleTheme = () => {
-    updateSetting("theme", isDark ? "light" : "dark");
+    const newTheme = isDark ? "light" : "dark";
+    updateSetting("theme", newTheme);
+    Appearance.setColorScheme(newTheme);
   };
 
   return (

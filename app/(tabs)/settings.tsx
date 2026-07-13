@@ -1,4 +1,4 @@
-import { Text, View, TouchableOpacity, useColorScheme, Pressable, SafeAreaView } from "react-native";
+import { Text, View, TouchableOpacity, useColorScheme, Pressable, SafeAreaView, Appearance } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "@/lib/SettingsContext";
@@ -9,7 +9,9 @@ export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
 
   const toggleTheme = () => {
-    updateSetting("theme", isDark ? "light" : "dark");
+    const newTheme = isDark ? "light" : "dark";
+    updateSetting("theme", newTheme);
+    Appearance.setColorScheme(newTheme);
   };
 
   return (

@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
+import { StatusBar, setStatusBarBackgroundColor } from "expo-status-bar";
+import { useColorScheme, ActivityIndicator, View } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
@@ -10,6 +10,7 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SettingsProvider, useSettings } from "@/lib/SettingsContext";
 import { FavouriteProvider } from "@/lib/FavouriteContext";
+import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
 import { ensureHolidaysLoaded } from "@/lib/HolidayCache";
 import "./global.css";
 
@@ -28,12 +29,58 @@ function HolidayDataLoader() {
   return null;
 }
 
+function AppContent() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const { isOnboardingComplete, loading } = useOnboarding();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: isDark ? "#11100E" : "#F8F6F3" }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <HolidayDataLoader />
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: isDark ? "#11100E" : "#F8F6F3",
+          },
+        }}
+      >
+        {isOnboardingComplete ? (
+          <>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="reading/index" />
+            <Stack.Screen name="settings/language" />
+            <Stack.Screen name="settings/font-alignment" />
+            <Stack.Screen name="settings/check-updates" />
+            <Stack.Screen name="glossary/lectionary" />
+            <Stack.Screen name="glossary/church-year" />
+            <Stack.Screen name="glossary/creeds" />
+            <Stack.Screen name="glossary/lords-prayer" />
+          </>
+        ) : (
+          <Stack.Screen name="onboarding" />
+        )}
+      </Stack>
+    </>
+  );
+}
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   useEffect(() => {
     setBackgroundColorAsync(isDark ? "#11100E" : "#F8F6F3");
+    setStatusBarBackgroundColor(isDark ? "#11100E" : "#F8F6F3");
   }, [isDark]);
 
   const [loaded, error] = useFonts({
@@ -59,28 +106,11 @@ export default function RootLayout() {
       >
         <BottomSheetModalProvider>
           <SettingsProvider>
-            <FavouriteProvider>
-              <HolidayDataLoader />
-              <StatusBar style="auto" />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: {
-                    backgroundColor: isDark ? "#11100E" : "#F8F6F3",
-                  },
-                }}
-              >
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="reading/index" />
-                <Stack.Screen name="settings/language" />
-                <Stack.Screen name="settings/font-alignment" />
-                <Stack.Screen name="settings/check-updates" />
-                <Stack.Screen name="glossary/lectionary" />
-                <Stack.Screen name="glossary/church-year" />
-                <Stack.Screen name="glossary/creeds" />
-                <Stack.Screen name="glossary/lords-prayer" />
-              </Stack>
-            </FavouriteProvider>
+            <OnboardingProvider>
+              <FavouriteProvider>
+                <AppContent />
+              </FavouriteProvider>
+            </OnboardingProvider>
           </SettingsProvider>
         </BottomSheetModalProvider>
       </SQLiteProvider>
