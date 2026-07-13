@@ -2,12 +2,16 @@ import { View } from "react-native";
 import LanguagePickerContent from "./LanguagePickerContent";
 import FontAlignmentContent from "./FontAlignmentContent";
 
-export default function ReadingSettingsContent() {
+type ReadingSettingsContentProps = {
+  viewType: "simple" | "expanded";
+};
+
+export default function ReadingSettingsContent({ viewType }: ReadingSettingsContentProps) {
   return (
     <View>
       <LanguagePickerContent />
       <View className="my-5" />
-      <FontAlignmentContent compact />
+      <FontAlignmentContent viewType={viewType} />
     </View>
   );
 }

@@ -9,9 +9,10 @@ import { useSettings, SettingsContext } from "@/lib/SettingsContext";
 
 type LanguageSwitcherSheetProps = {
   onChange?: (index: number) => void;
+  viewType: "simple" | "expanded";
 };
 
-const LanguageSwitcherSheet = forwardRef<BottomSheetModal, LanguageSwitcherSheetProps>(({ onChange }, ref) => {
+const LanguageSwitcherSheet = forwardRef<BottomSheetModal, LanguageSwitcherSheetProps>(({ onChange, viewType }, ref) => {
   const isDark = useColorScheme() === "dark";
   const ctx = useSettings();
 
@@ -32,7 +33,7 @@ const LanguageSwitcherSheet = forwardRef<BottomSheetModal, LanguageSwitcherSheet
         showsVerticalScrollIndicator={false}
       >
         <SettingsContext.Provider value={ctx}>
-          <ReadingSettingsContent />
+          <ReadingSettingsContent viewType={viewType} />
         </SettingsContext.Provider>
       </BottomSheetScrollView>
     </BottomSheetModal>

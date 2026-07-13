@@ -75,7 +75,7 @@ export default function LanguagePickerContent({ onVersionSelect }: LanguagePicke
               className="border-b border-stone-200 flex-row items-center justify-between pb-2 pt-4 dark:border-stone-700"
             >
               <Text
-                className="text-primary text-xs uppercase tracking-widest"
+                className="text-primary text-lg uppercase tracking-widest"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
                 {lang.language}
@@ -105,7 +105,7 @@ export default function LanguagePickerContent({ onVersionSelect }: LanguagePicke
                         <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
                       )}
                       <Text
-                        className={`text-base ${
+                        className={`text-lg ${
                           isActive
                             ? "text-primary font-semibold"
                             : "text-[#2D2A24] dark:text-[#E8E4DC]"

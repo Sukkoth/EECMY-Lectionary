@@ -123,6 +123,7 @@ export default function ReadingScreen() {
 
   // ── Header info from current date ──
   const currentDayData = repoRef.current?.getCached(currentDate) ?? null;
+  const viewType = (currentDayData?.readings.length ?? 0) === 1 ? "simple" : "expanded";
   const weekday = currentDate.toLocaleDateString("en-US", { weekday: "long" });
   const formattedDate = currentDate.toLocaleDateString("en-US", {
     month: "long",
@@ -212,7 +213,7 @@ export default function ReadingScreen() {
         onPageChange={handlePageChange}
         rebuildKey={rebuildKey}
       />
-      <LanguageSwitcherSheet ref={sheetRef} onChange={handleSheetChange} />
+      <LanguageSwitcherSheet ref={sheetRef} onChange={handleSheetChange} viewType={viewType} />
     </View>
   );
 }

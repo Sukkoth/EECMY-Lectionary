@@ -32,7 +32,7 @@ export default function FontAlignmentSettingsScreen() {
         contentContainerStyle={{ paddingBottom: 32, paddingTop: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        <FontAlignmentContent />
+        <FontAlignmentContent viewType="settings" />
       </ScrollView>
     </SafeAreaView>
   );

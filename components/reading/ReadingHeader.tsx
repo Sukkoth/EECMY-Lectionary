@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { useSettings } from "@/lib/SettingsContext";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 
@@ -47,7 +48,7 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
               activeOpacity={0.7}
               className="bg-surface dark:bg-surface-dark rounded-full p-2.5"
             >
-              <Ionicons name="language-outline" size={20} color="#6B6560" />
+              <AntDesign name="ellipsis" size={20} color="#6B6560" />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={toggleTheme}
