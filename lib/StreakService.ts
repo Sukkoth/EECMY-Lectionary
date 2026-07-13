@@ -8,7 +8,7 @@ const DEFAULT_STREAK: ReadingStreak = {
   best: 0,
   completedDays: [false, false, false, false, false, false, false],
   lastCompletedDate: null,
-  weekStartDate: new Date().toISOString().slice(0, 10), // today
+  weekStartDate: toDateString(new Date()), // today (local)
 };
 
 function getWeekStart(date: Date): string {

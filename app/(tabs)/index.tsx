@@ -36,6 +36,16 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [streak, setStreak] = useState<ReadingStreak | null>(null);
 
+  function getWeekStart(date: Date): string {
+    const d = new Date(date);
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
+  }
+
   const fetchReadings = useCallback(() => {
     const readingsDB = new ReadingsDB(db);
     readingsDB
@@ -71,8 +81,15 @@ export default function HomeScreen() {
     });
   };
 
-  const safeStreak = streak ?? { current: 0, best: 0, completedDays: [false, false, false, false, false, false, false] };
-  const progress = Math.min(Math.max(safeStreak.current / safeStreak.best, 0), 1);
+  const currentWeekStart = getWeekStart(new Date());
+  const rawStreak = streak ?? { current: 0, best: 0, completedDays: [false, false, false, false, false, false, false], weekStartDate: "" };
+  const safeStreak = {
+    ...rawStreak,
+    completedDays: rawStreak.weekStartDate === currentWeekStart
+      ? rawStreak.completedDays
+      : [false, false, false, false, false, false, false],
+  };
+  const progress = safeStreak.best > 0 ? Math.min(Math.max(safeStreak.current / safeStreak.best, 0), 1) : 0;
   const progressPercent = `${Math.round(progress * 100)}%`;
 
   const toggleTheme = () => {
