@@ -105,7 +105,7 @@ export default function HomeScreen() {
             className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Daily Readings
+            Yeilet Readings
           </Text>
           <TouchableOpacity
             onPress={toggleTheme}
