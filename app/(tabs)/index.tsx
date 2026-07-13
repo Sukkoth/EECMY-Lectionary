@@ -338,7 +338,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Progress bar */}
-          <View className="mt-4 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+          <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
             <View
               className="bg-primary h-full rounded-full"
               style={{ width: progressPercent as DimensionValue }}
@@ -348,13 +348,14 @@ export default function HomeScreen() {
           {/* Weekly indicators */}
           <View className="mt-4 flex-row justify-between">
             {safeStreak.completedDays.map((completed, index) => (
-              <View key={index} className="items-center">
+              <View key={index} className="items-center" style={{ width: 36 }}>
                 <View
-                  className={`h-7 w-7 items-center justify-center rounded-lg ${
-                    completed ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"
-                  }`}
+                  className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
                 >
-                  {completed && <Ionicons name="checkmark" size={16} color="white" />}
+                  <View
+                    className={`h-full rounded-full ${completed ? "bg-primary" : ""}`}
+                    style={{ width: completed ? "100%" : "0%" }}
+                  />
                 </View>
                 <Text
                   className="text-muted dark:text-muted-dark mt-1.5 text-xs"
