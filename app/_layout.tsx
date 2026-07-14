@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack, useSegments, useRouter } from "expo-router";
 import { StatusBar, setStatusBarBackgroundColor } from "expo-status-bar";
 import { useColorScheme, ActivityIndicator, View } from "react-native";
 import { useFonts } from "expo-font";
@@ -33,6 +33,20 @@ function AppContent() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { isOnboardingComplete, loading } = useOnboarding();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inOnboardingGroup = segments[0] === "onboarding";
+
+    if (!isOnboardingComplete && !inOnboardingGroup) {
+      router.replace("/onboarding");
+    } else if (isOnboardingComplete && inOnboardingGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [isOnboardingComplete, loading, segments]);
 
   if (loading) {
     return (
@@ -47,6 +61,7 @@ function AppContent() {
       <HolidayDataLoader />
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
+        initialRouteName={isOnboardingComplete ? "(tabs)" : "onboarding"}
         screenOptions={{
           headerShown: false,
           contentStyle: {
