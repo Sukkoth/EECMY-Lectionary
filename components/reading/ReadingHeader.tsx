@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { Text, TouchableOpacity, View, useColorScheme, Appearance } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useSettings } from "@/lib/SettingsContext";
@@ -17,7 +17,9 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
     const { updateSetting } = useSettings();
 
     const toggleTheme = () => {
-      updateSetting("theme", isDark ? "light" : "dark");
+      const newTheme = isDark ? "light" : "dark";
+      updateSetting("theme", newTheme);
+      Appearance.setColorScheme(newTheme);
     };
 
     return (
