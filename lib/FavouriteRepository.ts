@@ -16,17 +16,6 @@ export type HydratedFavourite = {
 
 let favourites: FavouriteRow[] = [];
 
-export async function ensureFavouriteTable(db: SQLiteDatabase): Promise<void> {
-  await db.runAsync(`
-    CREATE TABLE IF NOT EXISTS Favourite (
-      date TEXT NOT NULL,
-      "order" INTEGER NOT NULL,
-      createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-      PRIMARY KEY (date, "order")
-    )
-  `);
-}
-
 async function reloadCache(db: SQLiteDatabase): Promise<void> {
   favourites = await db.getAllAsync<FavouriteRow>(
     `SELECT * FROM Favourite ORDER BY createdAt DESC`,

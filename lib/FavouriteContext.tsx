@@ -2,7 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { useSQLiteContext } from "expo-sqlite";
 import {
   type FavouriteRow,
-  ensureFavouriteTable,
   loadFavourites,
   addFavourite as repoAddFavourite,
   removeFavourite as repoRemoveFavourite,
@@ -34,7 +33,6 @@ export function FavouriteProvider({ children }: { children: React.ReactNode }) {
 
     async function init() {
       try {
-        await ensureFavouriteTable(db);
         await loadFavourites(db);
         if (!cancelled) {
           setFavourites([...getFavourites()]);
