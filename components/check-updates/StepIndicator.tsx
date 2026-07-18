@@ -1,7 +1,7 @@
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { WizardStep } from "../../app/settings/check-updates/types";
-import { STEP_LABELS, STEP_ICONS } from "../../app/settings/check-updates/types";
+import type { WizardStep } from "../../types/check-update";
+import { STEP_LABELS, STEP_ICONS } from "../../types/check-update";
 
 type Props = {
   currentStep: WizardStep;

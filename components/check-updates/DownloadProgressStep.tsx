@@ -80,7 +80,6 @@ function DownloadProgressStep({
 
         <View className="mt-6 w-full border-t border-stone-200 pt-4 dark:border-stone-700">
           <InfoRow label="Year" value={String(year.year)} />
-          <InfoRow label="Size" value={year.size} />
           {selectedVersionLabels.length <= 6 && (
             <InfoRow
               label="Content"

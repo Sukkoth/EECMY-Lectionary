@@ -42,7 +42,6 @@ function SuccessStep({
 
         <View className="mt-6 w-full border-t border-stone-200 pt-4 dark:border-stone-700">
           <InfoRow label="Year" value={String(year.year)} />
-          <InfoRow label="Size" value={year.size} />
           <InfoRow
             label="Languages"
             value={selectedLanguageNames.join(", ")}
@@ -81,7 +80,6 @@ function SuccessStep({
               value={`${selectedVersionLabels.length} total`}
             />
           )}
-          <InfoRow label="Updated" value={year.lastUpdated} />
         </View>
 
         <TouchableOpacity

@@ -5,10 +5,11 @@ import type { Manifest, YearOption } from "../../app/settings/check-updates/type
 type Props = {
   manifest: Manifest;
   onSelectYear: (year: YearOption) => void;
+  downloadedYears?: number[];
   isDark: boolean;
 };
 
-function YearSelectionStep({ manifest, onSelectYear, isDark }: Props) {
+function YearSelectionStep({ manifest, onSelectYear, downloadedYears = [], isDark }: Props) {
   return (
     <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
       <Text
@@ -24,12 +25,13 @@ function YearSelectionStep({ manifest, onSelectYear, isDark }: Props) {
         Choose which year&apos;s reading data to download.
       </Text>
 
-      {manifest.availableYears.map((yearOption) => {
+      {manifest.years.map((yearOption) => {
         const langCount = yearOption.languages.length;
         const versionCount = yearOption.languages.reduce(
-          (sum, l) => sum + l.versions.length,
+          (sum: number, l) => sum + l.versions.length,
           0,
         );
+        const isDownloaded = downloadedYears.includes(yearOption.year);
 
         return (
           <TouchableOpacity
@@ -39,12 +41,24 @@ function YearSelectionStep({ manifest, onSelectYear, isDark }: Props) {
             className="bg-surface dark:bg-surface-dark mb-4 rounded-2xl px-5 py-5"
           >
             <View className="flex-row items-center justify-between">
-              <Text
-                className="text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-              >
-                {yearOption.year}
-              </Text>
+              <View className="flex-row items-center gap-2">
+                <Text
+                  className="text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                >
+                  {yearOption.year}
+                </Text>
+                {isDownloaded && (
+                  <View className="rounded-full bg-green-500/15 px-2 py-0.5">
+                    <Text
+                      className="text-xs text-green-600 dark:text-green-400"
+                      style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                    >
+                      Downloaded
+                    </Text>
+                  </View>
+                )}
+              </View>
               <Ionicons
                 name="chevron-forward"
                 size={20}
@@ -52,28 +66,7 @@ function YearSelectionStep({ manifest, onSelectYear, isDark }: Props) {
               />
             </View>
 
-            <View className="mt-2 flex-row items-center gap-2">
-              <Text
-                className="text-muted dark:text-muted-dark text-sm"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-              >
-                Updated {yearOption.lastUpdated}
-              </Text>
-              <Text
-                className="text-muted dark:text-muted-dark text-sm"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-              >
-                ·
-              </Text>
-              <Text
-                className="text-muted dark:text-muted-dark text-sm"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-              >
-                {yearOption.size}
-              </Text>
-            </View>
-
-            <View className="mt-2 flex-row items-center gap-2">
+            <View className="mt-3 flex-row items-center gap-2">
               <Text
                 className="text-primary text-sm"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}

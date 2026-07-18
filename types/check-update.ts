@@ -3,7 +3,7 @@ import type {
   ManifestYear,
   ManifestLanguage,
   ManifestVersion,
-} from "../../../lib/content";
+} from "../lib/content";
 
 export type WizardStep =
   | "idle"

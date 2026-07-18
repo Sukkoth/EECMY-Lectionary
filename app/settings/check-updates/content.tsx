@@ -6,10 +6,21 @@ import {
   useColorScheme,
   SafeAreaView,
 } from "react-native";
+import { useSQLiteContext } from "expo-sqlite";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { CHECK_DELAY_MS, DOWNLOAD_TICK_MS, DOWNLOAD_TOTAL_MS, MOCK_MANIFEST } from "./types";
-import type { Manifest, YearOption, WizardStep } from "./types";
+import type { Manifest, YearOption, WizardStep } from "../../../types/check-update";
+import {
+  fetchManifest,
+  downloadDayInfo,
+  downloadHolidays,
+  downloadReadings,
+  prepareDayInfo,
+  prepareHolidays,
+  prepareReadings,
+  prepareSyncRecord,
+  commitStatements,
+} from "../../../lib/content";
 import {
   IdleStep,
   CheckingStep,
@@ -22,6 +33,7 @@ import {
 
 export default function ContentUpdateScreen() {
   const isDark = useColorScheme() === "dark";
+  const db = useSQLiteContext();
 
   const [step, setStep] = useState<WizardStep>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -33,16 +45,21 @@ export default function ContentUpdateScreen() {
   const [expandedLangs, setExpandedLangs] = useState<Record<string, boolean>>({});
 
   const [progress, setProgress] = useState(0);
-  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abortRef = useRef(false);
 
   useEffect(() => {
     return () => {
-      if (progressTimer.current) clearInterval(progressTimer.current);
+      abortRef.current = true;
     };
   }, []);
 
   const totalSelectedItems = Object.values(selectedLangs).reduce(
     (sum, versions) => sum + versions.length,
+    0,
+  );
+
+  const totalDownloadTasks = Object.entries(selectedLangs).reduce(
+    (sum, [_, versions]) => sum + 2 + versions.length,
     0,
   );
 
@@ -58,7 +75,7 @@ export default function ContentUpdateScreen() {
         .flatMap((l) =>
           selectedLangs[l.code].map((vCode) => {
             const v = l.versions.find((ver) => ver.code === vCode);
-            return `${l.name} — ${v?.label ?? vCode.toUpperCase()}`;
+            return `${l.name} — ${v?.name ?? vCode.toUpperCase()}`;
           }),
         )
     : [];
@@ -76,19 +93,23 @@ export default function ContentUpdateScreen() {
     }
   };
 
-  const handleCheck = useCallback(() => {
+  const handleCheck = useCallback(async () => {
     setStep("checking");
     setError(null);
+    abortRef.current = false;
 
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        setError("Network error. Please check your connection and try again.");
-        setStep("idle");
-        return;
-      }
-      setManifest(MOCK_MANIFEST);
+    try {
+      const data = await fetchManifest();
+      if (abortRef.current) return;
+      setManifest(data);
       setStep("selectYear");
-    }, CHECK_DELAY_MS);
+    } catch (err) {
+      if (abortRef.current) return;
+      const msg =
+        err instanceof Error ? err.message : "Failed to check for updates.";
+      setError(msg);
+      setStep("idle");
+    }
   }, []);
 
   const handleYearSelect = useCallback((year: YearOption) => {
@@ -134,36 +155,96 @@ export default function ContentUpdateScreen() {
     setExpandedLangs((prev) => ({ ...prev, [langCode]: !prev[langCode] }));
   }, []);
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async () => {
+    if (!selectedYear) return;
+
     setStep("downloading");
     setProgress(0);
+    setError(null);
+    abortRef.current = false;
 
-    const startTime = Date.now();
-    progressTimer.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const newProgress = Math.min((elapsed / DOWNLOAD_TOTAL_MS) * 100, 100);
-      setProgress(newProgress);
+    const year = selectedYear.year;
+    let completed = 0;
 
-      if (newProgress >= 100) {
-        if (progressTimer.current) clearInterval(progressTimer.current);
-        progressTimer.current = null;
+    const updateProgress = () => {
+      completed++;
+      setProgress(Math.round((completed / totalDownloadTasks) * 100));
+    };
 
-        if (Math.random() < 0.1) {
-          setError("Download failed. Please try again.");
-          setStep("selectLang");
-          return;
+    try {
+      for (const lang of selectedYear.languages) {
+        const versions = selectedLangs[lang.code];
+        if (!versions?.length) continue;
+
+        if (abortRef.current) return;
+
+        const dayInfoPkg = await downloadDayInfo(lang.dayInfo.path);
+        const dayInfoPrepared = prepareDayInfo(dayInfoPkg, lang.code);
+        const dayInfoSync = prepareSyncRecord(
+          year,
+          lang.code,
+          lang.name,
+          null,
+          null,
+          "day-info",
+          "",
+        );
+        await commitStatements(db, [...dayInfoPrepared.statements, dayInfoSync]);
+        updateProgress();
+
+        if (abortRef.current) return;
+
+        const holidaysPkg = await downloadHolidays(lang.holidays.path);
+        const holidaysPrepared = prepareHolidays(holidaysPkg, lang.code);
+        const holidaysSync = prepareSyncRecord(
+          year,
+          lang.code,
+          lang.name,
+          null,
+          null,
+          "holidays",
+          "",
+        );
+        await commitStatements(db, [...holidaysPrepared.statements, holidaysSync]);
+        updateProgress();
+
+        for (const versionCode of versions) {
+          if (abortRef.current) return;
+
+          const versionMeta = lang.versions.find((v) => v.code === versionCode);
+          const readingsPkg = await downloadReadings(versionMeta!.path);
+          const readingsPrepared = prepareReadings(
+            readingsPkg,
+            lang.code,
+            versionCode,
+          );
+          const readingsSync = prepareSyncRecord(
+            year,
+            lang.code,
+            lang.name,
+            versionCode,
+            versionMeta!.name,
+            "readings",
+            "",
+          );
+          await commitStatements(db, [...readingsPrepared.statements, readingsSync]);
+          updateProgress();
         }
-
-        setStep("success");
       }
-    }, DOWNLOAD_TICK_MS);
-  }, []);
+
+      if (abortRef.current) return;
+      setStep("success");
+    } catch (err) {
+      if (abortRef.current) return;
+      const msg =
+        err instanceof Error ? err.message : "Download failed. Please try again.";
+      setError(msg);
+      setStep("selectLang");
+    }
+  }, [selectedYear, selectedLangs, totalDownloadTasks, db]);
 
   const handleDone = useCallback(() => {
-    if (progressTimer.current) {
-      clearInterval(progressTimer.current);
-      progressTimer.current = null;
-    }
+    abortRef.current = true;
     setStep("idle");
     setManifest(null);
     setSelectedYear(null);

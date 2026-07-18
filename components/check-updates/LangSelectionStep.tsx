@@ -9,6 +9,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { YearOption } from "../../app/settings/check-updates/types";
 
+type DownloadedVersion = {
+  version: string;
+  pulledAt: string;
+};
+
 type Props = {
   year: YearOption;
   selectedLangs: Record<string, string[]>;
@@ -18,6 +23,7 @@ type Props = {
   onToggleVersion: (langCode: string, versionCode: string) => void;
   onToggleExpand: (langCode: string) => void;
   onDownload: () => void;
+  downloadedVersions?: Record<string, DownloadedVersion[]>;
   isDark: boolean;
 };
 
@@ -30,6 +36,7 @@ function LangSelectionStep({
   onToggleVersion,
   onToggleExpand,
   onDownload,
+  downloadedVersions = {},
   isDark,
 }: Props) {
   const [isStarting, setIsStarting] = useState(false);
@@ -57,21 +64,7 @@ function LangSelectionStep({
             className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            {year.year} · v{year.version}
-          </Text>
-        </View>
-        <View className="mt-2 flex-row items-center justify-between">
-          <Text
-            className="text-muted dark:text-muted-dark text-sm"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-          >
-            Last Updated
-          </Text>
-          <Text
-            className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-          >
-            {year.lastUpdated}
+            {year.year}
           </Text>
         </View>
       </View>
@@ -153,6 +146,9 @@ function LangSelectionStep({
               <View className="mt-2 pl-4">
                 {lang.versions.map((version) => {
                   const isSelected = selectedVersions.includes(version.code);
+                  const downloaded = downloadedVersions[lang.code]?.find(
+                    (d) => d.version === version.code,
+                  );
 
                   return (
                     <TouchableOpacity
@@ -187,14 +183,26 @@ function LangSelectionStep({
                             fontWeight: isSelected ? "600" : "400",
                           }}
                         >
-                          {version.label}
+                          {version.name}
                         </Text>
-                        <Text
-                          className="text-muted dark:text-muted-dark mt-0.5 text-xs"
-                          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                        >
-                          {version.code.toUpperCase()}
-                        </Text>
+                        <View className="mt-0.5 flex-row items-center gap-2">
+                          <Text
+                            className="text-muted dark:text-muted-dark text-xs"
+                            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                          >
+                            {version.code.toUpperCase()}
+                          </Text>
+                          {downloaded && (
+                            <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
+                              <Text
+                                className="text-[10px] text-green-600 dark:text-green-400"
+                                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                              >
+                                Synced
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
                     </TouchableOpacity>
                   );
@@ -250,7 +258,7 @@ function LangSelectionStep({
           {isStarting
             ? "Preparing Download…"
             : canProceed
-              ? `Download ${totalSelectedItems} ${totalSelectedItems === 1 ? "Item" : "Items"} · ${year.size}`
+              ? `Download ${totalSelectedItems} ${totalSelectedItems === 1 ? "Item" : "Items"}`
               : "Select Items to Download"}
         </Text>
       </TouchableOpacity>
