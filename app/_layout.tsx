@@ -69,21 +69,16 @@ function AppContent() {
           },
         }}
       >
-        {isOnboardingComplete ? (
-          <>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="reading/index" />
-            <Stack.Screen name="settings/language" />
-            <Stack.Screen name="settings/font-alignment" />
-            <Stack.Screen name="settings/check-updates" />
-            <Stack.Screen name="glossary/lectionary" />
-            <Stack.Screen name="glossary/church-year" />
-            <Stack.Screen name="glossary/creeds" />
-            <Stack.Screen name="glossary/lords-prayer" />
-          </>
-        ) : (
-          <Stack.Screen name="onboarding" />
-        )}
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="reading/index" />
+        <Stack.Screen name="settings/language" />
+        <Stack.Screen name="settings/font-alignment" />
+        <Stack.Screen name="settings/check-updates" />
+        <Stack.Screen name="glossary/lectionary" />
+        <Stack.Screen name="glossary/church-year" />
+        <Stack.Screen name="glossary/creeds" />
+        <Stack.Screen name="glossary/lords-prayer" />
+        <Stack.Screen name="onboarding" />
       </Stack>
     </>
   );
