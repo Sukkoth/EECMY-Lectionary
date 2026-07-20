@@ -50,6 +50,12 @@ function LangSelectionStep({
     }, 300);
   }, [canProceed, isStarting, onDownload]);
 
+  const availableLanguages = year.languages.filter((lang) => {
+    const downloaded = downloadedVersions[lang.code];
+    if (!downloaded || downloaded.length === 0) return true;
+    return downloaded.length < lang.versions.length;
+  });
+
   return (
     <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
       <View className="bg-surface dark:bg-surface-dark mb-5 rounded-2xl px-5 py-4">
@@ -74,7 +80,7 @@ function LangSelectionStep({
         SELECT CONTENT
       </Text>
 
-      {year.languages.map((lang) => {
+      {availableLanguages.map((lang) => {
         const isExpanded = expandedLangs[lang.code] ?? false;
         const selectedVersions = selectedLangs[lang.code] ?? [];
         const allSelected = selectedVersions.length === lang.versions.length;

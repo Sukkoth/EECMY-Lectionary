@@ -22,6 +22,18 @@ export async function getSyncedYears(
   return rows.map((r) => r.year);
 }
 
+export async function getSyncedReadingCounts(
+  db: SQLiteDatabase,
+): Promise<{ year: number; syncedCount: number }[]> {
+  return db.getAllAsync<{ year: number; syncedCount: number }>(
+    `SELECT year, COUNT(*) AS syncedCount
+     FROM SyncRecord
+     WHERE type = 'readings'
+     GROUP BY year
+     ORDER BY year DESC`,
+  );
+}
+
 export async function getDownloadedLangsForYear(
   db: SQLiteDatabase,
   year: number,

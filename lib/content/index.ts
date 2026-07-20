@@ -19,6 +19,7 @@ export type {
 
 export {
   getSyncedYears,
+  getSyncedReadingCounts,
   getDownloadedLangsForYear,
   getDownloadedVersionsForYearLang,
   isContentDownloaded,

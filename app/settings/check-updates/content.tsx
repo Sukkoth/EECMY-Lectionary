@@ -20,6 +20,9 @@ import {
   prepareReadings,
   prepareSyncRecord,
   commitStatements,
+  getSyncedYears,
+  getSyncedReadingCounts,
+  getDownloadedVersionsForYearLang,
 } from "../../../lib/content";
 import {
   IdleStep,
@@ -43,6 +46,34 @@ export default function ContentUpdateScreen() {
 
   const [selectedLangs, setSelectedLangs] = useState<Record<string, string[]>>({});
   const [expandedLangs, setExpandedLangs] = useState<Record<string, boolean>>({});
+
+  const [downloadedYears, setDownloadedYears] = useState<number[]>([]);
+  const [downloadedVersions, setDownloadedVersions] = useState<Record<string, { version: string; pulledAt: string }[]>>({});
+  const [syncedReadingCounts, setSyncedReadingCounts] = useState<Record<number, number>>({});
+
+  const loadSyncedData = useCallback(async () => {
+    const [years, counts] = await Promise.all([
+      getSyncedYears(db),
+      getSyncedReadingCounts(db),
+    ]);
+    setDownloadedYears(years);
+    const map: Record<number, number> = {};
+    for (const c of counts) {
+      map[c.year] = c.syncedCount;
+    }
+    setSyncedReadingCounts(map);
+  }, [db]);
+
+  const loadDownloadedVersions = useCallback(async (year: number, languages: { code: string }[]) => {
+    const result: Record<string, { version: string; pulledAt: string }[]> = {};
+    for (const lang of languages) {
+      const versions = await getDownloadedVersionsForYearLang(db, year, lang.code);
+      if (versions.length > 0) {
+        result[lang.code] = versions;
+      }
+    }
+    setDownloadedVersions(result);
+  }, [db]);
 
   const [progress, setProgress] = useState(0);
   const abortRef = useRef(false);
@@ -102,6 +133,7 @@ export default function ContentUpdateScreen() {
       const data = await fetchManifest();
       if (abortRef.current) return;
       setManifest(data);
+      await loadSyncedData();
       setStep("selectYear");
     } catch (err) {
       if (abortRef.current) return;
@@ -110,14 +142,15 @@ export default function ContentUpdateScreen() {
       setError(msg);
       setStep("idle");
     }
-  }, []);
+  }, [loadSyncedData]);
 
-  const handleYearSelect = useCallback((year: YearOption) => {
+  const handleYearSelect = useCallback(async (year: YearOption) => {
     setSelectedYear(year);
     setSelectedLangs({});
     setExpandedLangs({});
+    await loadDownloadedVersions(year.year, year.languages);
     setStep("selectLang");
-  }, []);
+  }, [loadDownloadedVersions]);
 
   const toggleLanguageVersions = useCallback(
     (langCode: string, allVersionCodes: string[]) => {
@@ -233,6 +266,10 @@ export default function ContentUpdateScreen() {
       }
 
       if (abortRef.current) return;
+      await loadSyncedData();
+      if (selectedYear) {
+        await loadDownloadedVersions(selectedYear.year, selectedYear.languages);
+      }
       setStep("success");
     } catch (err) {
       if (abortRef.current) return;
@@ -241,7 +278,7 @@ export default function ContentUpdateScreen() {
       setError(msg);
       setStep("selectLang");
     }
-  }, [selectedYear, selectedLangs, totalDownloadTasks, db]);
+  }, [selectedYear, selectedLangs, totalDownloadTasks, db, loadSyncedData, loadDownloadedVersions]);
 
   const handleDone = useCallback(() => {
     abortRef.current = true;
@@ -316,6 +353,8 @@ export default function ContentUpdateScreen() {
             <YearSelectionStep
               manifest={manifest}
               onSelectYear={handleYearSelect}
+              downloadedYears={downloadedYears}
+              syncedReadingCounts={syncedReadingCounts}
               isDark={isDark}
             />
           )}
@@ -330,6 +369,7 @@ export default function ContentUpdateScreen() {
               onToggleVersion={toggleVersion}
               onToggleExpand={toggleExpand}
               onDownload={handleDownload}
+              downloadedVersions={downloadedVersions}
               isDark={isDark}
             />
           )}
