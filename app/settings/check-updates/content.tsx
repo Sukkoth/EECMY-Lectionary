@@ -7,6 +7,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useSQLiteContext } from "expo-sqlite";
+import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { Manifest, YearOption, WizardStep } from "../../../types/check-update";
@@ -40,6 +41,7 @@ import {
 export default function ContentUpdateScreen() {
   const isDark = useColorScheme() === "dark";
   const db = useSQLiteContext();
+  const queryClient = useQueryClient();
 
   const [step, setStep] = useState<WizardStep>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -331,6 +333,14 @@ export default function ContentUpdateScreen() {
           loadLangPackStatus(selectedYear.year, selectedYear.languages),
         ]);
       }
+      if (selectedYear) {
+        for (const lang of selectedYear.languages) {
+          const items = selectedLangs[lang.code];
+          if (items?.includes("__holidays__")) {
+            queryClient.refetchQueries({ queryKey: ["holidays", lang.code], type: "all" });
+          }
+        }
+      }
       setStep("success");
     } catch (err) {
       if (abortRef.current) return;
@@ -346,7 +356,7 @@ export default function ContentUpdateScreen() {
       }
       setStep("selectLang");
     }
-  }, [selectedYear, selectedLangs, totalDownloadTasks, db, loadSyncedData, loadDownloadedVersions, loadLangPackStatus]);
+  }, [selectedYear, selectedLangs, totalDownloadTasks, db, loadSyncedData, loadDownloadedVersions, loadLangPackStatus, queryClient]);
 
   const handleDone = useCallback(() => {
     abortRef.current = true;

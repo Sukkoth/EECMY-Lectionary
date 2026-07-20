@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   PanResponder,
   Text,
@@ -10,14 +10,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import {
-  ensureHolidaysLoaded,
+  useHolidays,
   getHolidaysForMonth,
   getHolidaysListForMonth,
-} from "@/lib/HolidayCache";
-import { useSQLiteContext } from "expo-sqlite";
+} from "@/lib/hooks/useHolidays";
 import { useSettings } from "@/lib/SettingsContext";
 import { HOLIDAY_COLORS } from "@/constants";
-
 
 function formatMonthYear(year: number, month: number): string {
   return new Date(year, month).toLocaleDateString("en-US", {
@@ -49,27 +47,18 @@ export default function CalendarScreen() {
     year: today.getFullYear(),
     month: today.getMonth(),
   }));
-  const db = useSQLiteContext();
 
-  useEffect(() => {
-    ensureHolidaysLoaded(db, settings.language).then(() => {
-      setCurrent((prev) => ({ ...prev }));
-    }).catch((err) => {
-      console.warn("[Calendar] Failed to load holidays:", err);
-    });
-  }, [settings.language, db]);
+  const { data: allHolidays } = useHolidays(settings.language);
 
-  // ── Data from cache (synchronous) ──
   const holidayMap = useMemo(
-    () => getHolidaysForMonth(current.year, current.month),
-    [current],
+    () => getHolidaysForMonth(allHolidays, current.year, current.month),
+    [allHolidays, current],
   );
   const holidays = useMemo(
-    () => getHolidaysListForMonth(current.year, current.month),
-    [current],
+    () => getHolidaysListForMonth(allHolidays, current.year, current.month),
+    [allHolidays, current],
   );
 
-  // ── PanResponder for swipe ──
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) =>
@@ -84,7 +73,6 @@ export default function CalendarScreen() {
 
   return (
     <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" >
-      {/* Header with nav buttons */}
       <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
         <TouchableOpacity
           onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, -1))}
@@ -110,7 +98,6 @@ export default function CalendarScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Month grid — single instance, data replaced on swipe */}
       <View {...panResponder.panHandlers}>
         <MonthGrid
           year={current.year}
@@ -120,10 +107,8 @@ export default function CalendarScreen() {
         />
       </View>
 
-      {/* Divider */}
       <View className="mx-6 border-b border-stone-200 dark:border-stone-800" />
 
-      {/* Holiday list */}
       <View className="flex-1 px-6 pt-4">
         <Text
           className="text-muted dark:text-muted-dark mb-3 text-sm uppercase tracking-widest"

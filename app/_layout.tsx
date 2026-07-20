@@ -5,29 +5,17 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { setBackgroundColorAsync } from "expo-system-ui";
-import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
+import { SQLiteProvider } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SettingsProvider, useSettings } from "@/lib/SettingsContext";
+import { SettingsProvider } from "@/lib/SettingsContext";
 import { FavouriteProvider } from "@/lib/FavouriteContext";
 import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
-import { ensureHolidaysLoaded } from "@/lib/HolidayCache";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import "./global.css";
 
 SplashScreen.preventAutoHideAsync();
-
-function HolidayDataLoader() {
-  const db = useSQLiteContext();
-  const { settings } = useSettings();
-
-  useEffect(() => {
-    ensureHolidaysLoaded(db, settings.language).catch((err) => {
-      console.warn("[HolidayCache] Failed to load holidays:", err);
-    });
-  }, [db, settings.language]);
-
-  return null;
-}
 
 function AppContent() {
   const colorScheme = useColorScheme();
@@ -58,7 +46,6 @@ function AppContent() {
 
   return (
     <>
-      <HolidayDataLoader />
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         initialRouteName={isOnboardingComplete ? "(tabs)" : "onboarding"}
@@ -114,15 +101,17 @@ export default function RootLayout() {
         databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME!}
         assetSource={{ assetId: require("../assets/db/readings.db") }}
       >
-        <BottomSheetModalProvider>
-          <SettingsProvider>
-            <OnboardingProvider>
-              <FavouriteProvider>
-                <AppContent />
-              </FavouriteProvider>
-            </OnboardingProvider>
-          </SettingsProvider>
-        </BottomSheetModalProvider>
+        <QueryClientProvider client={queryClient}>
+          <BottomSheetModalProvider>
+            <SettingsProvider>
+              <OnboardingProvider>
+                <FavouriteProvider>
+                  <AppContent />
+                </FavouriteProvider>
+              </OnboardingProvider>
+            </SettingsProvider>
+          </BottomSheetModalProvider>
+        </QueryClientProvider>
       </SQLiteProvider>
     </GestureHandlerRootView>
   );
