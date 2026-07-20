@@ -11,12 +11,10 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { loadStreak } from "@/lib/StreakService";
-import type { ReadingStreak } from "@/lib/types";
-import { useSQLiteContext } from "expo-sqlite";
-import { useCallback, useMemo, useState } from "react";
-import { ReadingsDB, type DayData } from "@/lib/database";
+import { useCallback, useMemo } from "react";
 import { useSettings } from "@/lib/SettingsContext";
+import { useTodayReading } from "@/lib/hooks/useTodayReading";
+import { useStreak } from "@/lib/hooks/useStreak";
 
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -26,49 +24,32 @@ const SECTION_LABELS: Record<string, string> = {
   GOSPEL: "Gospel",
 };
 
+function getWeekStart(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
-  const db = useSQLiteContext();
-  const readingDate = useMemo(() => new Date(), []);
   const { settings, updateSetting } = useSettings();
+  const readingDate = useMemo(() => new Date(), []);
 
-  const [dayData, setDayData] = useState<DayData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [streak, setStreak] = useState<ReadingStreak | null>(null);
-
-  function getWeekStart(date: Date): string {
-    const d = new Date(date);
-    const day = d.getDay();
-    d.setDate(d.getDate() - day);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${dd}`;
-  }
-
-  const fetchReadings = useCallback(() => {
-    const readingsDB = new ReadingsDB(db);
-    readingsDB
-      .getReadingsForDate(readingDate, settings.language, settings.version)
-      .then((result) => {
-        setDayData(result);
-      })
-      .catch((err) => {
-        setError(err?.message ?? "Failed to load readings. Please try again.");
-        setDayData(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [db, readingDate, settings.language, settings.version]);
+  const { data: dayData, isLoading, error: queryError } = useTodayReading(
+    readingDate,
+    settings.language,
+    settings.version,
+  );
+  const { data: streak, refetch: refetchStreak } = useStreak();
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      fetchReadings();
-      loadStreak().then(setStreak);
-    }, [fetchReadings]),
+      refetchStreak();
+    }, [refetchStreak]),
   );
 
   const isMulti = dayData && dayData.readings.length > 1;
@@ -137,12 +118,12 @@ export default function HomeScreen() {
         </View>
 
         {/* READING CARD AREA (loading / error / no-data / loaded) */}
-        {loading ? (
+        {isLoading ? (
           /* LOADING STATE */
           <View className="bg-surface dark:bg-surface-dark mb-7 flex-1 items-center justify-center rounded-2xl px-6 py-8">
             <ActivityIndicator size="large" color="#3b82f6" />
           </View>
-        ) : error ? (
+        ) : queryError ? (
           /* ERROR STATE */
           <View className="bg-surface dark:bg-surface-dark mb-7 flex-1 items-center justify-center rounded-2xl px-6 py-8">
             <Ionicons name="alert-circle-outline" size={44} color="#ef4444" />
@@ -150,7 +131,7 @@ export default function HomeScreen() {
               className="mt-4 text-center text-base text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
-              {error}
+              {queryError?.message ?? "Failed to load readings."}
             </Text>
             <TouchableOpacity
               onPress={() => router.push("/settings")}

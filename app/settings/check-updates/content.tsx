@@ -339,6 +339,10 @@ export default function ContentUpdateScreen() {
           if (items?.includes("__holidays__")) {
             queryClient.refetchQueries({ queryKey: ["holidays", lang.code], type: "all" });
           }
+          const readingVersions = items?.filter((v) => !v.startsWith("__")) ?? [];
+          if (readingVersions.length > 0) {
+            queryClient.invalidateQueries({ queryKey: ["readings"] });
+          }
         }
       }
       setStep("success");
