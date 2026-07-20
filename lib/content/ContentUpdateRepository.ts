@@ -34,6 +34,28 @@ export async function getSyncedReadingCounts(
   );
 }
 
+export async function getSyncedLangPackVersions(
+  db: SQLiteDatabase,
+): Promise<{ year: number; language: string; type: string; contentVersion: number }[]> {
+  return db.getAllAsync<{ year: number; language: string; type: string; contentVersion: number }>(
+    `SELECT year, language, type, contentVersion
+     FROM SyncRecord
+     WHERE type IN ('holidays', 'day-info')
+     ORDER BY year DESC, language ASC`,
+  );
+}
+
+export async function getSyncedReadingVersions(
+  db: SQLiteDatabase,
+): Promise<{ year: number; language: string; version: string; contentVersion: number }[]> {
+  return db.getAllAsync<{ year: number; language: string; version: string; contentVersion: number }>(
+    `SELECT year, language, version, contentVersion
+     FROM SyncRecord
+     WHERE type = 'readings'
+     ORDER BY year DESC, language ASC, version ASC`,
+  );
+}
+
 export async function getDownloadedLangsForYear(
   db: SQLiteDatabase,
   year: number,
@@ -51,13 +73,14 @@ export async function getDownloadedVersionsForYearLang(
   db: SQLiteDatabase,
   year: number,
   lang: string,
-): Promise<{ version: string; versionFullName: string; pulledAt: string }[]> {
+): Promise<{ version: string; versionFullName: string; pulledAt: string; contentVersion: number }[]> {
   return db.getAllAsync<{
     version: string;
     versionFullName: string;
     pulledAt: string;
+    contentVersion: number;
   }>(
-    `SELECT version, versionFullName, pulledAt
+    `SELECT version, versionFullName, pulledAt, contentVersion
      FROM SyncRecord
      WHERE year = ? AND language = ? AND type = 'readings'
      ORDER BY version`,

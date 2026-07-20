@@ -22,7 +22,10 @@ import {
   commitStatements,
   getSyncedYears,
   getSyncedReadingCounts,
+  getSyncedReadingVersions,
+  getSyncedLangPackVersions,
   getDownloadedVersionsForYearLang,
+  isContentDownloaded,
 } from "../../../lib/content";
 import {
   IdleStep,
@@ -48,24 +51,32 @@ export default function ContentUpdateScreen() {
   const [expandedLangs, setExpandedLangs] = useState<Record<string, boolean>>({});
 
   const [downloadedYears, setDownloadedYears] = useState<number[]>([]);
-  const [downloadedVersions, setDownloadedVersions] = useState<Record<string, { version: string; pulledAt: string }[]>>({});
+  const [downloadedVersions, setDownloadedVersions] = useState<Record<string, { version: string; pulledAt: string; contentVersion: number }[]>>({});
+  const [downloadedLangPacks, setDownloadedLangPacks] = useState<Record<string, { holidays: boolean; dayInfo: boolean }>>({});
   const [syncedReadingCounts, setSyncedReadingCounts] = useState<Record<number, number>>({});
+  const [syncedLangPackVersions, setSyncedLangPackVersions] = useState<{ year: number; language: string; type: string; contentVersion: number }[]>([]);
+  const [syncedReadingVersions, setSyncedReadingVersions] = useState<{ year: number; language: string; version: string; contentVersion: number }[]>([]);
+  const [isYearLoading, setIsYearLoading] = useState(false);
 
   const loadSyncedData = useCallback(async () => {
-    const [years, counts] = await Promise.all([
+    const [years, readingCounts, langPackVersions, readingVersions] = await Promise.all([
       getSyncedYears(db),
       getSyncedReadingCounts(db),
+      getSyncedLangPackVersions(db),
+      getSyncedReadingVersions(db),
     ]);
     setDownloadedYears(years);
-    const map: Record<number, number> = {};
-    for (const c of counts) {
-      map[c.year] = c.syncedCount;
+    const readingMap: Record<number, number> = {};
+    for (const c of readingCounts) {
+      readingMap[c.year] = c.syncedCount;
     }
-    setSyncedReadingCounts(map);
+    setSyncedReadingCounts(readingMap);
+    setSyncedLangPackVersions(langPackVersions);
+    setSyncedReadingVersions(readingVersions);
   }, [db]);
 
   const loadDownloadedVersions = useCallback(async (year: number, languages: { code: string }[]) => {
-    const result: Record<string, { version: string; pulledAt: string }[]> = {};
+    const result: Record<string, { version: string; pulledAt: string; contentVersion: number }[]> = {};
     for (const lang of languages) {
       const versions = await getDownloadedVersionsForYearLang(db, year, lang.code);
       if (versions.length > 0) {
@@ -73,6 +84,18 @@ export default function ContentUpdateScreen() {
       }
     }
     setDownloadedVersions(result);
+  }, [db]);
+
+  const loadLangPackStatus = useCallback(async (year: number, languages: { code: string }[]) => {
+    const result: Record<string, { holidays: boolean; dayInfo: boolean }> = {};
+    for (const lang of languages) {
+      const [hasHolidays, hasDayInfo] = await Promise.all([
+        isContentDownloaded(db, year, lang.code, "holidays"),
+        isContentDownloaded(db, year, lang.code, "day-info"),
+      ]);
+      result[lang.code] = { holidays: hasHolidays, dayInfo: hasDayInfo };
+    }
+    setDownloadedLangPacks(result);
   }, [db]);
 
   const [progress, setProgress] = useState(0);
@@ -89,8 +112,8 @@ export default function ContentUpdateScreen() {
     0,
   );
 
-  const totalDownloadTasks = Object.entries(selectedLangs).reduce(
-    (sum, [_, versions]) => sum + 2 + versions.length,
+  const totalDownloadTasks = Object.values(selectedLangs).reduce(
+    (sum, items) => sum + items.length,
     0,
   );
 
@@ -104,16 +127,34 @@ export default function ContentUpdateScreen() {
     ? selectedYear.languages
         .filter((l) => selectedLangs[l.code]?.length)
         .flatMap((l) =>
-          selectedLangs[l.code].map((vCode) => {
-            const v = l.versions.find((ver) => ver.code === vCode);
-            return `${l.name} — ${v?.name ?? vCode.toUpperCase()}`;
-          }),
+          selectedLangs[l.code]
+            .filter((vCode) => !vCode.startsWith("__"))
+            .map((vCode) => {
+              const v = l.versions.find((ver) => ver.code === vCode);
+              return `${l.name} — ${v?.name ?? vCode.toUpperCase()}`;
+            })
+            .concat(
+              selectedLangs[l.code]
+                .filter((vCode) => vCode.startsWith("__"))
+                .map((vCode) => {
+                  const label = vCode === "__holidays__" ? "Holidays" : "Day Info";
+                  return `${l.name} — ${label}`;
+                }),
+            ),
         )
     : [];
 
   const goBack = () => {
     setError(null);
-    if (step === "selectYear") {
+    if (step === "checking" || step === "downloading") {
+      abortRef.current = true;
+      setStep("idle");
+      setManifest(null);
+      setSelectedYear(null);
+      setSelectedLangs({});
+      setExpandedLangs({});
+      setProgress(0);
+    } else if (step === "selectYear") {
       setManifest(null);
       setStep("idle");
     } else if (step === "selectLang") {
@@ -145,24 +186,40 @@ export default function ContentUpdateScreen() {
   }, [loadSyncedData]);
 
   const handleYearSelect = useCallback(async (year: YearOption) => {
+    if (isYearLoading) return;
+    setIsYearLoading(true);
     setSelectedYear(year);
     setSelectedLangs({});
     setExpandedLangs({});
-    await loadDownloadedVersions(year.year, year.languages);
-    setStep("selectLang");
-  }, [loadDownloadedVersions]);
+    try {
+      await Promise.all([
+        loadDownloadedVersions(year.year, year.languages),
+        loadLangPackStatus(year.year, year.languages),
+      ]);
+      setStep("selectLang");
+    } finally {
+      setIsYearLoading(false);
+    }
+  }, [isYearLoading, loadDownloadedVersions, loadLangPackStatus]);
+
+  const isSentinel = (v: string) => v.startsWith("__");
 
   const toggleLanguageVersions = useCallback(
     (langCode: string, allVersionCodes: string[]) => {
       setSelectedLangs((prev) => {
         const current = prev[langCode] ?? [];
-        const allSelected = current.length === allVersionCodes.length;
-        if (allSelected) {
-          const next = { ...prev };
-          delete next[langCode];
-          return next;
+        const readingSelections = current.filter((v) => !isSentinel(v));
+        const allReadingSelected = readingSelections.length === allVersionCodes.length;
+        const sentinels = current.filter(isSentinel);
+        if (allReadingSelected) {
+          if (sentinels.length === 0) {
+            const next = { ...prev };
+            delete next[langCode];
+            return next;
+          }
+          return { ...prev, [langCode]: [...sentinels] };
         }
-        return { ...prev, [langCode]: [...allVersionCodes] };
+        return { ...prev, [langCode]: [...allVersionCodes, ...sentinels] };
       });
     },
     [],
@@ -188,6 +245,23 @@ export default function ContentUpdateScreen() {
     setExpandedLangs((prev) => ({ ...prev, [langCode]: !prev[langCode] }));
   }, []);
 
+  const handleToggleLangPack = useCallback((langCode: string, type: "holidays" | "dayInfo") => {
+    const key = type === "holidays" ? "__holidays__" : "__dayinfo__";
+    setSelectedLangs((prev) => {
+      const current = prev[langCode] ?? [];
+      const isSelected = current.includes(key);
+      const next = isSelected
+        ? current.filter((v) => v !== key)
+        : [...current, key];
+      if (next.length === 0) {
+        const updated = { ...prev };
+        delete updated[langCode];
+        return updated;
+      }
+      return { ...prev, [langCode]: next };
+    });
+  }, []);
+
   const handleDownload = useCallback(async () => {
     if (!selectedYear) return;
 
@@ -206,51 +280,34 @@ export default function ContentUpdateScreen() {
 
     try {
       for (const lang of selectedYear.languages) {
-        const versions = selectedLangs[lang.code];
-        if (!versions?.length) continue;
+        const items = selectedLangs[lang.code];
+        if (!items?.length) continue;
 
-        if (abortRef.current) return;
+        if (items.includes("__holidays__")) {
+          if (abortRef.current) return;
+          const pkg = await downloadHolidays(lang.holidays.path);
+          const prepared = prepareHolidays(pkg, lang.code);
+          const sync = prepareSyncRecord(year, lang.code, lang.name, null, null, "holidays", "", lang.holidays.version);
+          await commitStatements(db, [...prepared.statements, sync]);
+          updateProgress();
+        }
 
-        const dayInfoPkg = await downloadDayInfo(lang.dayInfo.path);
-        const dayInfoPrepared = prepareDayInfo(dayInfoPkg, lang.code);
-        const dayInfoSync = prepareSyncRecord(
-          year,
-          lang.code,
-          lang.name,
-          null,
-          null,
-          "day-info",
-          "",
-        );
-        await commitStatements(db, [...dayInfoPrepared.statements, dayInfoSync]);
-        updateProgress();
+        if (items.includes("__dayinfo__")) {
+          if (abortRef.current) return;
+          const pkg = await downloadDayInfo(lang.dayInfo.path);
+          const prepared = prepareDayInfo(pkg, lang.code);
+          const sync = prepareSyncRecord(year, lang.code, lang.name, null, null, "day-info", "", lang.dayInfo.version);
+          await commitStatements(db, [...prepared.statements, sync]);
+          updateProgress();
+        }
 
-        if (abortRef.current) return;
-
-        const holidaysPkg = await downloadHolidays(lang.holidays.path);
-        const holidaysPrepared = prepareHolidays(holidaysPkg, lang.code);
-        const holidaysSync = prepareSyncRecord(
-          year,
-          lang.code,
-          lang.name,
-          null,
-          null,
-          "holidays",
-          "",
-        );
-        await commitStatements(db, [...holidaysPrepared.statements, holidaysSync]);
-        updateProgress();
-
-        for (const versionCode of versions) {
+        const readingVersions = items.filter((v) => v !== "__holidays__" && v !== "__dayinfo__");
+        for (const versionCode of readingVersions) {
           if (abortRef.current) return;
 
           const versionMeta = lang.versions.find((v) => v.code === versionCode);
           const readingsPkg = await downloadReadings(versionMeta!.path);
-          const readingsPrepared = prepareReadings(
-            readingsPkg,
-            lang.code,
-            versionCode,
-          );
+          const readingsPrepared = prepareReadings(readingsPkg, lang.code, versionCode);
           const readingsSync = prepareSyncRecord(
             year,
             lang.code,
@@ -259,6 +316,7 @@ export default function ContentUpdateScreen() {
             versionMeta!.name,
             "readings",
             "",
+            versionMeta!.contentVersion,
           );
           await commitStatements(db, [...readingsPrepared.statements, readingsSync]);
           updateProgress();
@@ -268,7 +326,10 @@ export default function ContentUpdateScreen() {
       if (abortRef.current) return;
       await loadSyncedData();
       if (selectedYear) {
-        await loadDownloadedVersions(selectedYear.year, selectedYear.languages);
+        await Promise.all([
+          loadDownloadedVersions(selectedYear.year, selectedYear.languages),
+          loadLangPackStatus(selectedYear.year, selectedYear.languages),
+        ]);
       }
       setStep("success");
     } catch (err) {
@@ -276,9 +337,16 @@ export default function ContentUpdateScreen() {
       const msg =
         err instanceof Error ? err.message : "Download failed. Please try again.";
       setError(msg);
+      await loadSyncedData();
+      if (selectedYear) {
+        await Promise.all([
+          loadDownloadedVersions(selectedYear.year, selectedYear.languages),
+          loadLangPackStatus(selectedYear.year, selectedYear.languages),
+        ]);
+      }
       setStep("selectLang");
     }
-  }, [selectedYear, selectedLangs, totalDownloadTasks, db, loadSyncedData, loadDownloadedVersions]);
+  }, [selectedYear, selectedLangs, totalDownloadTasks, db, loadSyncedData, loadDownloadedVersions, loadLangPackStatus]);
 
   const handleDone = useCallback(() => {
     abortRef.current = true;
@@ -287,6 +355,7 @@ export default function ContentUpdateScreen() {
     setSelectedYear(null);
     setSelectedLangs({});
     setExpandedLangs({});
+    setDownloadedLangPacks({});
     setProgress(0);
     setError(null);
   }, []);
@@ -355,6 +424,8 @@ export default function ContentUpdateScreen() {
               onSelectYear={handleYearSelect}
               downloadedYears={downloadedYears}
               syncedReadingCounts={syncedReadingCounts}
+              syncedLangPackVersions={syncedLangPackVersions}
+              syncedReadingVersions={syncedReadingVersions}
               isDark={isDark}
             />
           )}
@@ -367,9 +438,12 @@ export default function ContentUpdateScreen() {
               totalSelectedItems={totalSelectedItems}
               onToggleLanguage={toggleLanguageVersions}
               onToggleVersion={toggleVersion}
+              onToggleLangPack={handleToggleLangPack}
               onToggleExpand={toggleExpand}
               onDownload={handleDownload}
               downloadedVersions={downloadedVersions}
+              downloadedLangPacks={downloadedLangPacks}
+              syncedLangPackVersions={syncedLangPackVersions}
               isDark={isDark}
             />
           )}

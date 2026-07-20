@@ -12,6 +12,19 @@ import type { YearOption } from "../../app/settings/check-updates/types";
 type DownloadedVersion = {
   version: string;
   pulledAt: string;
+  contentVersion: number;
+};
+
+type LangPackStatus = {
+  holidays: boolean;
+  dayInfo: boolean;
+};
+
+type LangPackVersion = {
+  year: number;
+  language: string;
+  type: string;
+  contentVersion: number;
 };
 
 type Props = {
@@ -21,9 +34,12 @@ type Props = {
   totalSelectedItems: number;
   onToggleLanguage: (langCode: string, allVersionCodes: string[]) => void;
   onToggleVersion: (langCode: string, versionCode: string) => void;
+  onToggleLangPack: (langCode: string, type: "holidays" | "dayInfo") => void;
   onToggleExpand: (langCode: string) => void;
   onDownload: () => void;
   downloadedVersions?: Record<string, DownloadedVersion[]>;
+  downloadedLangPacks?: Record<string, LangPackStatus>;
+  syncedLangPackVersions?: LangPackVersion[];
   isDark: boolean;
 };
 
@@ -34,13 +50,27 @@ function LangSelectionStep({
   totalSelectedItems,
   onToggleLanguage,
   onToggleVersion,
+  onToggleLangPack,
   onToggleExpand,
   onDownload,
   downloadedVersions = {},
+  downloadedLangPacks = {},
+  syncedLangPackVersions = [],
   isDark,
 }: Props) {
   const [isStarting, setIsStarting] = useState(false);
   const canProceed = totalSelectedItems > 0;
+
+  const isLangPackSynced = useCallback(
+    (yearNum: number, langCode: string, type: "holidays" | "dayInfo", manifestVersion: number) => {
+      if (manifestVersion <= 0) return true;
+      const record = syncedLangPackVersions.find(
+        (r) => r.year === yearNum && r.language === langCode && r.type === (type === "holidays" ? "holidays" : "day-info"),
+      );
+      return !!record && record.contentVersion >= manifestVersion;
+    },
+    [syncedLangPackVersions],
+  );
 
   const handleDownloadPress = useCallback(() => {
     if (!canProceed || isStarting) return;
@@ -52,8 +82,11 @@ function LangSelectionStep({
 
   const availableLanguages = year.languages.filter((lang) => {
     const downloaded = downloadedVersions[lang.code];
-    if (!downloaded || downloaded.length === 0) return true;
-    return downloaded.length < lang.versions.length;
+    const hasUnsyncedVersions = !downloaded || downloaded.length < lang.versions.length;
+    const holidaysSynced = isLangPackSynced(year.year, lang.code, "holidays", lang.holidays?.version ?? 0);
+    const dayInfoSynced = isLangPackSynced(year.year, lang.code, "dayInfo", lang.dayInfo?.version ?? 0);
+    const hasUnsyncedPack = !holidaysSynced || !dayInfoSynced;
+    return hasUnsyncedVersions || hasUnsyncedPack;
   });
 
   return (
@@ -83,7 +116,8 @@ function LangSelectionStep({
       {availableLanguages.map((lang) => {
         const isExpanded = expandedLangs[lang.code] ?? false;
         const selectedVersions = selectedLangs[lang.code] ?? [];
-        const allSelected = selectedVersions.length === lang.versions.length;
+        const readingSelections = selectedVersions.filter((v) => !v.startsWith("__"));
+        const allSelected = readingSelections.length === lang.versions.length;
         const someSelected =
           selectedVersions.length > 0 && !allSelected;
 
@@ -189,30 +223,137 @@ function LangSelectionStep({
                             fontWeight: isSelected ? "600" : "400",
                           }}
                         >
-                          {version.name}
+                          {version.name} ({version.code.toUpperCase()})
                         </Text>
                         <View className="mt-0.5 flex-row items-center gap-2">
                           <Text
                             className="text-muted dark:text-muted-dark text-xs"
                             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                           >
-                            {version.code.toUpperCase()}
+                            {version.contentVersion > 0 ? `v${version.contentVersion}` : "Available"}
                           </Text>
-                          {downloaded && (
-                            <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
-                              <Text
-                                className="text-[10px] text-green-600 dark:text-green-400"
-                                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                              >
-                                Synced
-                              </Text>
-                            </View>
-                          )}
+                      {downloaded && downloaded.contentVersion >= version.contentVersion && (
+                        <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
+                          <Text
+                            className="text-[10px] text-green-600 dark:text-green-400"
+                            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                          >
+                            Synced
+                          </Text>
+                        </View>
+                      )}
                         </View>
                       </View>
                     </TouchableOpacity>
                   );
                 })}
+
+                <View className="my-2 border-b border-stone-200 dark:border-stone-700" />
+
+                {(() => {
+                  const holidaysSynced = isLangPackSynced(year.year, lang.code, "holidays", lang.holidays?.version ?? 0);
+                  const dayInfoSynced = isLangPackSynced(year.year, lang.code, "dayInfo", lang.dayInfo?.version ?? 0);
+                  const holidaysSelected = (selectedLangs[lang.code] ?? []).includes("__holidays__");
+                  const dayInfoSelected = (selectedLangs[lang.code] ?? []).includes("__dayinfo__");
+
+                  return (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => onToggleLangPack(lang.code, "holidays")}
+                        activeOpacity={0.7}
+                        className={`flex-row items-center gap-3 my-1 rounded-xl px-4 py-3 ${
+                          holidaysSelected ? "bg-primary/8" : ""
+                        }`}
+                      >
+                        {holidaysSelected ? (
+                          <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
+                        ) : (
+                          <Ionicons
+                            name="ellipse-outline"
+                            size={20}
+                            color={isDark ? "#8a8480" : "#6b6560"}
+                          />
+                        )}
+                        <View className="flex-1">
+                          <Text
+                            className={`text-sm ${holidaysSelected ? "text-primary" : "text-[#2D2A24] dark:text-[#E8E4DC]"}`}
+                            style={{
+                              fontFamily: "ReadingFont",
+                              fontWeight: holidaysSelected ? "600" : "400",
+                            }}
+                          >
+                            Holidays
+                          </Text>
+                          <View className="mt-0.5 flex-row items-center gap-2">
+                            <Text
+                              className="text-muted dark:text-muted-dark text-xs"
+                              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                            >
+                              {lang.holidays.version > 0 ? `v${lang.holidays.version}` : "Available"}
+                            </Text>
+                            {holidaysSynced && (
+                              <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
+                                <Text
+                                  className="text-[10px] text-green-600 dark:text-green-400"
+                                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                                >
+                                  Synced
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => onToggleLangPack(lang.code, "dayInfo")}
+                        activeOpacity={0.7}
+                        className={`flex-row items-center gap-3 my-1 rounded-xl px-4 py-3 ${
+                          dayInfoSelected ? "bg-primary/8" : ""
+                        }`}
+                      >
+                        {dayInfoSelected ? (
+                          <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
+                        ) : (
+                          <Ionicons
+                            name="ellipse-outline"
+                            size={20}
+                            color={isDark ? "#8a8480" : "#6b6560"}
+                          />
+                        )}
+                        <View className="flex-1">
+                          <Text
+                            className={`text-sm ${dayInfoSelected ? "text-primary" : "text-[#2D2A24] dark:text-[#E8E4DC]"}`}
+                            style={{
+                              fontFamily: "ReadingFont",
+                              fontWeight: dayInfoSelected ? "600" : "400",
+                            }}
+                          >
+                            Day Info
+                          </Text>
+                          <View className="mt-0.5 flex-row items-center gap-2">
+                            <Text
+                              className="text-muted dark:text-muted-dark text-xs"
+                              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                            >
+                              {lang.dayInfo.version > 0 ? `v${lang.dayInfo.version}` : "Available"}
+                            </Text>
+                            {dayInfoSynced && (
+                              <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
+                                <Text
+                                  className="text-[10px] text-green-600 dark:text-green-400"
+                                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                                >
+                                  Synced
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  );
+                })()}
               </View>
             )}
           </View>

@@ -19,6 +19,7 @@ async function fetchJSON<T>(url: string): Promise<T> {
   if (!res.ok) {
     throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
   }
+
   return res.json() as Promise<T>;
 }
 
@@ -162,11 +163,12 @@ export function prepareSyncRecord(
   versionFullName: string | null,
   type: string,
   checksum: string,
+  contentVersion: number,
 ): PreparedStatement {
   return {
     sql: `INSERT OR REPLACE INTO SyncRecord
           (id, type, language, languageFullName, version, versionFullName, year, checksum, pulledAt, contentVersion)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)`,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)`,
     params: [
       generateSyncId(type, year, lang, version ?? "none"),
       type,
@@ -176,6 +178,7 @@ export function prepareSyncRecord(
       versionFullName ?? "",
       year,
       checksum,
+      contentVersion,
     ],
   };
 }
