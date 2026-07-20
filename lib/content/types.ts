@@ -38,7 +38,7 @@ export type HolidayPackage = {
   version: number;
   holidays: {
     date: string;
-    title: string;
+    name: string;
     description: string;
     type: string;
   }[];

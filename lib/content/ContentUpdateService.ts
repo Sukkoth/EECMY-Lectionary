@@ -12,7 +12,10 @@ const JSDELIVR_HEADERS = {
 };
 
 async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: JSDELIVR_HEADERS });
+  /**
+   * Add query param `t` to bypass caching
+   */
+  const res = await fetch(`${url}?t=${Date.now()}`, { headers: JSDELIVR_HEADERS });
   if (!res.ok) {
     throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
   }
@@ -20,7 +23,7 @@ async function fetchJSON<T>(url: string): Promise<T> {
 }
 
 export async function fetchManifest(): Promise<Manifest> {
-  return fetchJSON<Manifest>(`${CONTENT_BASE_URL}/manifest.json?t=${Date.now()}`);
+  return fetchJSON<Manifest>(`${CONTENT_BASE_URL}/manifest.json`);
 }
 
 export async function downloadDayInfo(path: string): Promise<DayInfoPackage> {
@@ -112,11 +115,11 @@ export function prepareHolidays(
       sql: `INSERT OR REPLACE INTO Holiday (id, language, date, type, name)
             VALUES (?, ?, ?, ?, ?)`,
       params: [
-        generateHolidayId(lang, row.date, row.title),
+        generateHolidayId(lang, row.date, row.name),
         lang,
         row.date,
         row.type,
-        row.title,
+        row.name,
       ],
     });
   }
@@ -184,11 +187,7 @@ export async function commitStatements(
   // TODO: uncomment when DB writes are enabled
   await db.withTransactionAsync(async () => {
     for (const stmt of stmts) {
-      console.log(stmt.params);
       await db.runAsync(stmt.sql, ...stmt.params);
     }
   });
-  console.log(
-    `[ContentUpdate] Prepared ${stmts.length} statements (DB write not yet enabled)`,
-  );
 }
