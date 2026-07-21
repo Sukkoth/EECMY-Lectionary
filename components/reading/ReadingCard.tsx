@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
 import { Share, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from '@expo/vector-icons/Octicons';
 import type { ReadingRow } from "@/lib/database";
-import { useFavourite } from "@/lib/FavouriteContext";
-import { isFavourite as checkFavourite } from "@/lib/FavouriteRepository";
+import { useFavourites, useAddFavourite, useRemoveFavourite } from "@/lib/hooks/useFavourites";
 
 type ReadingCardProps = {
   date: string;
@@ -15,22 +13,16 @@ type ReadingCardProps = {
 };
 
 export default function ReadingCard({ date, reading, sectionLabel, fontSize, align }: ReadingCardProps) {
-  const { addFavourite, removeFavourite, optimisticAdd, optimisticRemove } = useFavourite();
-  const [favourited, setFavourited] = useState(() => checkFavourite(date, reading.order));
-
-  useEffect(() => {
-    setFavourited(checkFavourite(date, reading.order));
-  }, [date, reading.order]);
+  const { data: favourites = [] } = useFavourites();
+  const addMut = useAddFavourite();
+  const removeMut = useRemoveFavourite();
+  const favourited = favourites.some((f) => f.date === date && f.order === reading.order);
 
   const handleToggleFavourite = () => {
     if (favourited) {
-      setFavourited(false);
-      optimisticRemove(date, reading.order);
-      removeFavourite(date, reading.order).catch(console.warn);
+      removeMut.mutate({ date, order: reading.order });
     } else {
-      setFavourited(true);
-      optimisticAdd(date, reading.order);
-      addFavourite(date, reading.order).catch(console.warn);
+      addMut.mutate({ date, order: reading.order });
     }
   };
 

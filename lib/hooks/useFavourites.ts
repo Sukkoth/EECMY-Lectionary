@@ -1,0 +1,124 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSQLiteContext } from "expo-sqlite";
+import {
+  type FavouriteRow,
+  type HydratedFavourite,
+  addFavourite as repoAdd,
+  removeFavourite as repoRemove,
+  clearAll as repoClear,
+  hydrateFavourites,
+} from "../FavouriteRepository";
+
+export const FAVOURITE_KEYS = {
+  all: ["favourites"] as const,
+  hydrated: (language: string, version: string) =>
+    ["favourites", "hydrated", language, version] as const,
+};
+
+/** Returns all favourites as raw rows (date, order, createdAt). Lightweight — no reading text joined. */
+export function useFavourites() {
+  const db = useSQLiteContext();
+
+  return useQuery({
+    queryKey: FAVOURITE_KEYS.all,
+    queryFn: async (): Promise<FavouriteRow[]> => {
+      return db.getAllAsync<FavouriteRow>(
+        `SELECT * FROM Favourite ORDER BY createdAt DESC`,
+      );
+    },
+  });
+}
+
+/** Returns favourites joined with Reading data (reference, text) for display in the favourites tab. */
+export function useHydratedFavourites(language: string, version: string) {
+  const db = useSQLiteContext();
+  const { data: favourites = [] } = useFavourites();
+
+  return useQuery({
+    queryKey: FAVOURITE_KEYS.hydrated(language, version),
+    queryFn: async (): Promise<HydratedFavourite[]> => {
+      if (favourites.length === 0) return [];
+      return hydrateFavourites(db, favourites, language, version);
+    },
+  });
+}
+
+export function useAddFavourite() {
+  const db = useSQLiteContext();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ date, order }: { date: string; order: number }) => {
+      await repoAdd(db, date, order);
+    },
+    onMutate: async ({ date, order }) => {
+      await queryClient.cancelQueries({ queryKey: FAVOURITE_KEYS.all });
+      const previous = queryClient.getQueryData<FavouriteRow[]>(FAVOURITE_KEYS.all);
+      queryClient.setQueryData<FavouriteRow[]>(FAVOURITE_KEYS.all, (old = []) => [
+        { date, order, createdAt: new Date().toISOString() },
+        ...old,
+      ]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(FAVOURITE_KEYS.all, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.refetchQueries({ queryKey: FAVOURITE_KEYS.all, type: "all" });
+    },
+  });
+}
+
+export function useRemoveFavourite() {
+  const db = useSQLiteContext();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ date, order }: { date: string; order: number }) => {
+      await repoRemove(db, date, order);
+    },
+    onMutate: async ({ date, order }) => {
+      await queryClient.cancelQueries({ queryKey: FAVOURITE_KEYS.all });
+      const previous = queryClient.getQueryData<FavouriteRow[]>(FAVOURITE_KEYS.all);
+      queryClient.setQueryData<FavouriteRow[]>(FAVOURITE_KEYS.all, (old = []) =>
+        old.filter((f) => !(f.date === date && f.order === order)),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(FAVOURITE_KEYS.all, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.refetchQueries({ queryKey: FAVOURITE_KEYS.all, type: "all" });
+    },
+  });
+}
+
+export function useClearFavourites() {
+  const db = useSQLiteContext();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await repoClear(db);
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: FAVOURITE_KEYS.all });
+      const previous = queryClient.getQueryData<FavouriteRow[]>(FAVOURITE_KEYS.all);
+      queryClient.setQueryData<FavouriteRow[]>(FAVOURITE_KEYS.all, []);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(FAVOURITE_KEYS.all, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.refetchQueries({ queryKey: FAVOURITE_KEYS.all, type: "all" });
+    },
+  });
+}

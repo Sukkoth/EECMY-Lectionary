@@ -9,7 +9,6 @@ import { SQLiteProvider } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SettingsProvider } from "@/lib/SettingsContext";
-import { FavouriteProvider } from "@/lib/FavouriteContext";
 import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -105,9 +104,7 @@ export default function RootLayout() {
           <BottomSheetModalProvider>
             <SettingsProvider>
               <OnboardingProvider>
-                <FavouriteProvider>
-                  <AppContent />
-                </FavouriteProvider>
+                <AppContent />
               </OnboardingProvider>
             </SettingsProvider>
           </BottomSheetModalProvider>

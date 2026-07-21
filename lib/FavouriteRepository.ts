@@ -14,18 +14,6 @@ export type HydratedFavourite = {
   text: string;
 };
 
-let favourites: FavouriteRow[] = [];
-
-async function reloadCache(db: SQLiteDatabase): Promise<void> {
-  favourites = await db.getAllAsync<FavouriteRow>(
-    `SELECT * FROM Favourite ORDER BY createdAt DESC`,
-  );
-}
-
-export async function loadFavourites(db: SQLiteDatabase): Promise<void> {
-  await reloadCache(db);
-}
-
 export async function addFavourite(
   db: SQLiteDatabase,
   date: string,
@@ -35,7 +23,6 @@ export async function addFavourite(
     `INSERT OR IGNORE INTO Favourite (date, "order") VALUES (?, ?)`,
     [date, order],
   );
-  await reloadCache(db);
 }
 
 export async function removeFavourite(
@@ -47,33 +34,6 @@ export async function removeFavourite(
     `DELETE FROM Favourite WHERE date = ? AND "order" = ?`,
     [date, order],
   );
-  await reloadCache(db);
-}
-
-/**
- * Optimistically add to the in-memory cache (no DB operation).
- * Used for instant UI feedback before the async DB write completes.
- */
-export function optimisticAdd(date: string, order: number): void {
-  if (!favourites.some((f) => f.date === date && f.order === order)) {
-    favourites = [{ date, order, createdAt: new Date().toISOString() }, ...favourites];
-  }
-}
-
-/**
- * Optimistically remove from the in-memory cache (no DB operation).
- * Used for instant UI feedback before the async DB delete completes.
- */
-export function optimisticRemove(date: string, order: number): void {
-  favourites = favourites.filter((f) => !(f.date === date && f.order === order));
-}
-
-export function isFavourite(date: string, order: number): boolean {
-  return favourites.some((f) => f.date === date && f.order === order);
-}
-
-export function getFavourites(): FavouriteRow[] {
-  return favourites;
 }
 
 export async function hydrateFavourites(
@@ -86,9 +46,7 @@ export async function hydrateFavourites(
 
   const whereParts: string[] = [];
   const params: (string | number)[] = [];
-  // JOIN params first (they appear first in the SQL)
   params.push(language, version);
-  // WHERE params after (one pair per favourite)
   for (const fav of favourites) {
     whereParts.push('(f.date = ? AND f."order" = ?)');
     params.push(fav.date, fav.order);
@@ -106,5 +64,4 @@ export async function hydrateFavourites(
 
 export async function clearAll(db: SQLiteDatabase): Promise<void> {
   await db.runAsync(`DELETE FROM Favourite`);
-  favourites = [];
 }

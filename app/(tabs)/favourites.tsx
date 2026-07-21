@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   Text,
   View,
@@ -10,11 +10,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from "@expo/vector-icons/Octicons";
-import { useFocusEffect, router } from "expo-router";
-import { useSQLiteContext } from "expo-sqlite";
-import { useFavourite } from "@/lib/FavouriteContext";
+import { router, useFocusEffect } from "expo-router";
 import { useSettings } from "@/lib/SettingsContext";
-import { type HydratedFavourite, hydrateFavourites } from "@/lib/FavouriteRepository";
+import { useHydratedFavourites, useRemoveFavourite, useClearFavourites, FAVOURITE_KEYS } from "@/lib/hooks/useFavourites";
+import { useQueryClient } from "@tanstack/react-query";
+import { type HydratedFavourite } from "@/lib/FavouriteRepository";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -23,27 +23,17 @@ function formatDate(iso: string): string {
 
 export default function FavouritesScreen() {
   const isDark = useColorScheme() === "dark";
-  const { favourites, removeFavourite, clearAll } = useFavourite();
-  const db = useSQLiteContext();
   const { settings } = useSettings();
-
-  const [hydratedFavourites, setHydratedFavourites] = useState<HydratedFavourite[]>([]);
+  const { data: favourites = [] } = useHydratedFavourites(settings.language, settings.version);
+  const removeMut = useRemoveFavourite();
+  const clearMut = useClearFavourites();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  const queryClient = useQueryClient();
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-
-      async function hydrate() {
-        const rows = await hydrateFavourites(db, favourites, settings.language, settings.version);
-        if (!cancelled) setHydratedFavourites(rows);
-      }
-
-      hydrate().catch((err) => console.warn("[Favourites] Hydration failed:", err));
-      return () => {
-        cancelled = true;
-      };
-    }, [favourites, settings.language, settings.version, db]),
+      queryClient.refetchQueries({ queryKey: FAVOURITE_KEYS.all, type: "all" });
+    }, [queryClient]),
   );
 
   function handleClearAll() {
@@ -60,7 +50,7 @@ export default function FavouritesScreen() {
   }
 
   function handleDelete(fav: HydratedFavourite) {
-    removeFavourite(fav.date, fav.order);
+    removeMut.mutate({ date: fav.date, order: fav.order });
   }
 
   // ─── Empty state ────────────────────────────────────────────
@@ -148,7 +138,7 @@ export default function FavouritesScreen() {
         <View className="mb-5 h-px bg-gray-200 dark:bg-gray-700" />
 
         {/* Favourite cards */}
-        {hydratedFavourites.map((fav) => (
+        {favourites.map((fav) => (
           <View
             key={`${fav.date}-${fav.order}`}
             className="bg-surface dark:bg-surface-dark mb-4 rounded-2xl p-5"
@@ -252,7 +242,7 @@ export default function FavouritesScreen() {
                 className="rounded-xl bg-red-500 px-5 py-2.5"
                 onPress={() => {
                   setShowClearConfirm(false);
-                  clearAll();
+                  clearMut.mutate();
                 }}
               >
                 <Text

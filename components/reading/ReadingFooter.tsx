@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
 import { Share, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from "@expo/vector-icons/Octicons";
-import { useFavourite } from "@/lib/FavouriteContext";
-import { isFavourite as checkFavourite } from "@/lib/FavouriteRepository";
+import { useFavourites, useAddFavourite, useRemoveFavourite } from "@/lib/hooks/useFavourites";
 
 type ReadingFooterProps = {
   date: string;
@@ -14,22 +12,16 @@ type ReadingFooterProps = {
 };
 
 export default function ReadingFooter({ date, order, reference, text, version }: ReadingFooterProps) {
-  const { addFavourite, removeFavourite, optimisticAdd, optimisticRemove } = useFavourite();
-  const [favourited, setFavourited] = useState(() => checkFavourite(date, order));
-
-  useEffect(() => {
-    setFavourited(checkFavourite(date, order));
-  }, [date, order]);
+  const { data: favourites = [] } = useFavourites();
+  const addMut = useAddFavourite();
+  const removeMut = useRemoveFavourite();
+  const favourited = favourites.some((f) => f.date === date && f.order === order);
 
   const handleToggleFavourite = () => {
     if (favourited) {
-      setFavourited(false);
-      optimisticRemove(date, order);
-      removeFavourite(date, order).catch(console.warn);
+      removeMut.mutate({ date, order });
     } else {
-      setFavourited(true);
-      optimisticAdd(date, order);
-      addFavourite(date, order).catch(console.warn);
+      addMut.mutate({ date, order });
     }
   };
 
