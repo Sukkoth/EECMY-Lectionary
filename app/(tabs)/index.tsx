@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
 import { useStreak } from "@/lib/hooks/useStreak";
@@ -37,7 +37,7 @@ function getWeekStart(date: Date): string {
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings, updateSetting } = useSettings();
-  const readingDate = useMemo(() => new Date(), []);
+  const readingDate = new Date();
 
   const { data: dayData, isLoading, error: queryError } = useTodayReading(
     readingDate,
@@ -134,7 +134,7 @@ export default function HomeScreen() {
               {queryError?.message ?? "Failed to load readings."}
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/settings")}
+              onPress={() => router.push("/settings/check-updates")}
               activeOpacity={0.7}
               className="bg-primary mt-6 rounded-xl px-6 py-3"
             >
@@ -163,7 +163,7 @@ export default function HomeScreen() {
               Readings may not have been downloaded yet.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/settings")}
+              onPress={() => router.push("/settings/check-updates")}
               activeOpacity={0.7}
               className="bg-primary mt-6 rounded-xl px-6 py-3"
             >

@@ -3,7 +3,8 @@ import { View } from "react-native";
 import PagerView from "react-native-pager-view";
 import { DayPage } from "./DayPage";
 import { toDateString, type DayData } from "@/lib/database";
-import { HALF_WINDOW } from "@/lib/ReadingRepository";
+
+const CENTER_INDEX = 2;
 
 type SwiperItem = {
   date: Date;
@@ -12,28 +13,27 @@ type SwiperItem = {
 
 type ReadingSwiperProps = {
   data: SwiperItem[];
-  initialIndex: number;
   onPageChange: (date: Date, position: number) => void;
-  /** Increment to trigger a snap to center after window rebuild. */
   rebuildKey: number;
 };
 
-export function ReadingSwiper({ data, initialIndex, onPageChange, rebuildKey }: ReadingSwiperProps) {
+export function ReadingSwiper({ data, onPageChange, rebuildKey }: ReadingSwiperProps) {
   const pagerRef = useRef<PagerView>(null);
 
   const handlePageSelected = useCallback(
     (e: { nativeEvent: { position: number } }) => {
-      const item = data[e.nativeEvent.position];
-      onPageChange(item.date, e.nativeEvent.position);
+      const position = e.nativeEvent.position;
+      if (position === CENTER_INDEX) return;
+      const item = data[position];
+      onPageChange(item.date, position);
     },
     [data, onPageChange],
   );
 
-  // When the window is rebuilt, snap back to center without animation
   useEffect(() => {
     if (rebuildKey > 0 && pagerRef.current) {
       requestAnimationFrame(() => {
-        pagerRef.current?.setPageWithoutAnimation(HALF_WINDOW);
+        pagerRef.current?.setPageWithoutAnimation(CENTER_INDEX);
       });
     }
   }, [rebuildKey]);
@@ -42,7 +42,7 @@ export function ReadingSwiper({ data, initialIndex, onPageChange, rebuildKey }: 
     <PagerView
       ref={pagerRef}
       style={{ flex: 1 }}
-      initialPage={initialIndex}
+      initialPage={CENTER_INDEX}
       onPageSelected={handlePageSelected}
     >
       {data.map((item) => (

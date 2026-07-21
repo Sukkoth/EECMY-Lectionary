@@ -33,14 +33,14 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
             >
               {weekday}, {formattedDate}
             </Text>
-            {title ? (
+
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-xs uppercase tracking-widest"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                {title}
+                {title ?? " "}
               </Text>
-            ) : null}
+
           </View>
 
           {/* Right: language switch + theme toggle + close */}

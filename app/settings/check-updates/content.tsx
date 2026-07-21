@@ -10,6 +10,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSettings } from "../../../lib/SettingsContext";
 import type { Manifest, YearOption, WizardStep } from "../../../types/check-update";
 import {
   fetchManifest,
@@ -42,6 +43,7 @@ export default function ContentUpdateScreen() {
   const isDark = useColorScheme() === "dark";
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
+  const { settings } = useSettings();
 
   const [step, setStep] = useState<WizardStep>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -340,8 +342,19 @@ export default function ContentUpdateScreen() {
             queryClient.refetchQueries({ queryKey: ["holidays", lang.code], type: "all" });
           }
           const readingVersions = items?.filter((v) => !v.startsWith("__")) ?? [];
-          if (readingVersions.length > 0) {
-            queryClient.invalidateQueries({ queryKey: ["readings"] });
+          for (const versionCode of readingVersions) {
+            if (lang.code === settings.language && versionCode === settings.version) {
+              queryClient.invalidateQueries({
+                predicate: (query) => {
+                  const key = query.queryKey;
+                  return (
+                    key[0] === "readings" &&
+                    key[2] === lang.code &&
+                    key[3] === versionCode
+                  );
+                },
+              });
+            }
           }
         }
       }
@@ -360,7 +373,7 @@ export default function ContentUpdateScreen() {
       }
       setStep("selectLang");
     }
-  }, [selectedYear, selectedLangs, totalDownloadTasks, db, loadSyncedData, loadDownloadedVersions, loadLangPackStatus, queryClient]);
+  }, [selectedYear, selectedLangs, totalDownloadTasks, db, loadSyncedData, loadDownloadedVersions, loadLangPackStatus, queryClient, settings.language, settings.version]);
 
   const handleDone = useCallback(() => {
     abortRef.current = true;
