@@ -43,8 +43,8 @@ function generateDayInfoId(lang: string, date: string): string {
   return `dayinfo:${lang}:${date}`;
 }
 
-function generateHolidayId(lang: string, date: string, name: string): string {
-  return `holiday:${lang}:${date}:${name}`;
+function generateHolidayId(lang: string, date: string, index: number): string {
+  return `holiday:${lang}:${date}:${index}`;
 }
 
 function generateReadingId(
@@ -110,13 +110,17 @@ export function prepareHolidays(
   lang: string,
 ): PreparedHolidays {
   const statements: PreparedStatement[] = [];
+  const dateCounts: Record<string, number> = {};
 
   for (const row of pkg.holidays) {
+    const index = dateCounts[row.date] ?? 0;
+    dateCounts[row.date] = index + 1;
+
     statements.push({
       sql: `INSERT OR REPLACE INTO Holiday (id, language, date, type, name)
             VALUES (?, ?, ?, ?, ?)`,
       params: [
-        generateHolidayId(lang, row.date, row.name),
+        generateHolidayId(lang, row.date, index),
         lang,
         row.date,
         row.type,
@@ -154,6 +158,7 @@ export function prepareReadings(
 
   return { statements };
 }
+
 
 export function prepareSyncRecord(
   year: number,

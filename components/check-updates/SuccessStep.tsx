@@ -20,9 +20,9 @@ function SuccessStep({
 }: Props) {
   return (
     <View className="flex-1 justify-center">
-      <View className="bg-surface dark:bg-surface-dark items-center rounded-2xl px-6 py-10">
-        <View className="mb-4 rounded-full bg-green-500/10 p-4">
-          <Ionicons name="checkmark-circle" size={48} color="#16a34a" />
+      <View className="bg-surface dark:bg-surface-dark items-center rounded-2xl p-6">
+        <View className="mb-4 items-center justify-center rounded-full bg-green-500/10 p-5">
+          <Ionicons name="checkmark-circle" size={44} color="#16a34a" />
         </View>
 
         <Text
@@ -33,28 +33,27 @@ function SuccessStep({
         </Text>
 
         <Text
-          className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
+          className="text-muted dark:text-muted-dark mt-1 text-center text-sm px-2"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
-          {totalSelectedItems} {totalSelectedItems === 1 ? "item" : "items"} downloaded
-          successfully.
+          {totalSelectedItems} {totalSelectedItems === 1 ? "package" : "packages"} downloaded & synced to your device for offline reading.
         </Text>
 
-        <View className="mt-6 w-full border-t border-stone-200 pt-4 dark:border-stone-700">
-          <InfoRow label="Year" value={String(year.year)} />
+        <View className="mt-5 w-full border-t border-stone-200/80 pt-4 dark:border-stone-800/80">
+          <InfoRow label="Target Year" value={String(year.year)} />
           <InfoRow
             label="Languages"
             value={selectedLanguageNames.join(", ")}
           />
           {selectedVersionLabels.length <= 8 && (
-            <View className="mt-1">
+            <View className="mt-2">
               <Text
-                className="text-muted dark:text-muted-dark text-sm"
+                className="text-xs text-muted dark:text-muted-dark mb-2"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Versions
+                Synced Packages
               </Text>
-              <View className="mt-1.5 flex-row flex-wrap gap-1.5">
+              <View className="flex-row flex-wrap gap-1.5">
                 {selectedVersionLabels.map((label) => (
                   <View
                     key={label}
@@ -64,7 +63,7 @@ function SuccessStep({
                       className="text-primary text-xs"
                       style={{
                         fontFamily: "ReadingFont",
-                        fontWeight: "500",
+                        fontWeight: "600",
                       }}
                     >
                       {label}
@@ -76,7 +75,7 @@ function SuccessStep({
           )}
           {selectedVersionLabels.length > 8 && (
             <InfoRow
-              label="Versions"
+              label="Synced Packages"
               value={`${selectedVersionLabels.length} total`}
             />
           )}
@@ -85,8 +84,9 @@ function SuccessStep({
         <TouchableOpacity
           onPress={onDone}
           activeOpacity={0.7}
-          className="bg-primary mt-6 w-full rounded-xl py-3.5"
+          className="bg-primary mt-6 w-full flex-row items-center justify-center gap-2 rounded-xl py-3.5 shadow-sm"
         >
+          <Ionicons name="checkmark-sharp" size={18} color="white" />
           <Text
             className="text-center text-base text-white"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
@@ -100,3 +100,4 @@ function SuccessStep({
 }
 
 export default SuccessStep;
+

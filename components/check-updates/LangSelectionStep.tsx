@@ -34,7 +34,10 @@ type Props = {
   totalSelectedItems: number;
   onToggleLanguage: (langCode: string, allVersionCodes: string[]) => void;
   onToggleVersion: (langCode: string, versionCode: string) => void;
-  onToggleLangPack: (langCode: string, type: "holidays" | "dayInfo") => void;
+  onToggleLangPack: (
+    langCode: string,
+    type?: "holidays" | "dayInfo" | "liturgical",
+  ) => void;
   onToggleExpand: (langCode: string) => void;
   onDownload: () => void;
   downloadedVersions?: Record<string, DownloadedVersion[]>;
@@ -54,7 +57,6 @@ function LangSelectionStep({
   onToggleExpand,
   onDownload,
   downloadedVersions = {},
-  downloadedLangPacks = {},
   syncedLangPackVersions = [],
   isDark,
 }: Props) {
@@ -62,10 +64,18 @@ function LangSelectionStep({
   const canProceed = totalSelectedItems > 0;
 
   const isLangPackSynced = useCallback(
-    (yearNum: number, langCode: string, type: "holidays" | "dayInfo", manifestVersion: number) => {
+    (
+      yearNum: number,
+      langCode: string,
+      type: "holidays" | "dayInfo",
+      manifestVersion: number,
+    ) => {
       if (manifestVersion <= 0) return true;
       const record = syncedLangPackVersions.find(
-        (r) => r.year === yearNum && r.language === langCode && r.type === (type === "holidays" ? "holidays" : "day-info"),
+        (r) =>
+          r.year === yearNum &&
+          r.language === langCode &&
+          r.type === (type === "holidays" ? "holidays" : "day-info"),
       );
       return !!record && record.contentVersion >= manifestVersion;
     },
@@ -82,52 +92,83 @@ function LangSelectionStep({
 
   const availableLanguages = year.languages.filter((lang) => {
     const downloaded = downloadedVersions[lang.code];
-    const hasUnsyncedVersions = !downloaded || downloaded.length < lang.versions.length;
-    const holidaysSynced = isLangPackSynced(year.year, lang.code, "holidays", lang.holidays?.version ?? 0);
-    const dayInfoSynced = isLangPackSynced(year.year, lang.code, "dayInfo", lang.dayInfo?.version ?? 0);
+    const hasUnsyncedVersions =
+      !downloaded || downloaded.length < lang.versions.length;
+    const holidaysSynced = isLangPackSynced(
+      year.year,
+      lang.code,
+      "holidays",
+      lang.holidays?.version ?? 0,
+    );
+    const dayInfoSynced = isLangPackSynced(
+      year.year,
+      lang.code,
+      "dayInfo",
+      lang.dayInfo?.version ?? 0,
+    );
     const hasUnsyncedPack = !holidaysSynced || !dayInfoSynced;
     return hasUnsyncedVersions || hasUnsyncedPack;
   });
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-      <View className="bg-surface dark:bg-surface-dark mb-5 rounded-2xl px-5 py-4">
-        <View className="flex-row items-center justify-between">
+      {/* Selected Year Header Card */}
+      <View className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4">
+        <View className="flex-row items-center gap-3">
+          <View className="rounded-lg bg-primary/10 p-2">
+            <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
+          </View>
+          <View>
+            <Text
+              className="text-xs text-muted dark:text-muted-dark"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              Target Year
+            </Text>
+            <Text
+              className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+            >
+              Liturgical Year {year.year}
+            </Text>
+          </View>
+        </View>
+        <View className="rounded-full bg-primary/10 px-3 py-1">
           <Text
-            className="text-muted dark:text-muted-dark text-sm"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            className="text-xs text-primary font-semibold"
+            style={{ fontFamily: "ReadingFont" }}
           >
-            Selected Year
-          </Text>
-          <Text
-            className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-          >
-            {year.year}
+            {year.languages.length} {year.languages.length === 1 ? "Lang" : "Langs"}
           </Text>
         </View>
       </View>
 
-      <Text className="text-primary mb-3 ml-1 mt-2 text-xs uppercase tracking-widest"
-        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}>
-        SELECT CONTENT
-      </Text>
+      {/* Section Label */}
+      <View className="mb-3 flex-row items-center justify-between px-1">
+        <Text
+          className="text-xs uppercase tracking-widest text-primary font-semibold"
+          style={{ fontFamily: "ReadingFont" }}
+        >
+          Select Content Packages
+        </Text>
+      </View>
 
       {availableLanguages.map((lang) => {
         const isExpanded = expandedLangs[lang.code] ?? false;
         const selectedVersions = selectedLangs[lang.code] ?? [];
-        const readingSelections = selectedVersions.filter((v) => !v.startsWith("__"));
+        const readingSelections = selectedVersions.filter(
+          (v) => !v.startsWith("__"),
+        );
         const allSelected = readingSelections.length === lang.versions.length;
-        const someSelected =
-          selectedVersions.length > 0 && !allSelected;
+        const someSelected = selectedVersions.length > 0 && !allSelected;
 
         return (
           <View key={lang.code} className="mb-3">
             <View
-              className={`flex-row items-center justify-between rounded-2xl px-5 py-4 ${
+              className={`bg-surface dark:bg-surface-dark flex-row items-center justify-between rounded-2xl px-5 py-4 border ${
                 allSelected
-                  ? "bg-primary/8 border-2 border-primary/20"
-                  : "bg-surface dark:bg-surface-dark border-2 border-transparent"
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-transparent"
               }`}
             >
               <TouchableOpacity
@@ -138,11 +179,15 @@ function LangSelectionStep({
                 <Ionicons
                   name={isExpanded ? "chevron-down" : "chevron-forward"}
                   size={16}
-                  color={isDark ? "#737373" : "#A3A3A3"}
+                  color={isDark ? "#8a8480" : "#6b6560"}
                 />
-                <View>
+                <View className="flex-1">
                   <Text
-                    className={`text-base ${allSelected ? "text-primary" : "text-[#2D2A24] dark:text-[#E8E4DC]"}`}
+                    className={`text-base ${
+                      allSelected
+                        ? "text-primary"
+                        : "text-[#2D2A24] dark:text-[#E8E4DC]"
+                    }`}
                     style={{
                       fontFamily: "ReadingFont",
                       fontWeight: allSelected ? "600" : "500",
@@ -150,19 +195,25 @@ function LangSelectionStep({
                   >
                     {lang.name}
                   </Text>
-                  {someSelected && (
-                    <Text
-                      className="text-muted dark:text-muted-dark mt-0.5 text-xs"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                    >
-                      {selectedVersions.length} of {lang.versions.length} selected
-                    </Text>
-                  )}
+                  <Text
+                    className="text-xs text-muted dark:text-muted-dark mt-0.5"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                  >
+                    {lang.versions.length}{" "}
+                    {lang.versions.length === 1 ? "version" : "versions"} available
+                    {selectedVersions.length > 0 &&
+                      ` · ${selectedVersions.length} selected`}
+                  </Text>
                 </View>
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => onToggleLanguage(lang.code, lang.versions.map((v) => v.code))}
+                onPress={() =>
+                  onToggleLanguage(
+                    lang.code,
+                    lang.versions.map((v) => v.code),
+                  )
+                }
                 activeOpacity={0.7}
                 className="p-1"
               >
@@ -170,7 +221,7 @@ function LangSelectionStep({
                   <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
                 ) : someSelected ? (
                   <View className="h-6 w-6 items-center justify-center rounded border-2 border-primary">
-                    <View className="bg-primary h-2.5 w-2.5 rounded-sm" />
+                    <View className="h-2.5 w-2.5 rounded-sm bg-primary" />
                   </View>
                 ) : (
                   <Ionicons
@@ -183,7 +234,15 @@ function LangSelectionStep({
             </View>
 
             {isExpanded && (
-              <View className="mt-2 pl-4">
+              <View className="ml-3 mt-2 border-l-2 border-primary/20 pl-3">
+                {/* Bible Versions Header */}
+                <Text
+                  className="mb-1 mt-2 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  Bible Versions
+                </Text>
+
                 {lang.versions.map((version) => {
                   const isSelected = selectedVersions.includes(version.code);
                   const downloaded = downloadedVersions[lang.code]?.find(
@@ -195,10 +254,10 @@ function LangSelectionStep({
                       key={version.code}
                       onPress={() => onToggleVersion(lang.code, version.code)}
                       activeOpacity={0.7}
-                      className={`flex-row items-center gap-3 my-1 rounded-xl px-4 py-3 ${
+                      className={`my-1 flex-row items-center gap-3 rounded-xl px-3.5 py-3 ${
                         isSelected
-                          ? "bg-primary/8"
-                          : ""
+                          ? "bg-primary/10"
+                          : "bg-surface/50 dark:bg-surface-dark/50"
                       }`}
                     >
                       {isSelected ? (
@@ -217,141 +276,132 @@ function LangSelectionStep({
 
                       <View className="flex-1">
                         <Text
-                          className={`text-sm ${isSelected ? "text-primary" : "text-[#2D2A24] dark:text-[#E8E4DC]"}`}
-                          style={{
-                            fontFamily: "ReadingFont",
-                            fontWeight: isSelected ? "600" : "400",
-                          }}
+                          className={`text-sm ${
+                            isSelected
+                              ? "text-primary font-semibold"
+                              : "text-[#2D2A24] dark:text-[#E8E4DC] font-normal"
+                          }`}
+                          style={{ fontFamily: "ReadingFont" }}
                         >
                           {version.name} ({version.code.toUpperCase()})
                         </Text>
                         <View className="mt-0.5 flex-row items-center gap-2">
                           <Text
-                            className="text-muted dark:text-muted-dark text-xs"
+                            className="text-xs text-muted dark:text-muted-dark"
                             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                           >
-                            {version.contentVersion > 0 ? `v${version.contentVersion}` : "Available"}
+                            {version.contentVersion > 0
+                              ? `v${version.contentVersion}`
+                              : "Available"}
                           </Text>
-                      {downloaded && downloaded.contentVersion >= version.contentVersion && (
-                        <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
-                          <Text
-                            className="text-[10px] text-green-600 dark:text-green-400"
-                            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                          >
-                            Synced
-                          </Text>
-                        </View>
-                      )}
+                          {downloaded &&
+                            downloaded.contentVersion >=
+                              version.contentVersion && (
+                              <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
+                                <Text
+                                  className="text-[10px] text-green-600 dark:text-green-400"
+                                  style={{
+                                    fontFamily: "ReadingFont",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  Synced
+                                </Text>
+                              </View>
+                            )}
                         </View>
                       </View>
                     </TouchableOpacity>
                   );
                 })}
 
-                <View className="my-2 border-b border-stone-200 dark:border-stone-700" />
+                {/* Additional Packs Header */}
+                <Text
+                  className="mb-1 mt-3 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  Liturgical Data Pack
+                </Text>
 
                 {(() => {
-                  const holidaysSynced = isLangPackSynced(year.year, lang.code, "holidays", lang.holidays?.version ?? 0);
-                  const dayInfoSynced = isLangPackSynced(year.year, lang.code, "dayInfo", lang.dayInfo?.version ?? 0);
-                  const holidaysSelected = (selectedLangs[lang.code] ?? []).includes("__holidays__");
-                  const dayInfoSelected = (selectedLangs[lang.code] ?? []).includes("__dayinfo__");
+                  const holidaysSynced = isLangPackSynced(
+                    year.year,
+                    lang.code,
+                    "holidays",
+                    lang.holidays?.version ?? 0,
+                  );
+                  const dayInfoSynced = isLangPackSynced(
+                    year.year,
+                    lang.code,
+                    "dayInfo",
+                    lang.dayInfo?.version ?? 0,
+                  );
+                  const isSynced = holidaysSynced && dayInfoSynced;
+
+                  const isSelected =
+                    (selectedLangs[lang.code] ?? []).includes("__holidays__") ||
+                    (selectedLangs[lang.code] ?? []).includes("__dayinfo__");
 
                   return (
-                    <>
-                      <TouchableOpacity
-                        onPress={() => onToggleLangPack(lang.code, "holidays")}
-                        activeOpacity={0.7}
-                        className={`flex-row items-center gap-3 my-1 rounded-xl px-4 py-3 ${
-                          holidaysSelected ? "bg-primary/8" : ""
-                        }`}
-                      >
-                        {holidaysSelected ? (
-                          <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
-                        ) : (
-                          <Ionicons
-                            name="ellipse-outline"
-                            size={20}
-                            color={isDark ? "#8a8480" : "#6b6560"}
-                          />
-                        )}
-                        <View className="flex-1">
+                    <TouchableOpacity
+                      onPress={() => onToggleLangPack(lang.code, "liturgical")}
+                      activeOpacity={0.7}
+                      className={`my-1 flex-row items-center gap-3 rounded-xl px-3.5 py-3 ${
+                        isSelected
+                          ? "bg-primary/10"
+                          : "bg-surface/50 dark:bg-surface-dark/50"
+                      }`}
+                    >
+                      {isSelected ? (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color="#3b82f6"
+                        />
+                      ) : (
+                        <Ionicons
+                          name="ellipse-outline"
+                          size={20}
+                          color={isDark ? "#8a8480" : "#6b6560"}
+                        />
+                      )}
+                      <View className="flex-1">
+                        <Text
+                          className={`text-sm ${
+                            isSelected
+                              ? "text-primary font-semibold"
+                              : "text-[#2D2A24] dark:text-[#E8E4DC] font-normal"
+                          }`}
+                          style={{ fontFamily: "ReadingFont" }}
+                        >
+                          Liturgical Data Pack
+                        </Text>
+                        <View className="mt-0.5 flex-row items-center gap-2">
                           <Text
-                            className={`text-sm ${holidaysSelected ? "text-primary" : "text-[#2D2A24] dark:text-[#E8E4DC]"}`}
+                            className="text-xs text-muted dark:text-muted-dark"
                             style={{
                               fontFamily: "ReadingFont",
-                              fontWeight: holidaysSelected ? "600" : "400",
+                              fontWeight: "400",
                             }}
                           >
-                            Holidays
+                            Holidays, Feasts & Daily Info
                           </Text>
-                          <View className="mt-0.5 flex-row items-center gap-2">
-                            <Text
-                              className="text-muted dark:text-muted-dark text-xs"
-                              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                            >
-                              {lang.holidays.version > 0 ? `v${lang.holidays.version}` : "Available"}
-                            </Text>
-                            {holidaysSynced && (
-                              <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
-                                <Text
-                                  className="text-[10px] text-green-600 dark:text-green-400"
-                                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                                >
-                                  Synced
-                                </Text>
-                              </View>
-                            )}
-                          </View>
+                          {isSynced && (
+                            <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
+                              <Text
+                                className="text-[10px] text-green-600 dark:text-green-400"
+                                style={{
+                                  fontFamily: "ReadingFont",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                Synced
+                              </Text>
+                            </View>
+                          )}
                         </View>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => onToggleLangPack(lang.code, "dayInfo")}
-                        activeOpacity={0.7}
-                        className={`flex-row items-center gap-3 my-1 rounded-xl px-4 py-3 ${
-                          dayInfoSelected ? "bg-primary/8" : ""
-                        }`}
-                      >
-                        {dayInfoSelected ? (
-                          <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
-                        ) : (
-                          <Ionicons
-                            name="ellipse-outline"
-                            size={20}
-                            color={isDark ? "#8a8480" : "#6b6560"}
-                          />
-                        )}
-                        <View className="flex-1">
-                          <Text
-                            className={`text-sm ${dayInfoSelected ? "text-primary" : "text-[#2D2A24] dark:text-[#E8E4DC]"}`}
-                            style={{
-                              fontFamily: "ReadingFont",
-                              fontWeight: dayInfoSelected ? "600" : "400",
-                            }}
-                          >
-                            Day Info
-                          </Text>
-                          <View className="mt-0.5 flex-row items-center gap-2">
-                            <Text
-                              className="text-muted dark:text-muted-dark text-xs"
-                              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                            >
-                              {lang.dayInfo.version > 0 ? `v${lang.dayInfo.version}` : "Available"}
-                            </Text>
-                            {dayInfoSynced && (
-                              <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
-                                <Text
-                                  className="text-[10px] text-green-600 dark:text-green-400"
-                                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                                >
-                                  Synced
-                                </Text>
-                              </View>
-                            )}
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    </>
+                      </View>
+                    </TouchableOpacity>
                   );
                 })()}
               </View>
@@ -360,12 +410,13 @@ function LangSelectionStep({
         );
       })}
 
-      <View className="mt-4 mb-4 flex-row items-center justify-between rounded-2xl bg-primary/5 px-5 py-3">
+      {/* Selected Items Summary Card */}
+      <View className="bg-surface dark:bg-surface-dark mb-4 mt-2 flex-row items-center justify-between rounded-2xl px-5 py-3.5">
         <Text
-          className="text-muted dark:text-muted-dark text-sm"
+          className="text-sm text-muted dark:text-muted-dark"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
-          Selected
+          Selected Packages
         </Text>
         <Text
           className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -375,14 +426,15 @@ function LangSelectionStep({
         </Text>
       </View>
 
+      {/* Action Button */}
       <TouchableOpacity
         onPress={handleDownloadPress}
         disabled={!canProceed || isStarting}
         activeOpacity={0.7}
-        className={`mb-8 flex-row items-center justify-center gap-2 rounded-xl py-4 ${
+        className={`mb-8 flex-row items-center justify-center gap-2 rounded-xl py-4 shadow-sm ${
           canProceed && !isStarting
             ? "bg-primary"
-            : "bg-stone-300 dark:bg-stone-600"
+            : "bg-stone-300 dark:bg-stone-700"
         }`}
       >
         {isStarting ? (
@@ -391,7 +443,7 @@ function LangSelectionStep({
           <Ionicons
             name="download-outline"
             size={20}
-            color={canProceed ? "white" : isDark ? "#8a8580" : "#a8a29e"}
+            color={canProceed ? "white" : isDark ? "#8a8480" : "#a8a29e"}
           />
         )}
         <Text

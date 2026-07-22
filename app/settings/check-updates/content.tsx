@@ -112,7 +112,12 @@ export default function ContentUpdateScreen() {
   }, []);
 
   const totalSelectedItems = Object.values(selectedLangs).reduce(
-    (sum, versions) => sum + versions.length,
+    (sum, items) => {
+      const readingCount = items.filter((v) => !v.startsWith("__")).length;
+      const hasLiturgicalPack =
+        items.includes("__holidays__") || items.includes("__dayinfo__");
+      return sum + readingCount + (hasLiturgicalPack ? 1 : 0);
+    },
     0,
   );
 
@@ -130,22 +135,22 @@ export default function ContentUpdateScreen() {
   const selectedVersionLabels = selectedYear
     ? selectedYear.languages
         .filter((l) => selectedLangs[l.code]?.length)
-        .flatMap((l) =>
-          selectedLangs[l.code]
+        .flatMap((l) => {
+          const items = selectedLangs[l.code] || [];
+          const labels = items
             .filter((vCode) => !vCode.startsWith("__"))
             .map((vCode) => {
               const v = l.versions.find((ver) => ver.code === vCode);
               return `${l.name} — ${v?.name ?? vCode.toUpperCase()}`;
-            })
-            .concat(
-              selectedLangs[l.code]
-                .filter((vCode) => vCode.startsWith("__"))
-                .map((vCode) => {
-                  const label = vCode === "__holidays__" ? "Holidays" : "Day Info";
-                  return `${l.name} — ${label}`;
-                }),
-            ),
-        )
+            });
+          if (
+            items.includes("__holidays__") ||
+            items.includes("__dayinfo__")
+          ) {
+            labels.push(`${l.name} — Liturgical Data Pack`);
+          }
+          return labels;
+        })
     : [];
 
   const goBack = () => {
@@ -189,22 +194,25 @@ export default function ContentUpdateScreen() {
     }
   }, [loadSyncedData]);
 
-  const handleYearSelect = useCallback(async (year: YearOption) => {
-    if (isYearLoading) return;
-    setIsYearLoading(true);
-    setSelectedYear(year);
-    setSelectedLangs({});
-    setExpandedLangs({});
-    try {
-      await Promise.all([
-        loadDownloadedVersions(year.year, year.languages),
-        loadLangPackStatus(year.year, year.languages),
-      ]);
-      setStep("selectLang");
-    } finally {
-      setIsYearLoading(false);
-    }
-  }, [isYearLoading, loadDownloadedVersions, loadLangPackStatus]);
+  const handleYearSelect = useCallback(
+    async (year: YearOption) => {
+      if (isYearLoading) return;
+      setIsYearLoading(true);
+      setSelectedYear(year);
+      setSelectedLangs({});
+      setExpandedLangs({});
+      try {
+        await Promise.all([
+          loadDownloadedVersions(year.year, year.languages),
+          loadLangPackStatus(year.year, year.languages),
+        ]);
+        setStep("selectLang");
+      } finally {
+        setIsYearLoading(false);
+      }
+    },
+    [isYearLoading, loadDownloadedVersions, loadLangPackStatus],
+  );
 
   const isSentinel = (v: string) => v.startsWith("__");
 
@@ -213,7 +221,8 @@ export default function ContentUpdateScreen() {
       setSelectedLangs((prev) => {
         const current = prev[langCode] ?? [];
         const readingSelections = current.filter((v) => !isSentinel(v));
-        const allReadingSelected = readingSelections.length === allVersionCodes.length;
+        const allReadingSelected =
+          readingSelections.length === allVersionCodes.length;
         const sentinels = current.filter(isSentinel);
         if (allReadingSelected) {
           if (sentinels.length === 0) {
@@ -249,22 +258,34 @@ export default function ContentUpdateScreen() {
     setExpandedLangs((prev) => ({ ...prev, [langCode]: !prev[langCode] }));
   }, []);
 
-  const handleToggleLangPack = useCallback((langCode: string, type: "holidays" | "dayInfo") => {
-    const key = type === "holidays" ? "__holidays__" : "__dayinfo__";
-    setSelectedLangs((prev) => {
-      const current = prev[langCode] ?? [];
-      const isSelected = current.includes(key);
-      const next = isSelected
-        ? current.filter((v) => v !== key)
-        : [...current, key];
-      if (next.length === 0) {
-        const updated = { ...prev };
-        delete updated[langCode];
-        return updated;
-      }
-      return { ...prev, [langCode]: next };
-    });
-  }, []);
+  const handleToggleLangPack = useCallback(
+    (langCode: string, type?: "holidays" | "dayInfo" | "liturgical") => {
+      setSelectedLangs((prev) => {
+        const current = prev[langCode] ?? [];
+        const hasHolidays = current.includes("__holidays__");
+        const hasDayInfo = current.includes("__dayinfo__");
+        const isSelected = hasHolidays || hasDayInfo;
+
+        let next: string[];
+        if (isSelected) {
+          next = current.filter(
+            (v) => v !== "__holidays__" && v !== "__dayinfo__",
+          );
+        } else {
+          next = [...current, "__holidays__", "__dayinfo__"];
+        }
+
+        if (next.length === 0) {
+          const updated = { ...prev };
+          delete updated[langCode];
+          return updated;
+        }
+        return { ...prev, [langCode]: next };
+      });
+    },
+    [],
+  );
+
 
   const handleDownload = useCallback(async () => {
     if (!selectedYear) return;
