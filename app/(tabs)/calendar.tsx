@@ -9,7 +9,6 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import {
   useHolidays,
@@ -19,26 +18,57 @@ import {
 import { useSettings } from "@/lib/SettingsContext";
 import { HOLIDAY_COLORS } from "@/constants";
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const MONTH_NAMES_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
 function formatMonth(year: number, month: number): string {
-  return new Date(year, month).toLocaleDateString("en-US", {
-    month: "long",
-  });
+  return MONTH_NAMES[month] ?? "";
 }
 
-function formatYear(year: number, month: number): string {
-  return new Date(year, month).toLocaleDateString("en-US", {
-    year: "numeric",
-  });
+function formatYear(year: number): string {
+  return String(year);
 }
 
 function formatShortDate(dateStr: string): { monthShort: string; dayNum: number } {
   const [, m, d] = dateStr.split("-").map(Number);
-  const date = new Date(2000, m - 1, d);
-  const monthShort = date.toLocaleDateString("en-US", { month: "short" });
-  return { monthShort, dayNum: d };
+  return {
+    monthShort: MONTH_NAMES_SHORT[(m || 1) - 1] ?? "Jan",
+    dayNum: d || 1,
+  };
 }
 
-function addMonths(year: number, month: number, delta: number): { year: number; month: number } {
+function addMonths(
+  year: number,
+  month: number,
+  delta: number,
+): { year: number; month: number } {
   const total = month + delta;
   const newYear = year + Math.floor(total / 12);
   const newMonth = ((total % 12) + 12) % 12;
@@ -73,10 +103,12 @@ export default function CalendarScreen() {
         Math.abs(gs.dx) > 10 && Math.abs(gs.dx) > Math.abs(gs.dy),
       onPanResponderRelease: (_, gs) => {
         if (Math.abs(gs.dx) > 50) {
-          setCurrent((prev) => addMonths(prev.year, prev.month, gs.dx > 0 ? -1 : 1));
+          setCurrent((prev) =>
+            addMonths(prev.year, prev.month, gs.dx > 0 ? -1 : 1),
+          );
         }
       },
-    })
+    }),
   ).current;
 
   const handleJumpToToday = useCallback(() => {
@@ -87,21 +119,21 @@ export default function CalendarScreen() {
     current.year === today.getFullYear() && current.month === today.getMonth();
 
   return (
-    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
+    <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       {/* Top Header Bar */}
       <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
         <View>
           <Text
-            className="text-2xl text-[#2D2A24] dark:text-[#E8E4DC] tracking-tight"
+            className="text-2xl font-bold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
             {formatMonth(current.year, current.month)}
           </Text>
           <Text
-            className="text-xs text-primary font-semibold tracking-wide uppercase mt-0.5"
+            className="text-primary mt-0.5 text-xs font-semibold uppercase tracking-wide"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {formatYear(current.year, current.month)}
+            {formatYear(current.year)}
           </Text>
         </View>
 
@@ -110,11 +142,11 @@ export default function CalendarScreen() {
             <TouchableOpacity
               onPress={handleJumpToToday}
               activeOpacity={0.75}
-              className="bg-primary/10 rounded-full px-3 py-1.5 flex-row items-center gap-1"
+              className="bg-primary/10 flex-row items-center gap-1 rounded-full px-3 py-1.5"
             >
               <Ionicons name="today-outline" size={14} color="#3b82f6" />
               <Text
-                className="text-xs text-primary font-semibold"
+                className="text-primary text-xs font-semibold"
                 style={{ fontFamily: "ReadingFont" }}
               >
                 Today
@@ -123,9 +155,11 @@ export default function CalendarScreen() {
           )}
 
           {/* Capsule Chevron Controls */}
-          <View className="bg-surface dark:bg-surface-dark flex-row items-center rounded-2xl border border-stone-200/60 dark:border-stone-800/60 p-1">
+          <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-2xl border border-stone-200/60 p-1 dark:border-stone-800/60">
             <TouchableOpacity
-              onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, -1))}
+              onPress={() =>
+                setCurrent((prev) => addMonths(prev.year, prev.month, -1))
+              }
               className="p-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -136,9 +170,11 @@ export default function CalendarScreen() {
                 color={isDark ? "#E8E4DC" : "#2D2A24"}
               />
             </TouchableOpacity>
-            <View className="h-4 w-[1px] bg-stone-200 dark:bg-stone-800 my-auto mx-0.5" />
+            <View className="mx-0.5 my-auto h-4 w-[1px] bg-stone-200 dark:bg-stone-800" />
             <TouchableOpacity
-              onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, 1))}
+              onPress={() =>
+                setCurrent((prev) => addMonths(prev.year, prev.month, 1))
+              }
               className="p-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -170,14 +206,14 @@ export default function CalendarScreen() {
       <View className="flex-1 px-6">
         <View className="mb-3 flex-row items-center justify-between">
           <Text
-            className="text-muted dark:text-muted-dark text-xs uppercase tracking-widest font-semibold"
+            className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont" }}
           >
             Holidays & Events
           </Text>
           <View className="bg-primary/10 rounded-full px-2.5 py-0.5">
             <Text
-              className="text-[11px] text-primary font-semibold"
+              className="text-primary text-[11px] font-semibold"
               style={{ fontFamily: "ReadingFont" }}
             >
               {holidays.length} {holidays.length === 1 ? "event" : "events"}
@@ -186,10 +222,10 @@ export default function CalendarScreen() {
         </View>
 
         {holidays.length === 0 ? (
-          <View className="bg-surface dark:bg-surface-dark rounded-2xl p-6 items-center justify-center border border-stone-200/40 dark:border-stone-800/40 my-2">
+          <View className="will-change-variable bg-surface dark:bg-surface-dark my-2 items-center justify-center rounded-2xl border border-stone-200/40 p-6 dark:border-stone-800/40">
             <Ionicons name="sparkles-outline" size={22} color="#6b6560" />
             <Text
-              className="text-muted dark:text-muted-dark mt-2 text-sm text-center"
+              className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
               No specific feasts listed for this month
@@ -203,38 +239,40 @@ export default function CalendarScreen() {
           >
             {holidays.map((item, i) => {
               const { monthShort, dayNum } = formatShortDate(item.date);
+              const key = item.id ?? `${item.date}-${item.name}-${i}`;
               return (
                 <View
-                  key={i}
-                  className="bg-surface dark:bg-surface-dark flex-row items-center justify-between rounded-2xl p-4 border border-stone-200/50 dark:border-stone-800/50 my-1.5"
+                  key={key}
+                  className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
                 >
                   {/* Left Color Accent Bar */}
                   <View
-                    className="w-1.5 h-10 rounded-full mr-3.5"
+                    className="mr-3.5 h-10 w-1.5 rounded-full"
                     style={{
-                      backgroundColor:
-                        HOLIDAY_COLORS[item.type] ?? "#3b82f6",
+                      backgroundColor: HOLIDAY_COLORS[item.type] ?? "#3b82f6",
                     }}
                   />
 
                   {/* Feast Info */}
                   <View className="flex-1">
                     <Text
-                      className="text-base text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
+                      className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
                       style={{ fontFamily: "ReadingFont" }}
                     >
                       {item.name}
                     </Text>
                     <View className="mt-1 flex-row items-center gap-2">
                       <Text
-                        className="text-xs text-primary font-semibold uppercase tracking-wider"
+                        className="text-primary text-xs font-semibold uppercase tracking-wider"
                         style={{ fontFamily: "ReadingFont" }}
                       >
                         {monthShort} {dayNum}
                       </Text>
-                      <Text className="text-xs text-muted dark:text-muted-dark">•</Text>
+                      <Text className="text-muted dark:text-muted-dark text-xs">
+                        •
+                      </Text>
                       <Text
-                        className="text-muted dark:text-muted-dark text-xs capitalize font-medium"
+                        className="text-muted dark:text-muted-dark text-xs font-medium capitalize"
                         style={{ fontFamily: "ReadingFont" }}
                       >
                         {item.type}

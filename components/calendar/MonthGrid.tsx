@@ -62,7 +62,7 @@ export default memo(function MonthGrid({
   return (
     <View style={{ width }} className="px-6">
       {/* Sleek Modern Card Surface */}
-      <View className="bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-4">
+      <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-4">
         {/* Day labels header */}
         <View className="mb-3 flex-row justify-between border-b border-stone-200/40 dark:border-stone-800/40 pb-2.5">
           {DAY_LABELS.map((label, index) => {
