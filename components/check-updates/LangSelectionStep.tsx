@@ -82,6 +82,35 @@ function LangSelectionStep({
     [syncedLangPackVersions],
   );
 
+  const isVersionSynced = useCallback(
+    (langCode: string, version: { code: string; contentVersion: number }) => {
+      const downloaded = downloadedVersions[langCode]?.find(
+        (d) => d.version === version.code,
+      );
+      return !!downloaded && downloaded.contentVersion >= version.contentVersion;
+    },
+    [downloadedVersions],
+  );
+
+  const isLiturgicalSynced = useCallback(
+    (lang: (typeof year.languages)[0]) => {
+      const holidaysSynced = isLangPackSynced(
+        year.year,
+        lang.code,
+        "holidays",
+        lang.holidays?.version ?? 0,
+      );
+      const dayInfoSynced = isLangPackSynced(
+        year.year,
+        lang.code,
+        "dayInfo",
+        lang.dayInfo?.version ?? 0,
+      );
+      return holidaysSynced && dayInfoSynced;
+    },
+    [isLangPackSynced, year.year],
+  );
+
   const handleDownloadPress = useCallback(() => {
     if (!canProceed || isStarting) return;
     setIsStarting(true);
@@ -90,25 +119,11 @@ function LangSelectionStep({
     }, 300);
   }, [canProceed, isStarting, onDownload]);
 
-  const availableLanguages = year.languages.filter((lang) => {
-    const downloaded = downloadedVersions[lang.code];
-    const hasUnsyncedVersions =
-      !downloaded || downloaded.length < lang.versions.length;
-    const holidaysSynced = isLangPackSynced(
-      year.year,
-      lang.code,
-      "holidays",
-      lang.holidays?.version ?? 0,
-    );
-    const dayInfoSynced = isLangPackSynced(
-      year.year,
-      lang.code,
-      "dayInfo",
-      lang.dayInfo?.version ?? 0,
-    );
-    const hasUnsyncedPack = !holidaysSynced || !dayInfoSynced;
-    return hasUnsyncedVersions || hasUnsyncedPack;
-  });
+  const yearAllSynced = year.languages.every(
+    (lang) =>
+      isLiturgicalSynced(lang) &&
+      lang.versions.every((v) => isVersionSynced(lang.code, v)),
+  );
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
@@ -149,24 +164,79 @@ function LangSelectionStep({
           className="text-xs uppercase tracking-widest text-primary font-semibold"
           style={{ fontFamily: "ReadingFont" }}
         >
-          Select Content Packages
+          Content Packages
         </Text>
       </View>
 
-      {availableLanguages.map((lang) => {
+      {year.languages.map((lang) => {
         const isExpanded = expandedLangs[lang.code] ?? false;
         const selectedVersions = selectedLangs[lang.code] ?? [];
-        const readingSelections = selectedVersions.filter(
-          (v) => !v.startsWith("__"),
+
+        const unsyncedVersions = lang.versions.filter(
+          (v) => !isVersionSynced(lang.code, v),
         );
-        const allSelected = readingSelections.length === lang.versions.length;
-        const someSelected = selectedVersions.length > 0 && !allSelected;
+        const unsyncedVersionCodes = unsyncedVersions.map((v) => v.code);
+        const liturgicalSynced = isLiturgicalSynced(lang);
+        const hasUnsyncedLiturgical = !liturgicalSynced;
+        const langAllSynced =
+          unsyncedVersionCodes.length === 0 && !hasUnsyncedLiturgical;
+
+        const unsyncedSelectedCount =
+          selectedVersions.filter((v) => unsyncedVersionCodes.includes(v))
+            .length +
+          (hasUnsyncedLiturgical &&
+          (selectedVersions.includes("__holidays__") ||
+            selectedVersions.includes("__dayinfo__"))
+            ? 1
+            : 0);
+
+        const totalUnsyncedCount =
+          unsyncedVersionCodes.length + (hasUnsyncedLiturgical ? 1 : 0);
+        const allUnsyncedSelected =
+          !langAllSynced &&
+          totalUnsyncedCount > 0 &&
+          unsyncedSelectedCount === totalUnsyncedCount;
+        const someUnsyncedSelected =
+          unsyncedSelectedCount > 0 && !allUnsyncedSelected;
+
+        const handleLanguageToggle = () => {
+          if (langAllSynced) return;
+          if (allUnsyncedSelected) {
+            // Deselect unsynced items
+            for (const vCode of unsyncedVersionCodes) {
+              if (selectedVersions.includes(vCode)) {
+                onToggleVersion(lang.code, vCode);
+              }
+            }
+            if (
+              hasUnsyncedLiturgical &&
+              (selectedVersions.includes("__holidays__") ||
+                selectedVersions.includes("__dayinfo__"))
+            ) {
+              onToggleLangPack(lang.code, "liturgical");
+            }
+          } else {
+            // Select unsynced items
+            for (const vCode of unsyncedVersionCodes) {
+              if (!selectedVersions.includes(vCode)) {
+                onToggleVersion(lang.code, vCode);
+              }
+            }
+            if (
+              hasUnsyncedLiturgical &&
+              !selectedVersions.includes("__holidays__") &&
+              !selectedVersions.includes("__dayinfo__")
+            ) {
+              onToggleLangPack(lang.code, "liturgical");
+            }
+          }
+        };
 
         return (
           <View key={lang.code} className="mb-3">
             <View
               className={`bg-surface dark:bg-surface-dark flex-row items-center justify-between rounded-2xl px-5 py-4 border ${
-                allSelected
+                allUnsyncedSelected
                   ? "border-primary/40 bg-primary/5"
                   : "border-transparent"
               }`}
@@ -184,53 +254,65 @@ function LangSelectionStep({
                 <View className="flex-1">
                   <Text
                     className={`text-base ${
-                      allSelected
+                      allUnsyncedSelected
                         ? "text-primary"
                         : "text-[#2D2A24] dark:text-[#E8E4DC]"
                     }`}
                     style={{
                       fontFamily: "ReadingFont",
-                      fontWeight: allSelected ? "600" : "500",
+                      fontWeight: allUnsyncedSelected ? "600" : "500",
                     }}
                   >
                     {lang.name}
                   </Text>
                   <Text
-                    className="text-xs text-muted dark:text-muted-dark mt-0.5"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                    className={`text-xs mt-0.5 ${
+                      langAllSynced
+                        ? "text-green-600 dark:text-green-400 font-medium"
+                        : "text-muted dark:text-muted-dark"
+                    }`}
+                    style={{ fontFamily: "ReadingFont" }}
                   >
-                    {lang.versions.length}{" "}
-                    {lang.versions.length === 1 ? "version" : "versions"} available
-                    {selectedVersions.length > 0 &&
-                      ` · ${selectedVersions.length} selected`}
+                    {langAllSynced
+                      ? "All content synced"
+                      : `${totalUnsyncedCount} update ${
+                          totalUnsyncedCount === 1 ? "available" : "s available"
+                        }`}
                   </Text>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() =>
-                  onToggleLanguage(
-                    lang.code,
-                    lang.versions.map((v) => v.code),
-                  )
-                }
-                activeOpacity={0.7}
-                className="p-1"
-              >
-                {allSelected ? (
-                  <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
-                ) : someSelected ? (
-                  <View className="h-6 w-6 items-center justify-center rounded border-2 border-primary">
-                    <View className="h-2.5 w-2.5 rounded-sm bg-primary" />
-                  </View>
-                ) : (
-                  <Ionicons
-                    name="ellipse-outline"
-                    size={24}
-                    color={isDark ? "#8a8480" : "#6b6560"}
-                  />
-                )}
-              </TouchableOpacity>
+              {langAllSynced ? (
+                <View className="flex-row items-center gap-1 rounded-full bg-green-500/15 px-2.5 py-1">
+                  <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
+                  <Text
+                    className="text-xs text-green-600 dark:text-green-400 font-semibold"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    Synced
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleLanguageToggle}
+                  activeOpacity={0.7}
+                  className="p-1"
+                >
+                  {allUnsyncedSelected ? (
+                    <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
+                  ) : someUnsyncedSelected ? (
+                    <View className="h-6 w-6 items-center justify-center rounded border-2 border-primary">
+                      <View className="h-2.5 w-2.5 rounded-sm bg-primary" />
+                    </View>
+                  ) : (
+                    <Ionicons
+                      name="ellipse-outline"
+                      size={24}
+                      color={isDark ? "#8a8480" : "#6b6560"}
+                    />
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
 
             {isExpanded && (
@@ -244,10 +326,47 @@ function LangSelectionStep({
                 </Text>
 
                 {lang.versions.map((version) => {
+                  const synced = isVersionSynced(lang.code, version);
                   const isSelected = selectedVersions.includes(version.code);
-                  const downloaded = downloadedVersions[lang.code]?.find(
-                    (d) => d.version === version.code,
-                  );
+
+                  if (synced) {
+                    return (
+                      <View
+                        key={version.code}
+                        className="my-1 flex-row items-center gap-3 rounded-xl bg-surface/30 dark:bg-surface-dark/30 px-3.5 py-3 opacity-90"
+                      >
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color="#16a34a"
+                        />
+                        <View className="flex-1">
+                          <Text
+                            className="text-sm text-[#2D2A24]/80 dark:text-[#E8E4DC]/80 font-normal"
+                            style={{ fontFamily: "ReadingFont" }}
+                          >
+                            {version.name} ({version.code.toUpperCase()})
+                          </Text>
+                          <Text
+                            className="text-xs text-muted dark:text-muted-dark mt-0.5"
+                            style={{ fontFamily: "ReadingFont" }}
+                          >
+                            {version.contentVersion > 0
+                              ? `v${version.contentVersion}`
+                              : "Installed"}
+                          </Text>
+                        </View>
+                        <View className="rounded-full bg-green-500/15 px-2 py-0.5">
+                          <Text
+                            className="text-[10px] text-green-600 dark:text-green-400 font-semibold"
+                            style={{ fontFamily: "ReadingFont" }}
+                          >
+                            Synced
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  }
 
                   return (
                     <TouchableOpacity
@@ -285,37 +404,28 @@ function LangSelectionStep({
                         >
                           {version.name} ({version.code.toUpperCase()})
                         </Text>
-                        <View className="mt-0.5 flex-row items-center gap-2">
-                          <Text
-                            className="text-xs text-muted dark:text-muted-dark"
-                            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                          >
-                            {version.contentVersion > 0
-                              ? `v${version.contentVersion}`
-                              : "Available"}
-                          </Text>
-                          {downloaded &&
-                            downloaded.contentVersion >=
-                              version.contentVersion && (
-                              <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
-                                <Text
-                                  className="text-[10px] text-green-600 dark:text-green-400"
-                                  style={{
-                                    fontFamily: "ReadingFont",
-                                    fontWeight: "600",
-                                  }}
-                                >
-                                  Synced
-                                </Text>
-                              </View>
-                            )}
-                        </View>
+                        <Text
+                          className="text-xs text-muted dark:text-muted-dark mt-0.5"
+                          style={{ fontFamily: "ReadingFont" }}
+                        >
+                          {version.contentVersion > 0
+                            ? `v${version.contentVersion}`
+                            : "Available"}
+                        </Text>
+                      </View>
+                      <View className="rounded-full bg-primary/10 px-2 py-0.5">
+                        <Text
+                          className="text-[10px] text-primary font-semibold"
+                          style={{ fontFamily: "ReadingFont" }}
+                        >
+                          Available
+                        </Text>
                       </View>
                     </TouchableOpacity>
                   );
                 })}
 
-                {/* Additional Packs Header */}
+                {/* Liturgical Data Pack Header */}
                 <Text
                   className="mb-1 mt-3 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
                   style={{ fontFamily: "ReadingFont" }}
@@ -324,23 +434,44 @@ function LangSelectionStep({
                 </Text>
 
                 {(() => {
-                  const holidaysSynced = isLangPackSynced(
-                    year.year,
-                    lang.code,
-                    "holidays",
-                    lang.holidays?.version ?? 0,
-                  );
-                  const dayInfoSynced = isLangPackSynced(
-                    year.year,
-                    lang.code,
-                    "dayInfo",
-                    lang.dayInfo?.version ?? 0,
-                  );
-                  const isSynced = holidaysSynced && dayInfoSynced;
-
+                  const synced = liturgicalSynced;
                   const isSelected =
-                    (selectedLangs[lang.code] ?? []).includes("__holidays__") ||
-                    (selectedLangs[lang.code] ?? []).includes("__dayinfo__");
+                    selectedVersions.includes("__holidays__") ||
+                    selectedVersions.includes("__dayinfo__");
+
+                  if (synced) {
+                    return (
+                      <View className="my-1 flex-row items-center gap-3 rounded-xl bg-surface/30 dark:bg-surface-dark/30 px-3.5 py-3 opacity-90">
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color="#16a34a"
+                        />
+                        <View className="flex-1">
+                          <Text
+                            className="text-sm text-[#2D2A24]/80 dark:text-[#E8E4DC]/80 font-normal"
+                            style={{ fontFamily: "ReadingFont" }}
+                          >
+                            Liturgical Data Pack
+                          </Text>
+                          <Text
+                            className="text-xs text-muted dark:text-muted-dark mt-0.5"
+                            style={{ fontFamily: "ReadingFont" }}
+                          >
+                            Holidays, Feasts & Daily Info
+                          </Text>
+                        </View>
+                        <View className="rounded-full bg-green-500/15 px-2 py-0.5">
+                          <Text
+                            className="text-[10px] text-green-600 dark:text-green-400 font-semibold"
+                            style={{ fontFamily: "ReadingFont" }}
+                          >
+                            Synced
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  }
 
                   return (
                     <TouchableOpacity
@@ -376,30 +507,20 @@ function LangSelectionStep({
                         >
                           Liturgical Data Pack
                         </Text>
-                        <View className="mt-0.5 flex-row items-center gap-2">
-                          <Text
-                            className="text-xs text-muted dark:text-muted-dark"
-                            style={{
-                              fontFamily: "ReadingFont",
-                              fontWeight: "400",
-                            }}
-                          >
-                            Holidays, Feasts & Daily Info
-                          </Text>
-                          {isSynced && (
-                            <View className="rounded-full bg-green-500/15 px-1.5 py-0.5">
-                              <Text
-                                className="text-[10px] text-green-600 dark:text-green-400"
-                                style={{
-                                  fontFamily: "ReadingFont",
-                                  fontWeight: "600",
-                                }}
-                              >
-                                Synced
-                              </Text>
-                            </View>
-                          )}
-                        </View>
+                        <Text
+                          className="text-xs text-muted dark:text-muted-dark mt-0.5"
+                          style={{ fontFamily: "ReadingFont" }}
+                        >
+                          Holidays, Feasts & Daily Info
+                        </Text>
+                      </View>
+                      <View className="rounded-full bg-amber-500/10 px-2 py-0.5">
+                        <Text
+                          className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold"
+                          style={{ fontFamily: "ReadingFont" }}
+                        >
+                          Update Available
+                        </Text>
                       </View>
                     </TouchableOpacity>
                   );
@@ -441,7 +562,11 @@ function LangSelectionStep({
           <ActivityIndicator size="small" color="white" />
         ) : (
           <Ionicons
-            name="download-outline"
+            name={
+              yearAllSynced
+                ? "checkmark-circle-outline"
+                : "download-outline"
+            }
             size={20}
             color={canProceed ? "white" : isDark ? "#8a8480" : "#a8a29e"}
           />
@@ -458,7 +583,9 @@ function LangSelectionStep({
             ? "Preparing Download…"
             : canProceed
               ? `Download ${totalSelectedItems} ${totalSelectedItems === 1 ? "Item" : "Items"}`
-              : "Select Items to Download"}
+              : yearAllSynced
+                ? "All Content Synced"
+                : "Select Items to Download"}
         </Text>
       </TouchableOpacity>
     </ScrollView>
@@ -466,3 +593,4 @@ function LangSelectionStep({
 }
 
 export default LangSelectionStep;
+
