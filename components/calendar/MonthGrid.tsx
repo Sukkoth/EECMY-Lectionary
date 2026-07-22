@@ -4,8 +4,7 @@ import { router } from "expo-router";
 import type { HolidayRow } from "@/lib/types";
 import { HOLIDAY_COLORS } from "@/constants";
 
-const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"] as const;
-
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 type MonthGridProps = {
   year: number;
@@ -50,95 +49,117 @@ function isToday(year: number, month: number, day: number): boolean {
   );
 }
 
-export default memo(function MonthGrid({ year, month, holidays, width }: MonthGridProps) {
+export default memo(function MonthGrid({
+  year,
+  month,
+  holidays,
+  width,
+}: MonthGridProps) {
   const weeks = useMemo(() => getWeeks(year, month), [year, month]);
-  const cellWidth = Math.floor((width - 48) / 7);
+  const paddingX = 48;
+  const cellWidth = Math.floor((width - paddingX) / 7);
 
   return (
-    <View style={{ width }} className="px-4">
-      <View className="bg-surface/70 dark:bg-surface-dark/70 rounded-3xl border border-stone-200/50 dark:border-stone-800/50 p-3 shadow-sm">
-        {/* Day labels row */}
-        <View className="mb-3 flex-row justify-between">
-          {DAY_LABELS.map((label, index) => (
-            <View key={index} style={{ width: cellWidth }} className="items-center">
-              <Text
-                style={{ fontFamily: "ReadingFont" }}
-                className="text-muted dark:text-muted-dark text-xs uppercase font-semibold opacity-80"
+    <View style={{ width }} className="px-6">
+      {/* Sleek Modern Card Surface */}
+      <View className="bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-4">
+        {/* Day labels header */}
+        <View className="mb-3 flex-row justify-between border-b border-stone-200/40 dark:border-stone-800/40 pb-2.5">
+          {DAY_LABELS.map((label, index) => {
+            const isWeekend = index === 0 || index === 6;
+            return (
+              <View
+                key={label}
+                style={{ width: cellWidth }}
+                className="items-center"
               >
-                {label}
-              </Text>
-            </View>
-          ))}
+                <Text
+                  style={{ fontFamily: "ReadingFont" }}
+                  className={`text-[11px] uppercase tracking-wider font-semibold ${
+                    isWeekend
+                      ? "text-primary/70"
+                      : "text-muted dark:text-muted-dark opacity-80"
+                  }`}
+                >
+                  {label}
+                </Text>
+              </View>
+            );
+          })}
         </View>
 
         {/* Week rows */}
-        {weeks.map((week, wi) => (
-          <View key={wi} className="flex-row justify-between">
-            {week.map((day, di) => {
-              if (day === null) {
-                return <View key={`empty-${wi}-${di}`} style={{ width: cellWidth }} />;
-              }
+        <View className="space-y-1">
+          {weeks.map((week, wi) => (
+            <View key={wi} className="flex-row justify-between py-1">
+              {week.map((day, di) => {
+                if (day === null) {
+                  return (
+                    <View key={`empty-${wi}-${di}`} style={{ width: cellWidth }} />
+                  );
+                }
 
-              const dateKey = toDateKey(year, month, day);
-              const dayHolidays = holidays.get(dateKey) ?? [];
-              const types = [...new Set(dayHolidays.map((h) => h.type))];
-              const today = isToday(year, month, day);
+                const dateKey = toDateKey(year, month, day);
+                const dayHolidays = holidays.get(dateKey) ?? [];
+                const types = [...new Set(dayHolidays.map((h) => h.type))];
+                const today = isToday(year, month, day);
 
-              return (
-                <TouchableOpacity
-                  key={dateKey}
-                  style={{ width: cellWidth }}
-                  className="items-center py-2"
-                  activeOpacity={0.6}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/reading",
-                      params: {
-                        year,
-                        month: month + 1,
-                        day,
-                      },
-                    })
-                  }
-                >
-                  {/* Day number */}
-                  {today ? (
-                    <View className="bg-primary h-8 w-8 items-center justify-center rounded-full shadow-sm">
+                return (
+                  <TouchableOpacity
+                    key={dateKey}
+                    style={{ width: cellWidth }}
+                    className="items-center justify-center py-1"
+                    activeOpacity={0.7}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/reading",
+                        params: {
+                          year,
+                          month: month + 1,
+                          day,
+                        },
+                      })
+                    }
+                  >
+                    {/* Day number container */}
+                    <View
+                      className={`h-9 w-9 items-center justify-center rounded-2xl ${
+                        today ? "bg-primary" : ""
+                      }`}
+                    >
                       <Text
-                        className="text-base font-semibold text-white"
+                        className={`text-base ${
+                          today
+                            ? "text-white font-semibold"
+                            : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                        }`}
                         style={{ fontFamily: "ReadingFont" }}
                       >
                         {day}
                       </Text>
                     </View>
-                  ) : (
-                    <View className="h-8 w-8 items-center justify-center">
-                      <Text
-                        className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-                        style={{ fontFamily: "ReadingFont" }}
-                      >
-                        {day}
-                      </Text>
-                    </View>
-                  )}
 
-                  {/* Holiday dots */}
-                  {types.length > 0 && (
-                    <View className="mt-1 flex-row gap-1">
-                      {types.map((type) => (
-                        <View
-                          key={type}
-                          className="h-1.5 w-1.5 rounded-full"
-                          style={{ backgroundColor: HOLIDAY_COLORS[type] ?? "#3b82f6" }}
-                        />
-                      ))}
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
+                    {/* Holiday dots indicator */}
+                    {types.length > 0 && (
+                      <View className="mt-1 flex-row gap-1">
+                        {types.map((type) => (
+                          <View
+                            key={type}
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{
+                              backgroundColor:
+                                HOLIDAY_COLORS[type] ?? "#3b82f6",
+                            }}
+                          />
+                        ))}
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+        </View>
       </View>
     </View>
   );
