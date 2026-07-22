@@ -124,7 +124,7 @@ export default function CalendarScreen() {
       <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
         <View>
           <Text
-            className="text-2xl font-bold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
+            className="text-2xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
             {formatMonth(current.year, current.month)}
