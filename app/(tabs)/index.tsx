@@ -288,23 +288,29 @@ export default function HomeScreen() {
         )}
 
         {/* READING STREAK CARD */}
-        <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl px-5 py-5">
+        <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl px-5 py-5 border border-stone-200/40 dark:border-stone-800/40">
           {/* Streak header */}
-          <View className="flex-row items-start justify-between">
-            <View className="flex-1">
-              <Text
-                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-              >
-                Reading Streak
-              </Text>
-              <Text
-                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-              >
-                Best record: {safeStreak.best} days
-              </Text>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3">
+              <View className="rounded-xl bg-amber-500/10 p-2.5">
+                <Ionicons name="flame" size={20} color="#f59e0b" />
+              </View>
+              <View>
+                <Text
+                  className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                >
+                  Reading Streak
+                </Text>
+                <Text
+                  className="text-muted dark:text-muted-dark mt-0.5 text-xs"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                >
+                  Best record: {safeStreak.best} {safeStreak.best === 1 ? "day" : "days"}
+                </Text>
+              </View>
             </View>
+
             <View className="items-end">
               <Text
                 className="text-primary text-3xl font-semibold leading-tight"
@@ -313,42 +319,57 @@ export default function HomeScreen() {
                 {safeStreak.current}
               </Text>
               <Text
-                className="text-muted dark:text-muted-dark text-xs"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                className="text-muted dark:text-muted-dark text-[11px] uppercase tracking-wider"
+                style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
-                days
+                {safeStreak.current === 1 ? "day" : "days"}
               </Text>
             </View>
           </View>
 
           {/* Progress bar */}
-          <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+          <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
             <View
               className="bg-primary h-full rounded-full"
               style={{ width: progressPercent as DimensionValue }}
             />
           </View>
 
-          {/* Weekly indicators */}
+          {/* Weekly day bars */}
           <View className="mt-4 flex-row justify-between">
-            {safeStreak.completedDays.map((completed, index) => (
-              <View key={index} className="items-center" style={{ width: 36 }}>
-                <View
-                  className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
-                >
+            {safeStreak.completedDays.map((completed, index) => {
+              const todayDayOfWeek = readingDate.getDay();
+              const isToday = index === todayDayOfWeek;
+
+              return (
+                <View key={index} className="items-center" style={{ width: 36 }}>
                   <View
-                    className={`h-full rounded-full ${completed ? "bg-primary" : ""}`}
-                    style={{ width: completed ? "100%" : "0%" }}
-                  />
+                    className={`h-2.5 w-full overflow-hidden rounded-full ${
+                      isToday
+                        ? "bg-primary/20"
+                        : "bg-stone-200 dark:bg-stone-800"
+                    }`}
+                  >
+                    <View
+                      className={`h-full rounded-full ${
+                        completed ? "bg-primary" : isToday ? "bg-primary/50" : ""
+                      }`}
+                      style={{ width: completed ? "100%" : isToday ? "50%" : "0%" }}
+                    />
+                  </View>
+                  <Text
+                    className={`mt-1.5 text-xs ${
+                      isToday
+                        ? "text-primary font-semibold"
+                        : "text-muted dark:text-muted-dark font-normal"
+                    }`}
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {DAY_LABELS[index]}
+                  </Text>
                 </View>
-                <Text
-                  className="text-muted dark:text-muted-dark mt-1.5 text-xs"
-                  style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                >
-                  {DAY_LABELS[index]}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
       </View>
