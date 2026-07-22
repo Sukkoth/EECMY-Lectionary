@@ -62,7 +62,7 @@ export default memo(function MonthGrid({ year, month, holidays, width }: MonthGr
           <View key={index} style={{ width: cellWidth }} className="items-center">
             <Text style={{
               fontFamily: "ReadingFont"
-            }} className="text-muted dark:text-muted-dark text-sm font-bold">
+            }} className="text-muted dark:text-muted-dark text-sm font-semibold">
               {label}
             </Text>
           </View>

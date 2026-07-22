@@ -56,7 +56,7 @@ export default function WelcomeScreen() {
         <Animated.Text
           entering={FadeInDown.delay(200).springify().damping(18)}
           className="mb-3 text-5xl text-[#2D2A24] dark:text-[#E8E4DC]"
-          style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
+          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
           YeiLet
         </Animated.Text>

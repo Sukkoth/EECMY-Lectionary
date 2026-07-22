@@ -307,8 +307,8 @@ export default function HomeScreen() {
             </View>
             <View className="items-end">
               <Text
-                className="text-primary text-3xl font-bold leading-tight"
-                style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
+                className="text-primary text-3xl font-semibold leading-tight"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
                 {safeStreak.current}
               </Text>

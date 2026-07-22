@@ -60,7 +60,7 @@ export default function AppUpdateScreen() {
           </Text>
           <Text
             className="mt-1 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
+            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {CURRENT_VERSION}
           </Text>

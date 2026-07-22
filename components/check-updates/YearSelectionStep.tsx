@@ -115,7 +115,7 @@ function YearSelectionStep({
                 </View>
                 <Text
                   className="text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
-                  style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
+                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
                 >
                   {yearOption.year}
                 </Text>

@@ -57,8 +57,8 @@ function DownloadProgressStep({
         </View>
 
         <Text
-          className="my-1 text-3xl font-bold text-[#2D2A24] dark:text-[#E8E4DC]"
-          style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
+          className="my-1 text-3xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
           {progressPercent}%
         </Text>
