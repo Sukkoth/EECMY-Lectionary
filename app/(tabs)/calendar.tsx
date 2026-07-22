@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   PanResponder,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -72,29 +73,30 @@ export default function CalendarScreen() {
   ).current;
 
   return (
-    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" >
+    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
+      {/* Header Bar */}
       <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
         <TouchableOpacity
           onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, -1))}
-          className="p-2"
+          className="bg-surface dark:bg-surface-dark border border-stone-200/60 dark:border-stone-800/60 rounded-full p-2.5 shadow-sm"
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={24} color={isDark ? "#E8E4DC" : "#2D2A24"} />
+          <Ionicons name="chevron-back" size={18} color={isDark ? "#E8E4DC" : "#2D2A24"} />
         </TouchableOpacity>
         <Text
-          className="flex-1 text-center text-lg text-[#2D2A24] dark:text-[#E8E4DC]"
+          className="flex-1 text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
           {formatMonthYear(current.year, current.month)}
         </Text>
         <TouchableOpacity
           onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, 1))}
-          className="p-2"
+          className="bg-surface dark:bg-surface-dark border border-stone-200/60 dark:border-stone-800/60 rounded-full p-2.5 shadow-sm"
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-forward" size={24} color={isDark ? "#E8E4DC" : "#2D2A24"} />
+          <Ionicons name="chevron-forward" size={18} color={isDark ? "#E8E4DC" : "#2D2A24"} />
         </TouchableOpacity>
       </View>
 
@@ -107,58 +109,75 @@ export default function CalendarScreen() {
         />
       </View>
 
-      <View className="mx-6 border-b border-stone-200 dark:border-stone-800" />
+      <View className="mx-6 my-4 border-b border-stone-200/60 dark:border-stone-800/60" />
 
-      <View className="flex-1 px-6 pt-4">
-        <Text
-          className="text-muted dark:text-muted-dark mb-3 text-sm uppercase tracking-widest"
-          style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-        >
-          Holidays
-        </Text>
-        {holidays.length === 0 ? (
+      <View className="flex-1 px-6 pt-1">
+        <View className="mb-3 flex-row items-center justify-between">
           <Text
-            className="text-muted dark:text-muted-dark text-base"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            className="text-muted dark:text-muted-dark text-xs uppercase tracking-widest font-semibold"
+            style={{ fontFamily: "ReadingFont" }}
           >
-            No holidays this month
+            Holidays & Feasts
           </Text>
+          <Text
+            className="text-xs text-primary font-medium"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            {holidays.length} {holidays.length === 1 ? "event" : "events"}
+          </Text>
+        </View>
+        {holidays.length === 0 ? (
+          <View className="bg-surface dark:bg-surface-dark rounded-2xl p-5 items-center justify-center border border-stone-200/40 dark:border-stone-800/40">
+            <Text
+              className="text-muted dark:text-muted-dark text-sm"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              No holidays listed for this month
+            </Text>
+          </View>
         ) : (
-          <View className="flex-1">
+          <ScrollView showsVerticalScrollIndicator={false} className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
             {holidays.map((item, i) => (
-              <View key={i} className="flex-row items-start py-2">
-                <Text
-                  className="text-muted dark:text-muted-dark w-16 text-base"
-                  style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                >
-                  {formatShortDate(item.date)}
-                </Text>
-                <View className="ml-2 flex-1">
-                  <Text
-                    className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-                  >
-                    {item.name}
-                  </Text>
-                  <View className="mt-0.5 flex-row items-center gap-1.5">
-                    <View
-                      className="h-2 w-2 rounded-full"
-                      style={{
-                        backgroundColor:
-                          HOLIDAY_COLORS[item.type] ?? "#9CA3AF",
-                      }}
-                    />
+              <View
+                key={i}
+                className="bg-surface dark:bg-surface-dark flex-row items-center justify-between rounded-2xl p-4 border border-stone-200/50 dark:border-stone-800/50 my-1 shadow-sm"
+              >
+                <View className="flex-row items-center gap-3.5 flex-1">
+                  <View className="rounded-xl bg-primary/10 px-3 py-2 items-center justify-center min-w-[56px]">
                     <Text
-                      className="text-muted dark:text-muted-dark text-sm capitalize"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                      className="text-xs text-primary font-semibold uppercase text-center"
+                      style={{ fontFamily: "ReadingFont" }}
                     >
-                      {item.type}
+                      {formatShortDate(item.date)}
                     </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className="text-base text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      {item.name}
+                    </Text>
+                    <View className="mt-1 flex-row items-center gap-1.5">
+                      <View
+                        className="h-2 w-2 rounded-full"
+                        style={{
+                          backgroundColor:
+                            HOLIDAY_COLORS[item.type] ?? "#3b82f6",
+                        }}
+                      />
+                      <Text
+                        className="text-muted dark:text-muted-dark text-xs capitalize font-medium"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {item.type}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
             ))}
-          </View>
+          </ScrollView>
         )}
       </View>
     </View>

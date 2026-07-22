@@ -52,91 +52,94 @@ function isToday(year: number, month: number, day: number): boolean {
 
 export default memo(function MonthGrid({ year, month, holidays, width }: MonthGridProps) {
   const weeks = useMemo(() => getWeeks(year, month), [year, month]);
-  const cellWidth = Math.floor(width / 7);
+  const cellWidth = Math.floor((width - 48) / 7);
 
   return (
     <View style={{ width }} className="px-4">
-      {/* Day labels row */}
-      <View className="mb-2 flex-row">
-        {DAY_LABELS.map((label, index) => (
-          <View key={index} style={{ width: cellWidth }} className="items-center">
-            <Text style={{
-              fontFamily: "ReadingFont"
-            }} className="text-muted dark:text-muted-dark text-sm font-semibold">
-              {label}
-            </Text>
+      <View className="bg-surface/70 dark:bg-surface-dark/70 rounded-3xl border border-stone-200/50 dark:border-stone-800/50 p-3 shadow-sm">
+        {/* Day labels row */}
+        <View className="mb-3 flex-row justify-between">
+          {DAY_LABELS.map((label, index) => (
+            <View key={index} style={{ width: cellWidth }} className="items-center">
+              <Text
+                style={{ fontFamily: "ReadingFont" }}
+                className="text-muted dark:text-muted-dark text-xs uppercase font-semibold opacity-80"
+              >
+                {label}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Week rows */}
+        {weeks.map((week, wi) => (
+          <View key={wi} className="flex-row justify-between">
+            {week.map((day, di) => {
+              if (day === null) {
+                return <View key={`empty-${wi}-${di}`} style={{ width: cellWidth }} />;
+              }
+
+              const dateKey = toDateKey(year, month, day);
+              const dayHolidays = holidays.get(dateKey) ?? [];
+              const types = [...new Set(dayHolidays.map((h) => h.type))];
+              const today = isToday(year, month, day);
+
+              return (
+                <TouchableOpacity
+                  key={dateKey}
+                  style={{ width: cellWidth }}
+                  className="items-center py-2"
+                  activeOpacity={0.6}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/reading",
+                      params: {
+                        year,
+                        month: month + 1,
+                        day,
+                      },
+                    })
+                  }
+                >
+                  {/* Day number */}
+                  {today ? (
+                    <View className="bg-primary h-8 w-8 items-center justify-center rounded-full shadow-sm">
+                      <Text
+                        className="text-base font-semibold text-white"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {day}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View className="h-8 w-8 items-center justify-center">
+                      <Text
+                        className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {day}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Holiday dots */}
+                  {types.length > 0 && (
+                    <View className="mt-1 flex-row gap-1">
+                      {types.map((type) => (
+                        <View
+                          key={type}
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ backgroundColor: HOLIDAY_COLORS[type] ?? "#3b82f6" }}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ))}
       </View>
-
-      {/* Week rows */}
-      {weeks.map((week, wi) => (
-        <View key={wi} className="flex-row">
-          {week.map((day, di) => {
-            if (day === null) {
-              return <View key={`empty-${wi}-${di}`} style={{ width: cellWidth }} />;
-            }
-
-            const dateKey = toDateKey(year, month, day);
-            const dayHolidays = holidays.get(dateKey) ?? [];
-            const types = [...new Set(dayHolidays.map((h) => h.type))];
-            const today = isToday(year, month, day);
-
-            return (
-              <TouchableOpacity
-                key={dateKey}
-                style={{ width: cellWidth }}
-                className="items-center py-1.5"
-                activeOpacity={0.6}
-                onPress={() =>
-                  router.push({
-                    pathname: "/reading",
-                    params: {
-                      year,
-                      month: month + 1,
-                      day,
-                    },
-                  })
-                }
-              >
-                {/* Day number */}
-                {today ? (
-                  <View className="bg-primary h-8 w-8 items-center justify-center rounded-l-full rounded-r-full">
-                    <Text
-                      className="text-xl font-semibold text-white"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {day}
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="h-8 w-8 items-center justify-center">
-                    <Text
-                      className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {day}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Holiday dots */}
-                {types.length > 0 && (
-                  <View className="mt-0.5 flex-row gap-1">
-                    {types.map((type) => (
-                      <View
-                        key={type}
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: HOLIDAY_COLORS[type] ?? "#9CA3AF" }}
-                      />
-                    ))}
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ))}
     </View>
   );
 });
