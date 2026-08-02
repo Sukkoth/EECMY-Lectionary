@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import {
   PanResponder,
   ScrollView,
@@ -18,6 +18,13 @@ import {
 } from "@/lib/hooks/useHolidays";
 import { useSettings } from "@/lib/SettingsContext";
 import { HOLIDAY_COLORS } from "@/constants";
+import {
+  ETHIOPIAN_MONTH_NAMES,
+  ETHIOPIAN_MONTH_NAMES_AM,
+  gregorianToEthiopian,
+  ethiopianToGregorian,
+  getEvangelistYear,
+} from "@/lib/ethiopianCalendar";
 
 const MONTH_NAMES = [
   "January",
@@ -49,11 +56,18 @@ const MONTH_NAMES_SHORT = [
   "Dec",
 ];
 
-function formatMonth(year: number, month: number): string {
+function formatMonth(year: number, month: number, isEth: boolean): string {
+  if (isEth) {
+    return ETHIOPIAN_MONTH_NAMES_AM[month] ?? "";
+  }
   return MONTH_NAMES[month] ?? "";
 }
 
-function formatYear(year: number): string {
+function formatYear(year: number, isEth: boolean): string {
+  if (isEth) {
+    const ev = getEvangelistYear(year);
+    return `${year} • ዘመነ ${ev.nameAmharic}`;
+  }
   return String(year);
 }
 
@@ -69,10 +83,12 @@ function addMonths(
   year: number,
   month: number,
   delta: number,
+  isEth: boolean,
 ): { year: number; month: number } {
+  const totalMonths = isEth ? 13 : 12;
   const total = month + delta;
-  const newYear = year + Math.floor(total / 12);
-  const newMonth = ((total % 12) + 12) % 12;
+  const newYear = year + Math.floor(total / totalMonths);
+  const newMonth = ((total % totalMonths) + totalMonths) % totalMonths;
   return { year: newYear, month: newMonth };
 }
 
@@ -81,21 +97,50 @@ export default function CalendarScreen() {
   const today = useMemo(() => new Date(), []);
   const isDark = useColorScheme() === "dark";
   const { settings } = useSettings();
+  const isEth = settings.calendarStyle === "ethiopian";
 
-  const [current, setCurrent] = useState(() => ({
-    year: today.getFullYear(),
-    month: today.getMonth(),
-  }));
+  const getInitialCurrent = useCallback(() => {
+    if (isEth) {
+      const eth = gregorianToEthiopian(today);
+      return { year: eth.year, month: eth.month };
+    }
+    return { year: today.getFullYear(), month: today.getMonth() };
+  }, [isEth, today]);
+
+  const [current, setCurrent] = useState(getInitialCurrent);
+
+  // Sync state when calendar style toggles
+  useEffect(() => {
+    if (isEth) {
+      if (current.year > 2020) {
+        const eth = gregorianToEthiopian(new Date(current.year, current.month, 15));
+        setCurrent({ year: eth.year, month: eth.month });
+      }
+    } else {
+      if (current.year <= 2020) {
+        const gc = ethiopianToGregorian(current.year, current.month, 15);
+        setCurrent({ year: gc.year, month: gc.month });
+      }
+    }
+  }, [isEth]);
 
   const { data: allHolidays } = useHolidays(settings.language);
 
+  // Map mid-month Ethiopian date to Gregorian date for fetching month holidays
+  const gcForHolidays = useMemo(() => {
+    if (isEth) {
+      return ethiopianToGregorian(current.year, current.month, 15);
+    }
+    return { year: current.year, month: current.month, day: 1 };
+  }, [current, isEth]);
+
   const holidayMap = useMemo(
-    () => getHolidaysForMonth(allHolidays, current.year, current.month),
-    [allHolidays, current],
+    () => getHolidaysForMonth(allHolidays, gcForHolidays.year, gcForHolidays.month),
+    [allHolidays, gcForHolidays],
   );
   const holidays = useMemo(
-    () => getHolidaysListForMonth(allHolidays, current.year, current.month),
-    [allHolidays, current],
+    () => getHolidaysListForMonth(allHolidays, gcForHolidays.year, gcForHolidays.month),
+    [allHolidays, gcForHolidays],
   );
 
   const panResponder = useRef(
@@ -105,7 +150,7 @@ export default function CalendarScreen() {
       onPanResponderRelease: (_, gs) => {
         if (Math.abs(gs.dx) > 50) {
           setCurrent((prev) =>
-            addMonths(prev.year, prev.month, gs.dx > 0 ? -1 : 1),
+            addMonths(prev.year, prev.month, gs.dx > 0 ? -1 : 1, isEth),
           );
         }
       },
@@ -113,11 +158,13 @@ export default function CalendarScreen() {
   ).current;
 
   const handleJumpToToday = useCallback(() => {
-    setCurrent({ year: today.getFullYear(), month: today.getMonth() });
-  }, [today]);
+    setCurrent(getInitialCurrent());
+  }, [getInitialCurrent]);
 
-  const isCurrentTodayMonth =
-    current.year === today.getFullYear() && current.month === today.getMonth();
+  const ethToday = useMemo(() => gregorianToEthiopian(today), [today]);
+  const isCurrentTodayMonth = isEth
+    ? current.year === ethToday.year && current.month === ethToday.month
+    : current.year === today.getFullYear() && current.month === today.getMonth();
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
@@ -128,13 +175,13 @@ export default function CalendarScreen() {
             className="text-2xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {formatMonth(current.year, current.month)}
+            {formatMonth(current.year, current.month, isEth)}
           </Text>
           <Text
             className="text-primary mt-0.5 text-xs font-semibold uppercase tracking-wide"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {formatYear(current.year)}
+            {formatYear(current.year, isEth)}
           </Text>
         </View>
 
@@ -159,7 +206,7 @@ export default function CalendarScreen() {
           <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-2xl border border-stone-200/60 p-1 dark:border-stone-800/60">
             <TouchableOpacity
               onPress={() =>
-                setCurrent((prev) => addMonths(prev.year, prev.month, -1))
+                setCurrent((prev) => addMonths(prev.year, prev.month, -1, isEth))
               }
               className="p-1.5"
               activeOpacity={0.7}
@@ -174,7 +221,7 @@ export default function CalendarScreen() {
             <View className="mx-0.5 my-auto h-4 w-[1px] bg-stone-200 dark:bg-stone-800" />
             <TouchableOpacity
               onPress={() =>
-                setCurrent((prev) => addMonths(prev.year, prev.month, 1))
+                setCurrent((prev) => addMonths(prev.year, prev.month, 1, isEth))
               }
               className="p-1.5"
               activeOpacity={0.7}
@@ -197,6 +244,7 @@ export default function CalendarScreen() {
           month={current.month}
           holidays={holidayMap}
           width={screenWidth}
+          calendarStyle={settings.calendarStyle}
         />
       </View>
 

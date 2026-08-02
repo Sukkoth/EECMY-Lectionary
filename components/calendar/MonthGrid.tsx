@@ -3,6 +3,12 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import type { HolidayRow } from "@/lib/types";
 import { HOLIDAY_COLORS } from "@/constants";
+import type { CalendarStyle } from "@/lib/settings";
+import {
+  getEthiopianWeeks,
+  ethiopianToGregorian,
+  gregorianToEthiopian,
+} from "@/lib/ethiopianCalendar";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
@@ -11,6 +17,7 @@ type MonthGridProps = {
   month: number;
   holidays: Map<string, HolidayRow[]>;
   width: number;
+  calendarStyle?: CalendarStyle;
 };
 
 function getWeeks(year: number, month: number): (number | null)[][] {
@@ -40,22 +47,24 @@ function toDateKey(year: number, month: number, day: number): string {
   return `${year}-${m}-${d}`;
 }
 
-function isToday(year: number, month: number, day: number): boolean {
-  const today = new Date();
-  return (
-    today.getFullYear() === year &&
-    today.getMonth() === month &&
-    today.getDate() === day
-  );
-}
-
 export default memo(function MonthGrid({
   year,
   month,
   holidays,
   width,
+  calendarStyle = "ethiopian",
 }: MonthGridProps) {
-  const weeks = useMemo(() => getWeeks(year, month), [year, month]);
+  const isEth = calendarStyle === "ethiopian";
+  const weeks = useMemo(() => {
+    return isEth ? getEthiopianWeeks(year, month) : getWeeks(year, month);
+  }, [year, month, isEth]);
+
+  const ethToday = useMemo(() => gregorianToEthiopian(new Date()), []);
+  const gcToday = useMemo(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
+  }, []);
+
   const paddingX = 48;
   const cellWidth = Math.floor((width - paddingX) / 7);
 
@@ -99,14 +108,29 @@ export default memo(function MonthGrid({
                   );
                 }
 
-                const dateKey = toDateKey(year, month, day);
+                let targetGc = { year, month, day };
+                let today = false;
+
+                if (isEth) {
+                  targetGc = ethiopianToGregorian(year, month, day);
+                  today =
+                    ethToday.year === year &&
+                    ethToday.month === month &&
+                    ethToday.day === day;
+                } else {
+                  today =
+                    gcToday.year === year &&
+                    gcToday.month === month &&
+                    gcToday.day === day;
+                }
+
+                const dateKey = toDateKey(targetGc.year, targetGc.month, targetGc.day);
                 const dayHolidays = holidays.get(dateKey) ?? [];
                 const types = [...new Set(dayHolidays.map((h) => h.type))];
-                const today = isToday(year, month, day);
 
                 return (
                   <TouchableOpacity
-                    key={dateKey}
+                    key={`day-${year}-${month}-${day}`}
                     style={{ width: cellWidth }}
                     className="items-center justify-center py-1"
                     activeOpacity={0.7}
@@ -114,9 +138,9 @@ export default memo(function MonthGrid({
                       router.push({
                         pathname: "/reading",
                         params: {
-                          year,
-                          month: month + 1,
-                          day,
+                          year: targetGc.year,
+                          month: targetGc.month + 1,
+                          day: targetGc.day,
                         },
                       })
                     }
