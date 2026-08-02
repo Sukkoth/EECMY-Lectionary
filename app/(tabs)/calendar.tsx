@@ -63,12 +63,14 @@ function formatMonth(month: number, isEth: boolean): string {
   return MONTH_NAMES[month] ?? "";
 }
 
-function formatYear(year: number, isEth: boolean): string {
+function formatYear(year: number, month: number, isEth: boolean): string {
   if (isEth) {
     const ev = getEvangelistYear(year);
     return `${year} • ዘመነ ${ev.nameAmharic}`;
   }
-  return String(year);
+  const ethDate = gregorianToEthiopian(new Date(year, month, 15));
+  const ev = getEvangelistYear(ethDate.year);
+  return `${year} • Year of ${ev.name}`;
 }
 
 export default function CalendarScreen() {
@@ -155,7 +157,7 @@ export default function CalendarScreen() {
             className="text-primary mt-0.5 text-xs font-semibold uppercase tracking-wide"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {formatYear(current.year, isEth)}
+            {formatYear(current.year, current.month, isEth)}
           </Text>
         </View>
 
