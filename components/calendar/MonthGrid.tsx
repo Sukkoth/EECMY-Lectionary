@@ -154,8 +154,8 @@ export default memo(function MonthGrid({
                           <Text
                             className={`text-xl ${
                               today
-                                ? "text-white font-bold"
-                                : "text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
+                                ? "text-white font-semibold"
+                                : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
                             }`}
                             style={{ fontFamily: "ReadingFont" }}
                           >
