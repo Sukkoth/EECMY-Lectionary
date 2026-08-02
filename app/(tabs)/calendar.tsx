@@ -13,8 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import {
   useHolidays,
-  getHolidaysForMonth,
-  getHolidaysListForMonth,
+  getHolidaysForRange,
 } from "@/lib/hooks/useHolidays";
 import { useSettings } from "@/lib/SettingsContext";
 import { HOLIDAY_COLORS } from "@/constants";
@@ -23,6 +22,7 @@ import {
   ETHIOPIAN_MONTH_NAMES_AM,
   gregorianToEthiopian,
   ethiopianToGregorian,
+  getDaysInEthiopianMonth,
   getEvangelistYear,
 } from "@/lib/ethiopianCalendar";
 
@@ -71,8 +71,16 @@ function formatYear(year: number, isEth: boolean): string {
   return String(year);
 }
 
-function formatShortDate(dateStr: string): { monthShort: string; dayNum: number } {
-  const [, m, d] = dateStr.split("-").map(Number);
+function formatShortDate(dateStr: string, isEth: boolean): { monthShort: string; dayNum: number } {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (isEth) {
+    const eth = gregorianToEthiopian(new Date(y, (m || 1) - 1, d || 1));
+    const ethMonthName = ETHIOPIAN_MONTH_NAMES_AM[eth.month] ?? "";
+    return {
+      monthShort: ethMonthName,
+      dayNum: eth.day,
+    };
+  }
   return {
     monthShort: MONTH_NAMES_SHORT[(m || 1) - 1] ?? "Jan",
     dayNum: d || 1,
@@ -126,21 +134,27 @@ export default function CalendarScreen() {
 
   const { data: allHolidays } = useHolidays(settings.language);
 
-  // Map mid-month Ethiopian date to Gregorian date for fetching month holidays
-  const gcForHolidays = useMemo(() => {
+  // Compute exact start and end GC date strings for the currently displayed month
+  const { startDateStr, endDateStr } = useMemo(() => {
     if (isEth) {
-      return ethiopianToGregorian(current.year, current.month, 15);
+      const gcStart = ethiopianToGregorian(current.year, current.month, 1);
+      const maxDays = getDaysInEthiopianMonth(current.year, current.month);
+      const gcEnd = ethiopianToGregorian(current.year, current.month, maxDays);
+
+      const start = `${gcStart.year}-${String(gcStart.month + 1).padStart(2, "0")}-${String(gcStart.day).padStart(2, "0")}`;
+      const end = `${gcEnd.year}-${String(gcEnd.month + 1).padStart(2, "0")}-${String(gcEnd.day).padStart(2, "0")}`;
+      return { startDateStr: start, endDateStr: end };
     }
-    return { year: current.year, month: current.month, day: 1 };
+
+    const daysInMonth = new Date(current.year, current.month + 1, 0).getDate();
+    const start = `${current.year}-${String(current.month + 1).padStart(2, "0")}-01`;
+    const end = `${current.year}-${String(current.month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
+    return { startDateStr: start, endDateStr: end };
   }, [current, isEth]);
 
-  const holidayMap = useMemo(
-    () => getHolidaysForMonth(allHolidays, gcForHolidays.year, gcForHolidays.month),
-    [allHolidays, gcForHolidays],
-  );
-  const holidays = useMemo(
-    () => getHolidaysListForMonth(allHolidays, gcForHolidays.year, gcForHolidays.month),
-    [allHolidays, gcForHolidays],
+  const { map: holidayMap, list: holidays } = useMemo(
+    () => getHolidaysForRange(allHolidays, startDateStr, endDateStr),
+    [allHolidays, startDateStr, endDateStr],
   );
 
   const panResponder = useRef(
@@ -287,7 +301,7 @@ export default function CalendarScreen() {
             contentContainerStyle={{ paddingBottom: 28 }}
           >
             {holidays.map((item, i) => {
-              const { monthShort, dayNum } = formatShortDate(item.date);
+              const { monthShort, dayNum } = formatShortDate(item.date, isEth);
               const key = item.id ?? `${item.date}-${item.name}-${i}`;
               return (
                 <View

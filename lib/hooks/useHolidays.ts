@@ -52,3 +52,24 @@ export function getHolidaysListForMonth(
   const prefix = `${year}-${String(month + 1).padStart(2, "0")}`;
   return holidays.filter((h) => h.date.startsWith(prefix));
 }
+
+export function getHolidaysForRange(
+  holidays: HolidayRow[] | undefined,
+  startDateStr: string,
+  endDateStr: string,
+): { map: Map<string, HolidayRow[]>; list: HolidayRow[] } {
+  const map = new Map<string, HolidayRow[]>();
+  const list: HolidayRow[] = [];
+  if (!holidays) return { map, list };
+
+  for (const row of holidays) {
+    if (row.date >= startDateStr && row.date <= endDateStr) {
+      const existing = map.get(row.date) ?? [];
+      existing.push(row);
+      map.set(row.date, existing);
+      list.push(row);
+    }
+  }
+
+  return { map, list };
+}
