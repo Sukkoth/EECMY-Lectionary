@@ -88,18 +88,14 @@ export default function CalendarScreen() {
 
   const [current, setCurrent] = useState(getInitialCurrent);
 
-  // Sync state when calendar style toggles
+  // Reset calendar view to today's date when calendar system toggles
   useEffect(() => {
+    const now = new Date();
     if (isEth) {
-      if (current.year > 2020) {
-        const eth = gregorianToEthiopian(new Date(Date.UTC(current.year, current.month, 15, 12)));
-        setCurrent({ year: eth.year, month: eth.month });
-      }
+      const eth = gregorianToEthiopian(now);
+      setCurrent({ year: eth.year, month: eth.month });
     } else {
-      if (current.year <= 2020) {
-        const gc = ethiopianToGregorian(current.year, current.month, 15);
-        setCurrent({ year: gc.year, month: gc.month });
-      }
+      setCurrent({ year: now.getFullYear(), month: now.getMonth() });
     }
   }, [isEth]);
 
