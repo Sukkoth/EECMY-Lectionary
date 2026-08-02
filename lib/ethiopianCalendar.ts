@@ -56,9 +56,9 @@ export function ethiopianToGregorian(
     const eth = new EthDateTime(ethYear, validMonthIndex + 1, validDay);
     const gc = eth.toEuropeanDate();
     return {
-      year: gc.getFullYear(),
-      month: gc.getMonth(),
-      day: gc.getDate(),
+      year: gc.getUTCFullYear(),
+      month: gc.getUTCMonth(),
+      day: gc.getUTCDate(),
     };
   } catch {
     return {
@@ -71,7 +71,8 @@ export function ethiopianToGregorian(
 
 /** Convert Gregorian Date to Ethiopian date (0-indexed month: 0..12) */
 export function gregorianToEthiopian(date: Date): { year: number; month: number; day: number } {
-  const eth = EthDateTime.fromEuropeanDate(date);
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0));
+  const eth = EthDateTime.fromEuropeanDate(utcDate);
   return {
     year: eth.year,
     month: eth.month - 1,
@@ -79,7 +80,7 @@ export function gregorianToEthiopian(date: Date): { year: number; month: number;
   };
 }
 
-/** Compute Evangelist of the Year */
+/** Compute Evangelist of the Year (ባሕረ ሐሳብ) */
 export function getEvangelistYear(ethYear: number): { name: string; nameAmharic: string } {
   const ameteAlem = ethYear + 5500;
   const remainder = ameteAlem % 4;
@@ -96,12 +97,18 @@ export function getEvangelistYear(ethYear: number): { name: string; nameAmharic:
   }
 }
 
+/** Calculate Ethiopian Calendar Week Number (1..53) for a given Ethiopian date (0-indexed month: 0..12) */
+export function getEcWeekNumber(monthIndex: number, ethDay: number): number {
+  const totalDays = monthIndex * 30 + (ethDay - 1);
+  return Math.floor(totalDays / 7) + 1;
+}
+
 /** Generates week grid rows for Ethiopian month (0-indexed month: 0..12) */
 export function getEthiopianWeeks(ethYear: number, monthIndex: number): (number | null)[][] {
-  // Find weekday of first day of Ethiopian month
-  const firstGc = ethiopianToGregorian(ethYear, monthIndex, 1);
-  const firstDayOfWeek = new Date(firstGc.year, firstGc.month, firstGc.day).getDay();
-  const daysInMonth = getDaysInEthiopianMonth(ethYear, monthIndex);
+  const validMonthIndex = Math.max(0, Math.min(12, monthIndex));
+  const firstEth = new EthDateTime(ethYear, validMonthIndex + 1, 1);
+  const firstDayOfWeek = firstEth.getDay();
+  const daysInMonth = getDaysInEthiopianMonth(ethYear, validMonthIndex);
 
   const weeks: (number | null)[][] = [];
   let week: (number | null)[] = Array(firstDayOfWeek).fill(null);

@@ -148,13 +148,13 @@ export default function CalendarScreen() {
       <View className="flex-row items-center justify-between px-6 pt-12 pb-4">
         <View>
           <Text
-            className="text-2xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
+            className="text-3xl font-bold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
             {formatMonth(current.month, isEth)}
           </Text>
           <Text
-            className="text-primary mt-0.5 text-xs font-semibold uppercase tracking-wide"
+            className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
             style={{ fontFamily: "ReadingFont" }}
           >
             {formatYear(current.year, current.month, isEth)}
@@ -212,6 +212,7 @@ export default function CalendarScreen() {
       {/* Swipeable Month Grid */}
       <View {...panResponder.panHandlers}>
         <MonthGrid
+          key={`grid-${isEth ? "eth" : "gc"}-${current.year}-${current.month}`}
           year={current.year}
           month={current.month}
           holidays={holidayMap}
