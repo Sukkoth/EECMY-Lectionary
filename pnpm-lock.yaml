@@ -29,6 +29,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.101.3
         version: 5.101.3(react@19.1.0)
+      ethiopian-calendar-date-converter:
+        specifier: ^2.1.6
+        version: 2.1.6
       expo:
         specifier: ~54.0.34
         version: 54.0.35(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
@@ -2406,6 +2409,9 @@ packages:
   etag@1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
+
+  ethiopian-calendar-date-converter@2.1.6:
+    resolution: {integrity: sha512-qqOPkFQlMfLXF4gP70+2z6DrJNvKKcj+VIC37e72A5qs/LXCYQVt8egahDUfGkI0s92FyV7lfSUtGrX4rdM+3w==}
 
   event-target-shim@5.0.1:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
@@ -7456,6 +7462,8 @@ snapshots:
   esutils@2.0.3: {}
 
   etag@1.8.1: {}
+
+  ethiopian-calendar-date-converter@2.1.6: {}
 
   event-target-shim@5.0.1: {}
 
