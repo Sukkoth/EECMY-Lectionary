@@ -56,7 +56,7 @@ const MONTH_NAMES_SHORT = [
   "Dec",
 ];
 
-function formatMonth(year: number, month: number, isEth: boolean): string {
+function formatMonth(month: number, isEth: boolean): string {
   if (isEth) {
     return ETHIOPIAN_MONTH_NAMES_AM[month] ?? "";
   }
@@ -87,19 +87,6 @@ function formatShortDate(dateStr: string, isEth: boolean): { monthShort: string;
   };
 }
 
-function addMonths(
-  year: number,
-  month: number,
-  delta: number,
-  isEth: boolean,
-): { year: number; month: number } {
-  const totalMonths = isEth ? 13 : 12;
-  const total = month + delta;
-  const newYear = year + Math.floor(total / totalMonths);
-  const newMonth = ((total % totalMonths) + totalMonths) % totalMonths;
-  return { year: newYear, month: newMonth };
-}
-
 export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const today = useMemo(() => new Date(), []);
@@ -107,29 +94,28 @@ export default function CalendarScreen() {
   const { settings } = useSettings();
   const isEth = settings.calendarStyle === "ethiopian";
 
-  const getInitialCurrent = useCallback(() => {
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+
+  const current = useMemo(() => {
     if (isEth) {
-      const eth = gregorianToEthiopian(today);
+      const eth = gregorianToEthiopian(currentDate);
       return { year: eth.year, month: eth.month };
     }
-    return { year: today.getFullYear(), month: today.getMonth() };
-  }, [isEth, today]);
+    return { year: currentDate.getFullYear(), month: currentDate.getMonth() };
+  }, [currentDate, isEth]);
 
-  const [current, setCurrent] = useState(getInitialCurrent);
-
-  // Sync state when calendar style toggles
-  useEffect(() => {
-    if (isEth) {
-      if (current.year > 2020) {
-        const eth = gregorianToEthiopian(new Date(current.year, current.month, 15));
-        setCurrent({ year: eth.year, month: eth.month });
+  const addMonthDelta = useCallback((delta: number) => {
+    setCurrentDate((prev) => {
+      if (isEth) {
+        const eth = gregorianToEthiopian(prev);
+        const total = eth.month + delta;
+        const newYear = eth.year + Math.floor(total / 13);
+        const newMonth = ((total % 13) + 13) % 13;
+        const gc = ethiopianToGregorian(newYear, newMonth, 15);
+        return new Date(gc.year, gc.month, gc.day);
       }
-    } else {
-      if (current.year <= 2020) {
-        const gc = ethiopianToGregorian(current.year, current.month, 15);
-        setCurrent({ year: gc.year, month: gc.month });
-      }
-    }
+      return new Date(prev.getFullYear(), prev.getMonth() + delta, 15);
+    });
   }, [isEth]);
 
   const { data: allHolidays } = useHolidays(settings.language);
@@ -163,17 +149,15 @@ export default function CalendarScreen() {
         Math.abs(gs.dx) > 10 && Math.abs(gs.dx) > Math.abs(gs.dy),
       onPanResponderRelease: (_, gs) => {
         if (Math.abs(gs.dx) > 50) {
-          setCurrent((prev) =>
-            addMonths(prev.year, prev.month, gs.dx > 0 ? -1 : 1, isEth),
-          );
+          addMonthDelta(gs.dx > 0 ? -1 : 1);
         }
       },
     }),
   ).current;
 
   const handleJumpToToday = useCallback(() => {
-    setCurrent(getInitialCurrent());
-  }, [getInitialCurrent]);
+    setCurrentDate(new Date());
+  }, []);
 
   const ethToday = useMemo(() => gregorianToEthiopian(today), [today]);
   const isCurrentTodayMonth = isEth
@@ -189,7 +173,7 @@ export default function CalendarScreen() {
             className="text-2xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {formatMonth(current.year, current.month, isEth)}
+            {formatMonth(current.month, isEth)}
           </Text>
           <Text
             className="text-primary mt-0.5 text-xs font-semibold uppercase tracking-wide"
@@ -219,9 +203,7 @@ export default function CalendarScreen() {
           {/* Capsule Chevron Controls */}
           <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-2xl border border-stone-200/60 p-1 dark:border-stone-800/60">
             <TouchableOpacity
-              onPress={() =>
-                setCurrent((prev) => addMonths(prev.year, prev.month, -1, isEth))
-              }
+              onPress={() => addMonthDelta(-1)}
               className="p-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -234,9 +216,7 @@ export default function CalendarScreen() {
             </TouchableOpacity>
             <View className="mx-0.5 my-auto h-4 w-[1px] bg-stone-200 dark:bg-stone-800" />
             <TouchableOpacity
-              onPress={() =>
-                setCurrent((prev) => addMonths(prev.year, prev.month, 1, isEth))
-              }
+              onPress={() => addMonthDelta(1)}
               className="p-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
