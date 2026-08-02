@@ -66,80 +66,43 @@ export default memo(function MonthGrid({
     return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
   }, []);
 
-  const paddingX = 40;
-  const weekNumWidth = 32;
-  const cellWidth = Math.floor((width - paddingX - weekNumWidth) / 7);
+  const paddingX = 48;
+  const cellWidth = Math.floor((width - paddingX) / 7);
 
   return (
-    <View style={{ width }} className="px-5">
+    <View style={{ width }} className="px-6">
       {/* Sleek Modern Card Surface */}
       <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-4">
         {/* Day labels header */}
         <View className="mb-3 flex-row items-center border-b border-stone-200/40 dark:border-stone-800/40 pb-2.5">
-          <View style={{ width: weekNumWidth }} className="items-center justify-center">
-            <Text
-              style={{ fontFamily: "ReadingFont" }}
-              className="text-xs font-bold text-muted dark:text-muted-dark opacity-60 uppercase"
-            >
-              Wk
-            </Text>
-          </View>
-          <View className="flex-1 flex-row items-center">
-            {DAY_LABELS.map((label, index) => {
-              const isWeekend = index === 0 || index === 6;
-              return (
-                <View
-                  key={label}
-                  style={{ width: cellWidth }}
-                  className="items-center justify-center"
+          {DAY_LABELS.map((label, index) => {
+            const isWeekend = index === 0 || index === 6;
+            return (
+              <View
+                key={label}
+                style={{ width: cellWidth }}
+                className="items-center justify-center"
+              >
+                <Text
+                  style={{ fontFamily: "ReadingFont" }}
+                  className={`text-xs uppercase tracking-wider font-semibold ${
+                    isWeekend
+                      ? "text-primary/70"
+                      : "text-muted dark:text-muted-dark opacity-80"
+                  }`}
                 >
-                  <Text
-                    style={{ fontFamily: "ReadingFont" }}
-                    className={`text-xs uppercase tracking-wider font-semibold ${
-                      isWeekend
-                        ? "text-primary/70"
-                        : "text-muted dark:text-muted-dark opacity-80"
-                    }`}
-                  >
-                    {label}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+                  {label}
+                </Text>
+              </View>
+            );
+          })}
         </View>
 
         {/* Week rows */}
         <View className="space-y-1">
-          {weeks.map((week, wi) => {
-            const firstValidDay = week.find((d) => d !== null)!;
-            let weekNum = 0;
-            if (isEth) {
-              weekNum = getEcWeekNumber(month, firstValidDay);
-            } else {
-              const eth = gregorianToEthiopian(
-                new Date(Date.UTC(year, month, firstValidDay, 12)),
-              );
-              weekNum = getEcWeekNumber(eth.month, eth.day);
-            }
-
-            return (
-              <View key={wi} className="flex-row items-center py-1">
-                {/* Week Number Gutter Pill */}
-                <View style={{ width: weekNumWidth }} className="items-center justify-center">
-                  <View className="bg-stone-200/60 dark:bg-stone-800/60 rounded-md px-1.5 py-0.5">
-                    <Text
-                      className="text-xs font-bold text-primary dark:text-primary-light"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {weekNum}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* 7 Day Cells */}
-                <View className="flex-1 flex-row items-center">
-                  {week.map((day, di) => {
+          {weeks.map((week, wi) => (
+            <View key={wi} className="flex-row items-center py-1">
+              {week.map((day, di) => {
                     if (day === null) {
                       return (
                         <View key={`empty-${wi}-${di}`} style={{ width: cellWidth }} />
@@ -218,10 +181,8 @@ export default memo(function MonthGrid({
                       </TouchableOpacity>
                     );
                   })}
-                </View>
-              </View>
-            );
-          })}
+            </View>
+          ))}
         </View>
       </View>
     </View>
