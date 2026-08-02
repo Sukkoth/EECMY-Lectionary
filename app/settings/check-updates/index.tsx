@@ -7,9 +7,9 @@ export default function CheckUpdatesScreen() {
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6">
+      <View className="flex-1 px-6 pt-12">
         {/* Header */}
-        <View className="mb-8 mt-8 flex-row items-center gap-4">
+        <View className="mb-6 flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.7}

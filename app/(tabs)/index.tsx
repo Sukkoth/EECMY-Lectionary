@@ -82,9 +82,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="mt-8 flex-1 px-6">
+      <View className="flex-1 px-6 pt-12">
         {/* HEADER */}
-        <View className="mb-7 mt-4 flex-row items-center justify-between">
+        <View className="mb-6 flex-row items-center justify-between">
           <Text
             className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}

@@ -410,8 +410,8 @@ export default function ContentUpdateScreen() {
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6">
-        <View className="mb-6 mt-8 flex-row items-center gap-4">
+      <View className="flex-1 px-6 pt-12">
+        <View className="mb-6 flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => (step === "idle" ? router.back() : goBack())}
             activeOpacity={0.7}

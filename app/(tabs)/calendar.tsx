@@ -7,6 +7,7 @@ import {
   View,
   useColorScheme,
   useWindowDimensions,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MonthGrid from "@/components/calendar/MonthGrid";
@@ -119,9 +120,9 @@ export default function CalendarScreen() {
     current.year === today.getFullYear() && current.month === today.getMonth();
 
   return (
-    <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       {/* Top Header Bar */}
-      <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
+      <View className="flex-row items-center justify-between px-6 pt-12 pb-4">
         <View>
           <Text
             className="text-2xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -285,6 +286,6 @@ export default function CalendarScreen() {
           </ScrollView>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

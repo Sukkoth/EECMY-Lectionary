@@ -9,7 +9,7 @@ export default function LanguageSettingsScreen() {
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       {/* Header with back button */}
-      <View className="border-b border-stone-200 px-6 pb-4 pt-10 dark:border-stone-800">
+      <View className="border-b border-stone-200 px-6 pb-4 pt-12 dark:border-stone-800">
         <View className="flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => router.back()}

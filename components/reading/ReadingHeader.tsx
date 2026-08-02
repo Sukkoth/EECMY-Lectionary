@@ -23,7 +23,7 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
     };
 
     return (
-      <View className="border-b border-stone-200 px-6 pb-4 pt-10 dark:border-stone-800">
+      <View className="border-b border-stone-200 px-6 pb-4 pt-12 dark:border-stone-800">
         <View className="flex-row items-start justify-between">
           {/* Left: weekday + date + liturgical day title */}
           <View className="flex-1">

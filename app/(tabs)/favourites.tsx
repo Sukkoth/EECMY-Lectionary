@@ -8,6 +8,7 @@ import {
   useColorScheme,
   Share,
   ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from "@expo/vector-icons/Octicons";
@@ -107,10 +108,10 @@ export default function FavouritesScreen() {
 
   // ─── Favourites list ────────────────────────────────────────
   return (
-    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" >
-      <ScrollView className="mt-6 flex-1 px-6 pt-2">
+    <SafeAreaView className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
+      <ScrollView className="flex-1 px-6 pt-12">
         {/* Header */}
-        <View className="mb-4 mt-4 flex-row items-center justify-between">
+        <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Text
               className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -266,6 +267,6 @@ export default function FavouritesScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }

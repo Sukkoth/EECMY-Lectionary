@@ -15,11 +15,11 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="bg-bg-warm  dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6 mt-6">
+    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+      <View className="flex-1 px-6 pt-12">
         {/* Title */}
         <Text
-          className="mt-8 mb-8 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
+          className="mb-6 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
           Settings
