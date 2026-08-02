@@ -6,55 +6,60 @@ export type LanguageEntry = {
   versions: { code: string; label: string }[];
 };
 
-/** Static maps from DB-stored codes to human-readable display names */
-//TODO: These will be removed for dynamic content later
-export const LANGUAGE_NAMES: Record<string, string> = {
-  en: "English",
-  am: "አማርኛ",
-  om: "Afaan Oromoo"
-};
-
-export const VERSION_LABELS: Record<string, string> = {
-  kjv: "King James Version",
-  niv: "New International Version",
-  am95: "አማርኛ 1954",
-  nasv: "NASV",
-  macqul: "Macaafa Qulqulluu",
-  hha: "Hiika Haarawa Ammayyaa"
-};
-
 /**
- * Fetches available (language, version) pairs from the DB,
- * groups them by language, and returns LanguageEntry[].
+ * Fetches available (language, version) pairs dynamically from the DB,
+ * joining SyncRecord for human-readable display names, groups them by language,
+ * and returns LanguageEntry[].
  * Runs once on app start — results are cached in SettingsContext.
  */
 export async function getAvailableLanguages(
   db: SQLiteDatabase,
 ): Promise<LanguageEntry[]> {
-  const rows = await db.getAllAsync<{ language: string; version: string }>(
-    `SELECT DISTINCT language, version FROM Reading ORDER BY language, version`,
+
+  const rows = await db.getAllAsync<{
+    language: string;
+    languageFullName: string;
+    version: string;
+    versionFullName: string;
+  }>(
+    `SELECT DISTINCT 
+       r.language,
+       COALESCE(
+         (SELECT languageFullName FROM SyncRecord WHERE language = r.language AND languageFullName IS NOT NULL AND languageFullName != '' LIMIT 1),
+         r.language
+       ) AS languageFullName,
+       r.version,
+       COALESCE(
+         (SELECT versionFullName FROM SyncRecord WHERE language = r.language AND version = r.version AND versionFullName IS NOT NULL AND versionFullName != '' LIMIT 1),
+         UPPER(r.version)
+       ) AS versionFullName
+     FROM Reading r
+     ORDER BY r.language, r.version`,
   );
 
-  const grouped = new Map<string, Set<string>>();
+  const grouped = new Map<
+    string,
+    { languageFullName: string; versions: Map<string, string> }
+  >();
 
   for (const row of rows) {
-    const existing = grouped.get(row.language);
-    if (existing) {
-      existing.add(row.version);
-    } else {
-      grouped.set(row.language, new Set([row.version]));
+    let entry = grouped.get(row.language);
+    if (!entry) {
+      entry = { languageFullName: row.languageFullName, versions: new Map() };
+      grouped.set(row.language, entry);
     }
+    entry.versions.set(row.version, row.versionFullName);
   }
 
   const result: LanguageEntry[] = [];
 
-  for (const [code, versions] of grouped) {
+  for (const [code, { languageFullName, versions }] of grouped) {
     result.push({
-      language: LANGUAGE_NAMES[code] ?? code,
+      language: languageFullName,
       code,
-      versions: Array.from(versions).map((v) => ({
-        code: v,
-        label: VERSION_LABELS[v] ?? v.toUpperCase(),
+      versions: Array.from(versions.entries()).map(([vCode, vLabel]) => ({
+        code: vCode,
+        label: vLabel,
       })),
     });
   }
