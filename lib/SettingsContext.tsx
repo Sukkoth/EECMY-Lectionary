@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   alignSimple: "center",
   alignExpanded: "justify",
   theme: "light",
+  calendarStyle: "ethiopian",
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);

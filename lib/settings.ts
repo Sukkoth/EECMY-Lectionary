@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 
 export type TextAlignment = "left" | "center" | "justify";
+export type CalendarStyle = "gregorian" | "ethiopian";
 
 export type AppSettings = {
   language: string;
@@ -10,6 +11,7 @@ export type AppSettings = {
   alignSimple: TextAlignment;
   alignExpanded: TextAlignment;
   theme: "light" | "dark";
+  calendarStyle: CalendarStyle;
 };
 
 const KEYS = {
@@ -20,6 +22,7 @@ const KEYS = {
   alignSimple: "yeilet_align_simple",
   alignExpanded: "yeilet_align_expanded",
   theme: "yeilet_theme",
+  calendarStyle: "yeilet_calendar_style",
   onboardingComplete: "yeilet_onboarding_complete",
 };
 
@@ -31,11 +34,12 @@ const DEFAULTS: AppSettings = {
   alignSimple: "center",
   alignExpanded: "justify",
   theme: "light",
+  calendarStyle: "ethiopian",
 };
 
 export async function loadSettings(): Promise<AppSettings> {
   try {
-    const [language, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded, theme] =
+    const [language, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded, theme, calendarStyle] =
       await Promise.all([
         SecureStore.getItemAsync(KEYS.language),
         SecureStore.getItemAsync(KEYS.version),
@@ -44,6 +48,7 @@ export async function loadSettings(): Promise<AppSettings> {
         SecureStore.getItemAsync(KEYS.alignSimple),
         SecureStore.getItemAsync(KEYS.alignExpanded),
         SecureStore.getItemAsync(KEYS.theme),
+        SecureStore.getItemAsync(KEYS.calendarStyle),
       ]);
 
     return {
@@ -54,6 +59,7 @@ export async function loadSettings(): Promise<AppSettings> {
       alignSimple: parseAlignment(alignSimple, DEFAULTS.alignSimple),
       alignExpanded: parseAlignment(alignExpanded, DEFAULTS.alignExpanded),
       theme: theme === "light" || theme === "dark" ? theme : DEFAULTS.theme,
+      calendarStyle: calendarStyle === "ethiopian" || calendarStyle === "gregorian" ? calendarStyle : DEFAULTS.calendarStyle,
     };
   } catch {
     return { ...DEFAULTS };
@@ -69,6 +75,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     SecureStore.setItemAsync(KEYS.alignSimple, settings.alignSimple),
     SecureStore.setItemAsync(KEYS.alignExpanded, settings.alignExpanded),
     SecureStore.setItemAsync(KEYS.theme, settings.theme),
+    SecureStore.setItemAsync(KEYS.calendarStyle, settings.calendarStyle),
   ]);
 }
 
