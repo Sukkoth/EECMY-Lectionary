@@ -7,6 +7,7 @@ import {
   Modal,
   useColorScheme,
   Share,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Octicons from "@expo/vector-icons/Octicons";
@@ -24,7 +25,7 @@ function formatDate(iso: string): string {
 export default function FavouritesScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings } = useSettings();
-  const { data: favourites = [] } = useHydratedFavourites(settings.language, settings.version);
+  const { data: favourites = [], isLoading } = useHydratedFavourites(settings.language, settings.version);
   const removeMut = useRemoveFavourite();
   const clearMut = useClearFavourites();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -51,6 +52,15 @@ export default function FavouritesScreen() {
 
   function handleDelete(fav: HydratedFavourite) {
     removeMut.mutate({ date: fav.date, order: fav.order });
+  }
+
+  // ─── Loading state ───────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark items-center justify-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
   }
 
   // ─── Empty state ────────────────────────────────────────────
