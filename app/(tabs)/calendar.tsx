@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import {
   useHolidays,
-  getHolidaysForRange,
+  getHolidaysForActiveMonth,
 } from "@/lib/hooks/useHolidays";
 import { useSettings } from "@/lib/SettingsContext";
 import { HOLIDAY_COLORS } from "@/constants";
@@ -71,22 +71,6 @@ function formatYear(year: number, isEth: boolean): string {
   return String(year);
 }
 
-function formatShortDate(dateStr: string, isEth: boolean): { monthShort: string; dayNum: number } {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  if (isEth) {
-    const eth = gregorianToEthiopian(new Date(y, (m || 1) - 1, d || 1));
-    const ethMonthName = ETHIOPIAN_MONTH_NAMES_AM[eth.month] ?? "";
-    return {
-      monthShort: ethMonthName,
-      dayNum: eth.day,
-    };
-  }
-  return {
-    monthShort: MONTH_NAMES_SHORT[(m || 1) - 1] ?? "Jan",
-    dayNum: d || 1,
-  };
-}
-
 export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const today = useMemo(() => new Date(), []);
@@ -94,53 +78,53 @@ export default function CalendarScreen() {
   const { settings } = useSettings();
   const isEth = settings.calendarStyle === "ethiopian";
 
-  const [currentDate, setCurrentDate] = useState(() => new Date());
-
-  const current = useMemo(() => {
+  const getInitialCurrent = useCallback(() => {
     if (isEth) {
-      const eth = gregorianToEthiopian(currentDate);
+      const eth = gregorianToEthiopian(today);
       return { year: eth.year, month: eth.month };
     }
-    return { year: currentDate.getFullYear(), month: currentDate.getMonth() };
-  }, [currentDate, isEth]);
+    return { year: today.getFullYear(), month: today.getMonth() };
+  }, [isEth, today]);
 
-  const addMonthDelta = useCallback((delta: number) => {
-    setCurrentDate((prev) => {
-      if (isEth) {
-        const eth = gregorianToEthiopian(prev);
-        const total = eth.month + delta;
-        const newYear = eth.year + Math.floor(total / 13);
-        const newMonth = ((total % 13) + 13) % 13;
-        const gc = ethiopianToGregorian(newYear, newMonth, 15);
-        return new Date(gc.year, gc.month, gc.day);
+  const [current, setCurrent] = useState(getInitialCurrent);
+
+  // Sync state when calendar style toggles
+  useEffect(() => {
+    if (isEth) {
+      if (current.year > 2020) {
+        const eth = gregorianToEthiopian(new Date(Date.UTC(current.year, current.month, 15, 12)));
+        setCurrent({ year: eth.year, month: eth.month });
       }
-      return new Date(prev.getFullYear(), prev.getMonth() + delta, 15);
-    });
+    } else {
+      if (current.year <= 2020) {
+        const gc = ethiopianToGregorian(current.year, current.month, 15);
+        setCurrent({ year: gc.year, month: gc.month });
+      }
+    }
   }, [isEth]);
+
+  const addMonthDelta = useCallback(
+    (delta: number) => {
+      setCurrent((prev) => {
+        const totalMonths = isEth ? 13 : 12;
+        const total = prev.month + delta;
+        const newYear = prev.year + Math.floor(total / totalMonths);
+        const newMonth = ((total % totalMonths) + totalMonths) % totalMonths;
+        return { year: newYear, month: newMonth };
+      });
+    },
+    [isEth],
+  );
+
+  const handleJumpToToday = useCallback(() => {
+    setCurrent(getInitialCurrent());
+  }, [getInitialCurrent]);
 
   const { data: allHolidays } = useHolidays(settings.language);
 
-  // Compute exact start and end GC date strings for the currently displayed month
-  const { startDateStr, endDateStr } = useMemo(() => {
-    if (isEth) {
-      const gcStart = ethiopianToGregorian(current.year, current.month, 1);
-      const maxDays = getDaysInEthiopianMonth(current.year, current.month);
-      const gcEnd = ethiopianToGregorian(current.year, current.month, maxDays);
-
-      const start = `${gcStart.year}-${String(gcStart.month + 1).padStart(2, "0")}-${String(gcStart.day).padStart(2, "0")}`;
-      const end = `${gcEnd.year}-${String(gcEnd.month + 1).padStart(2, "0")}-${String(gcEnd.day).padStart(2, "0")}`;
-      return { startDateStr: start, endDateStr: end };
-    }
-
-    const daysInMonth = new Date(current.year, current.month + 1, 0).getDate();
-    const start = `${current.year}-${String(current.month + 1).padStart(2, "0")}-01`;
-    const end = `${current.year}-${String(current.month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
-    return { startDateStr: start, endDateStr: end };
-  }, [current, isEth]);
-
   const { map: holidayMap, list: holidays } = useMemo(
-    () => getHolidaysForRange(allHolidays, startDateStr, endDateStr),
-    [allHolidays, startDateStr, endDateStr],
+    () => getHolidaysForActiveMonth(allHolidays, current.year, current.month, isEth),
+    [allHolidays, current.year, current.month, isEth],
   );
 
   const panResponder = useRef(
@@ -154,10 +138,6 @@ export default function CalendarScreen() {
       },
     }),
   ).current;
-
-  const handleJumpToToday = useCallback(() => {
-    setCurrentDate(new Date());
-  }, []);
 
   const ethToday = useMemo(() => gregorianToEthiopian(today), [today]);
   const isCurrentTodayMonth = isEth
@@ -281,7 +261,8 @@ export default function CalendarScreen() {
             contentContainerStyle={{ paddingBottom: 28 }}
           >
             {holidays.map((item, i) => {
-              const { monthShort, dayNum } = formatShortDate(item.date, isEth);
+              const monthShort = item.displayMonthName;
+              const dayNum = item.displayDay;
               const key = item.id ?? `${item.date}-${item.name}-${i}`;
               return (
                 <View

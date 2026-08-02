@@ -15,7 +15,7 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 type MonthGridProps = {
   year: number;
   month: number;
-  holidays: Map<string, HolidayRow[]>;
+  holidays: Map<number, HolidayRow[]>;
   width: number;
   calendarStyle?: CalendarStyle;
 };
@@ -124,8 +124,7 @@ export default memo(function MonthGrid({
                     gcToday.day === day;
                 }
 
-                const dateKey = toDateKey(targetGc.year, targetGc.month, targetGc.day);
-                const dayHolidays = holidays.get(dateKey) ?? [];
+                const dayHolidays = holidays.get(day) ?? [];
                 const types = [...new Set(dayHolidays.map((h) => h.type))];
 
                 return (
