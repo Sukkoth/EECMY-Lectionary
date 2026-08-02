@@ -15,6 +15,11 @@ import { useCallback } from "react";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
 import { useStreak } from "@/lib/hooks/useStreak";
+import {
+  formatDisplayDate,
+  gregorianToEthiopian,
+  getEvangelistYear,
+} from "@/lib/ethiopianCalendar";
 
 const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -38,6 +43,8 @@ export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings, updateSetting } = useSettings();
   const readingDate = new Date();
+  const ethDate = gregorianToEthiopian(readingDate);
+  const evangelist = getEvangelistYear(ethDate.year);
 
   const { data: dayData, isLoading, error: queryError } = useTodayReading(
     readingDate,
@@ -55,12 +62,7 @@ export default function HomeScreen() {
   const isMulti = dayData && dayData.readings.length > 1;
 
   const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return formatDisplayDate(date, settings.calendarStyle).fullString;
   };
 
   const currentWeekStart = getWeekStart(new Date());
@@ -105,16 +107,29 @@ export default function HomeScreen() {
         </View>
 
         {/* DATE CARD */}
-        <View className="bg-surface dark:bg-surface-dark mb-7 flex-row items-center rounded-2xl px-4 py-3.5">
-          <View className="bg-primary-dimmed rounded-lg p-2">
-            <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
+        <View className="bg-surface dark:bg-surface-dark mb-7 flex-row items-center justify-between rounded-2xl px-4 py-3.5">
+          <View className="flex-1 flex-row items-center">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
+            </View>
+            <Text
+              className="ml-3 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              numberOfLines={1}
+            >
+              {formatDate(readingDate)}
+            </Text>
           </View>
-          <Text
-            className="ml-3 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-          >
-            {formatDate(readingDate)}
-          </Text>
+          <View className="bg-primary/10 ml-2 rounded-full px-3.5 py-1.5">
+            <Text
+              className="text-primary text-sm font-semibold"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {settings.calendarStyle === "ethiopian"
+                ? `ዘመነ ${evangelist.nameAmharic}`
+                : `Year of ${evangelist.name}`}
+            </Text>
+          </View>
         </View>
 
         {/* READING CARD AREA (loading / error / no-data / loaded) */}

@@ -11,6 +11,7 @@ import { useSettings } from "@/lib/SettingsContext";
 import { markDayCompleted } from "@/lib/StreakService";
 import { ReadingsDB, toDateString, type DayData } from "@/lib/database";
 import { useSQLiteContext } from "expo-sqlite";
+import { formatDisplayDate } from "@/lib/ethiopianCalendar";
 
 const addDays = (date: Date, days: number) => {
   const d = new Date(date);
@@ -109,11 +110,9 @@ export default function ReadingScreen() {
 
   const currentDayData = readingQueries.data[CENTER_INDEX];
   const viewType = (currentDayData?.readings.length ?? 0) === 1 ? "simple" : "expanded";
-  const weekday = centerDate.toLocaleDateString("en-US", { weekday: "long" });
-  const formattedDate = centerDate.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-  });
+  const displayDate = formatDisplayDate(centerDate, settings.calendarStyle);
+  const weekday = displayDate.weekday;
+  const formattedDate = displayDate.dateString;
   const liturgicalDay = currentDayData?.dayInfo?.title ?? null;
 
   const handleSheetChange = useCallback((index: number) => {
