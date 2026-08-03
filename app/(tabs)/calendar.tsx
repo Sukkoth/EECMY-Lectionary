@@ -78,7 +78,7 @@ export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const today = useMemo(() => new Date(), []);
   const isDark = useColorScheme() === "dark";
-  const { settings } = useSettings();
+  const { settings, updateSetting } = useSettings();
   const isEth = settings.calendarStyle === "ethiopian";
 
   const getInitialCurrent = useCallback(() => {
@@ -90,9 +90,11 @@ export default function CalendarScreen() {
   }, [isEth, today]);
 
   const [current, setCurrent] = useState(getInitialCurrent);
+  const [prevIsEth, setPrevIsEth] = useState(isEth);
 
-  // Reset calendar view to today's date when calendar system toggles
-  useEffect(() => {
+  // Synchronously reset calendar view to today's date when calendar system toggles (avoids render flashing)
+  if (prevIsEth !== isEth) {
+    setPrevIsEth(isEth);
     const now = new Date();
     if (isEth) {
       const eth = gregorianToEthiopian(now);
@@ -100,7 +102,7 @@ export default function CalendarScreen() {
     } else {
       setCurrent({ year: now.getFullYear(), month: now.getMonth() });
     }
-  }, [isEth]);
+  }
 
   const addMonthDelta = useCallback(
     (delta: number) => {
@@ -207,6 +209,44 @@ export default function CalendarScreen() {
               />
             </TouchableOpacity>
           </View>
+        </View>
+      </View>
+
+      {/* Calendar System Segmented Bar */}
+      <View className="mb-3 flex-row items-center justify-between px-6">
+        <Text
+          className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-wider"
+          style={{ fontFamily: "ReadingFont" }}
+        >
+          Calendar System
+        </Text>
+
+        <View className="bg-stone-200/60 dark:bg-stone-800/60 flex-row items-center rounded-full p-0.5 border border-stone-200/60 dark:border-stone-800/60">
+          <TouchableOpacity
+            onPress={() => updateSetting("calendarStyle", "ethiopian")}
+            activeOpacity={0.7}
+            className={`rounded-full px-3 py-1 ${isEth ? "bg-primary" : ""}`}
+          >
+            <Text
+              className={`text-xs font-semibold ${isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              Ethiopian (EC)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => updateSetting("calendarStyle", "gregorian")}
+            activeOpacity={0.7}
+            className={`rounded-full px-3 py-1 ${!isEth ? "bg-primary" : ""}`}
+          >
+            <Text
+              className={`text-xs font-semibold ${!isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              Gregorian (GC)
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
