@@ -2,29 +2,33 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { YearOption } from "../../app/settings/check-updates/types";
 import InfoRow from "./InfoRow";
+import { useTranslation } from "@/lib/i18n";
 
 type Props = {
   progress: number;
   year: YearOption;
   selectedVersionLabels: string[];
+  isDark?: boolean;
 };
 
 function DownloadProgressStep({
   progress,
   year,
   selectedVersionLabels,
+  isDark,
 }: Props) {
+  const { t } = useTranslation();
   const progressPercent = Math.round(progress);
   const statusText =
     progress < 10
-      ? "Preparing download…"
+      ? t("preparingDownload")
       : progress < 45
-        ? "Downloading reading data…"
+        ? t("downloadingReadingData")
         : progress < 75
-          ? "Verifying data integrity…"
+          ? t("verifyingDataIntegrity")
           : progress < 95
-            ? "Finalizing…"
-            : "Almost done…";
+            ? t("finalizing")
+            : t("almostDone");
 
   const statusIcon =
     progress < 10
@@ -73,12 +77,10 @@ function DownloadProgressStep({
         </View>
 
         <View className="mt-4 w-full border-t border-stone-200/80 pt-4 dark:border-stone-800/80">
-          <InfoRow label="Target Year" value={String(year.year)} />
+          <InfoRow label={t("targetYear")} value={String(year.year)} />
           <InfoRow
-            label="Selected Packages"
-            value={`${selectedVersionLabels.length} ${
-              selectedVersionLabels.length === 1 ? "item" : "items"
-            }`}
+            label={t("selectedPackages")}
+            value={`${selectedVersionLabels.length}`}
           />
         </View>
       </View>

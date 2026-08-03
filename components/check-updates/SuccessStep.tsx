@@ -2,6 +2,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { YearOption } from "../../app/settings/check-updates/types";
 import InfoRow from "./InfoRow";
+import { useTranslation } from "@/lib/i18n";
 
 type Props = {
   year: YearOption;
@@ -18,6 +19,8 @@ function SuccessStep({
   totalSelectedItems,
   onDone,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-1 justify-center">
       <View className="bg-surface dark:bg-surface-dark items-center rounded-2xl p-6">
@@ -29,20 +32,20 @@ function SuccessStep({
           className="text-center text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
-          Download Complete
+          {t("downloadComplete")}
         </Text>
 
         <Text
           className="text-muted dark:text-muted-dark mt-1 text-center text-sm px-2"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
-          {totalSelectedItems} {totalSelectedItems === 1 ? "package" : "packages"} downloaded & synced to your device for offline reading.
+          {totalSelectedItems} {t("packagesDownloadedAndSynced")}
         </Text>
 
         <View className="mt-5 w-full border-t border-stone-200/80 pt-4 dark:border-stone-800/80">
-          <InfoRow label="Target Year" value={String(year.year)} />
+          <InfoRow label={t("targetYear")} value={String(year.year)} />
           <InfoRow
-            label="Languages"
+            label={t("language")}
             value={selectedLanguageNames.join(", ")}
           />
           {selectedVersionLabels.length <= 8 && (
@@ -51,7 +54,7 @@ function SuccessStep({
                 className="text-xs text-muted dark:text-muted-dark mb-2"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Synced Packages
+                {t("syncedPackages")}
               </Text>
               <View className="flex-row flex-wrap gap-1.5">
                 {selectedVersionLabels.map((label) => (
@@ -75,8 +78,8 @@ function SuccessStep({
           )}
           {selectedVersionLabels.length > 8 && (
             <InfoRow
-              label="Synced Packages"
-              value={`${selectedVersionLabels.length} total`}
+              label={t("syncedPackages")}
+              value={`${selectedVersionLabels.length}`}
             />
           )}
         </View>
@@ -91,7 +94,7 @@ function SuccessStep({
             className="text-center text-base text-white"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Done
+            {t("done")}
           </Text>
         </TouchableOpacity>
       </View>

@@ -13,6 +13,7 @@ type SettingsContextValue = {
 
 const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
+  appLanguage: "am",
   version: "niv",
   fontSizeSimple: 20,
   fontSizeExpanded: 18,

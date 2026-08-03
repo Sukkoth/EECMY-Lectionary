@@ -19,9 +19,10 @@ import {
   formatDisplayDate,
   gregorianToEthiopian,
   getEvangelistYear,
+  formatEvangelistYear,
 } from "@/lib/ethiopianCalendar";
 
-const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+import { useTranslation, getDayLabels } from "@/lib/i18n";
 
 const SECTION_LABELS: Record<string, string> = {
   OLD_TESTAMENT: "Old Testament",
@@ -42,6 +43,7 @@ function getWeekStart(date: Date): string {
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings, updateSetting } = useSettings();
+  const { t, lang } = useTranslation();
   const readingDate = new Date();
   const ethDate = gregorianToEthiopian(readingDate);
   const evangelist = getEvangelistYear(ethDate.year);
@@ -62,7 +64,7 @@ export default function HomeScreen() {
   const isMulti = dayData && dayData.readings.length > 1;
 
   const formatDate = (date: Date): string => {
-    return formatDisplayDate(date, settings.calendarStyle).fullString;
+    return formatDisplayDate(date, settings.calendarStyle, lang).fullString;
   };
 
   const currentWeekStart = getWeekStart(new Date());
@@ -91,7 +93,7 @@ export default function HomeScreen() {
             className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Yeilet Readings
+            {t("appTitle")}
           </Text>
           <TouchableOpacity
             onPress={toggleTheme}
@@ -125,9 +127,7 @@ export default function HomeScreen() {
               className="text-primary text-sm font-semibold"
               style={{ fontFamily: "ReadingFont" }}
             >
-              {settings.calendarStyle === "ethiopian"
-                ? `ዘመነ ${evangelist.nameAmharic}`
-                : `Year of ${evangelist.name}`}
+              {formatEvangelistYear(ethDate.year, lang)}
             </Text>
           </View>
         </View>
@@ -290,7 +290,7 @@ export default function HomeScreen() {
                 className="text-primary text-xs tracking-wide"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
-                Read passage
+                {t("readPassage")}
               </Text>
               <Ionicons
                 name="chevron-forward"
@@ -315,13 +315,13 @@ export default function HomeScreen() {
                   className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                   style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
                 >
-                  Reading Streak
+                  {t("readingStreak")}
                 </Text>
                 <Text
                   className="text-muted dark:text-muted-dark mt-0.5 text-xs"
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                 >
-                  Best record: {safeStreak.best} {safeStreak.best === 1 ? "day" : "days"}
+                  {t("bestRecord")}: {safeStreak.best}
                 </Text>
               </View>
             </View>
@@ -337,7 +337,7 @@ export default function HomeScreen() {
                 className="text-muted dark:text-muted-dark text-[11px] uppercase tracking-wider"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
-                {safeStreak.current === 1 ? "day" : "days"}
+                {t("days")}
               </Text>
             </View>
           </View>
@@ -380,7 +380,7 @@ export default function HomeScreen() {
                     }`}
                     style={{ fontFamily: "ReadingFont" }}
                   >
-                    {DAY_LABELS[index]}
+                    {getDayLabels(lang)[index]}
                   </Text>
                 </View>
               );

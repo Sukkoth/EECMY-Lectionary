@@ -13,6 +13,8 @@ import { ReadingsDB, toDateString, type DayData } from "@/lib/database";
 import { useSQLiteContext } from "expo-sqlite";
 import { formatDisplayDate } from "@/lib/ethiopianCalendar";
 
+import { useTranslation } from "@/lib/i18n";
+
 const addDays = (date: Date, days: number) => {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
@@ -45,6 +47,7 @@ export default function ReadingScreen() {
   const [sheetIndex, setSheetIndex] = useState(-1);
 
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
   const prefetchReadings = usePrefetchReadings();
@@ -169,7 +172,7 @@ export default function ReadingScreen() {
             className="text-center text-white"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Try Again
+            {t("tryAgain")}
           </Text>
         </TouchableOpacity>
       </View>

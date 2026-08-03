@@ -1,11 +1,14 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "@/lib/i18n";
 
 type Props = {
   onCheck: () => void;
 };
 
 function IdleStep({ onCheck }: Props) {
+  const { t } = useTranslation();
+
   return (
     <>
       <View className="bg-surface dark:bg-surface-dark mb-6 rounded-2xl p-6">
@@ -17,13 +20,13 @@ function IdleStep({ onCheck }: Props) {
             className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Content Update
+            {t("contentUpdate")}
           </Text>
           <Text
             className="text-muted dark:text-muted-dark mt-1 px-2 text-center text-sm"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
-            Download and sync offline Bible readings, liturgical calendar, and daily information.
+            {t("contentUpdateDesc")}
           </Text>
         </View>
 
@@ -37,13 +40,13 @@ function IdleStep({ onCheck }: Props) {
                 className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Annual Reading Plans
+                {t("annualReadingPlans")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-xs"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Full year data for daily readings & liturgical seasons
+                {t("annualReadingPlansDesc")}
               </Text>
             </View>
           </View>
@@ -57,13 +60,13 @@ function IdleStep({ onCheck }: Props) {
                 className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Multi-Language Support
+                {t("multiLanguageSupport")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-xs"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Choose from available translations and content packs
+                {t("multiLanguageSupportDesc")}
               </Text>
             </View>
           </View>
@@ -77,13 +80,13 @@ function IdleStep({ onCheck }: Props) {
                 className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Offline Storage
+                {t("offlineStorage")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-xs"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Saved locally on your device for instant offline access
+                {t("offlineStorageDesc")}
               </Text>
             </View>
           </View>
@@ -100,7 +103,7 @@ function IdleStep({ onCheck }: Props) {
           className="text-center text-base text-white"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
-          Check for Available Updates
+          {t("checkAvailableUpdates")}
         </Text>
       </TouchableOpacity>
     </>

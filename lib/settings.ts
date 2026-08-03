@@ -2,9 +2,11 @@ import * as SecureStore from "expo-secure-store";
 
 export type TextAlignment = "left" | "center" | "justify";
 export type CalendarStyle = "gregorian" | "ethiopian";
+export type AppLanguage = "am" | "en" | "om";
 
 export type AppSettings = {
   language: string;
+  appLanguage: AppLanguage;
   version: string;
   fontSizeSimple: number;
   fontSizeExpanded: number;
@@ -16,6 +18,7 @@ export type AppSettings = {
 
 const KEYS = {
   language: "yeilet_language",
+  appLanguage: "yeilet_app_language",
   version: "yeilet_version",
   fontSizeSimple: "yeilet_font_size_simple",
   fontSizeExpanded: "yeilet_font_size_expanded",
@@ -28,6 +31,7 @@ const KEYS = {
 
 const DEFAULTS: AppSettings = {
   language: "en",
+  appLanguage: "am",
   version: "niv",
   fontSizeSimple: 20,
   fontSizeExpanded: 18,
@@ -39,9 +43,10 @@ const DEFAULTS: AppSettings = {
 
 export async function loadSettings(): Promise<AppSettings> {
   try {
-    const [language, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded, theme, calendarStyle] =
+    const [language, appLanguage, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded, theme, calendarStyle] =
       await Promise.all([
         SecureStore.getItemAsync(KEYS.language),
+        SecureStore.getItemAsync(KEYS.appLanguage),
         SecureStore.getItemAsync(KEYS.version),
         SecureStore.getItemAsync(KEYS.fontSizeSimple),
         SecureStore.getItemAsync(KEYS.fontSizeExpanded),
@@ -51,8 +56,14 @@ export async function loadSettings(): Promise<AppSettings> {
         SecureStore.getItemAsync(KEYS.calendarStyle),
       ]);
 
+    const validAppLang: AppLanguage =
+      appLanguage === "am" || appLanguage === "en" || appLanguage === "om"
+        ? appLanguage
+        : (language === "om" || language === "en" ? language : "am");
+
     return {
       language: language ?? DEFAULTS.language,
+      appLanguage: validAppLang,
       version: version ?? DEFAULTS.version,
       fontSizeSimple: fontSizeSimple ? safeParseInt(fontSizeSimple, DEFAULTS.fontSizeSimple) : DEFAULTS.fontSizeSimple,
       fontSizeExpanded: fontSizeExpanded ? safeParseInt(fontSizeExpanded, DEFAULTS.fontSizeExpanded) : DEFAULTS.fontSizeExpanded,
@@ -69,6 +80,7 @@ export async function loadSettings(): Promise<AppSettings> {
 export async function saveSettings(settings: AppSettings): Promise<void> {
   await Promise.all([
     SecureStore.setItemAsync(KEYS.language, settings.language),
+    SecureStore.setItemAsync(KEYS.appLanguage, settings.appLanguage),
     SecureStore.setItemAsync(KEYS.version, settings.version),
     SecureStore.setItemAsync(KEYS.fontSizeSimple, String(settings.fontSizeSimple)),
     SecureStore.setItemAsync(KEYS.fontSizeExpanded, String(settings.fontSizeExpanded)),

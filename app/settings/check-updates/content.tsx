@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../../../lib/SettingsContext";
+import { useTranslation } from "../../../lib/i18n";
 import type { Manifest, YearOption, WizardStep } from "../../../types/check-update";
 import {
   fetchManifest,
@@ -44,6 +45,7 @@ export default function ContentUpdateScreen() {
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
   const { settings } = useSettings();
+  const { t } = useTranslation();
 
   const [step, setStep] = useState<WizardStep>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -427,7 +429,7 @@ export default function ContentUpdateScreen() {
             className="text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Content Update
+            {t("contentUpdate")}
           </Text>
         </View>
 

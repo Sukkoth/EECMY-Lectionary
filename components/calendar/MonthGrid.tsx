@@ -4,13 +4,18 @@ import { router } from "expo-router";
 import type { HolidayRow } from "@/lib/types";
 import { HOLIDAY_COLORS } from "@/constants";
 import type { CalendarStyle } from "@/lib/settings";
+import { useTranslation, getDayLabels } from "@/lib/i18n";
 import {
   getEthiopianWeeks,
   ethiopianToGregorian,
   gregorianToEthiopian,
   getEcWeekNumber,
   ETHIOPIAN_MONTH_NAMES_SHORT_AM,
-  GREGORIAN_MONTH_NAMES_SHORT,
+  ETHIOPIAN_MONTH_NAMES_SHORT_OM,
+  ETHIOPIAN_MONTH_NAMES_SHORT_EN,
+  GREGORIAN_MONTH_NAMES_SHORT_EN,
+  GREGORIAN_MONTH_NAMES_SHORT_AM,
+  GREGORIAN_MONTH_NAMES_SHORT_OM,
 } from "@/lib/ethiopianCalendar";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -58,11 +63,16 @@ export default memo(function MonthGrid({
   calendarStyle = "ethiopian",
 }: MonthGridProps) {
   const isEth = calendarStyle === "ethiopian";
+  const { lang } = useTranslation();
 
   const resolvedEthYear = useMemo(() => {
     if (!isEth) return year;
     if (year > 2020) {
-      return gregorianToEthiopian(new Date(Date.UTC(year, month, 15, 12))).year;
+      const sampleGcDate =
+        month === 12
+          ? new Date(Date.UTC(year, 8, 7, 12))
+          : new Date(Date.UTC(year, month, 15, 12));
+      return gregorianToEthiopian(sampleGcDate).year;
     }
     return year;
   }, [isEth, year, month]);
@@ -77,6 +87,9 @@ export default memo(function MonthGrid({
     return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
   }, []);
 
+  const gcShorts = lang === "om" ? GREGORIAN_MONTH_NAMES_SHORT_OM : lang === "am" ? GREGORIAN_MONTH_NAMES_SHORT_AM : GREGORIAN_MONTH_NAMES_SHORT_EN;
+  const ethShorts = lang === "om" ? ETHIOPIAN_MONTH_NAMES_SHORT_OM : lang === "en" ? ETHIOPIAN_MONTH_NAMES_SHORT_EN : ETHIOPIAN_MONTH_NAMES_SHORT_AM;
+
   const paddingX = 32;
   const cellWidth = Math.floor((width - paddingX) / 7);
 
@@ -86,11 +99,11 @@ export default memo(function MonthGrid({
       <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-3">
         {/* Day labels header */}
         <View className="mb-3 flex-row items-center border-b border-stone-200/40 dark:border-stone-800/40 pb-2.5">
-          {DAY_LABELS.map((label, index) => {
+          {getDayLabels(lang).map((label, index) => {
             const isWeekend = index === 0 || index === 6;
             return (
               <View
-                key={label}
+                key={`header-day-${index}`}
                 style={{ width: cellWidth }}
                 className="items-center justify-center"
               >
@@ -147,8 +160,9 @@ export default memo(function MonthGrid({
 
                     // Show month abbreviation on Day 1 of sub-month or on the first day of the grid card (day === 1)
                     const showSubMonthLabel = subDay === 1 || day === 1;
+                    const subAbbr = isEth ? gcShorts[subMonthIndex] : ethShorts[subMonthIndex];
                     const subLabel = showSubMonthLabel
-                      ? `${isEth ? GREGORIAN_MONTH_NAMES_SHORT[subMonthIndex] : ETHIOPIAN_MONTH_NAMES_SHORT_AM[subMonthIndex]} ${subDay}`
+                      ? `${subAbbr} ${subDay}`
                       : `${subDay}`;
 
                     const dayHolidays = holidays.get(day) ?? [];
@@ -209,7 +223,7 @@ export default memo(function MonthGrid({
                           <View className="mt-1 flex-row gap-1">
                             {types.map((type) => (
                               <View
-                                key={type}
+                                key={`holiday-${type}`}
                                 className="h-1.5 w-1.5 rounded-full"
                                 style={{
                                   backgroundColor:

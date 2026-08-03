@@ -5,6 +5,8 @@ import ReadingPassage from "./ReadingPassage";
 import ReadingFooter from "./ReadingFooter";
 import ExpandedView from "./ExpandedView";
 
+import { useTranslation } from "@/lib/i18n";
+
 type DayPageProps = {
   date: Date;
   dayData: DayData | null;
@@ -12,6 +14,7 @@ type DayPageProps = {
 
 export function DayPage({ date, dayData }: DayPageProps) {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const dateStr = toDateString(date);
 
   // No readings available
@@ -22,12 +25,7 @@ export function DayPage({ date, dayData }: DayPageProps) {
           className="text-muted dark:text-muted-dark text-center leading-relaxed"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
-          No readings available for{" "}
-          {date.toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
+          {t("noReadings")}
         </Text>
       </View>
     );

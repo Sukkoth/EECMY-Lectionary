@@ -1,14 +1,23 @@
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { WizardStep } from "../../types/check-update";
-import { STEP_LABELS, STEP_ICONS } from "../../types/check-update";
+import type { WizardStep } from "../../app/settings/check-updates/types";
+import { STEP_ICONS } from "../../app/settings/check-updates/types";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 
 type Props = {
   currentStep: WizardStep;
   isDark: boolean;
 };
 
+const stepLabelKeys: TranslationKey[] = [
+  "stepYears",
+  "stepLanguages",
+  "stepDownload",
+  "stepDone",
+];
+
 function StepIndicator({ currentStep, isDark }: Props) {
+  const { t } = useTranslation();
   const getStepIndex = (s: WizardStep): number => {
     if (s === "checking") return 0;
     if (s === "selectYear") return 0;
@@ -33,16 +42,17 @@ function StepIndicator({ currentStep, isDark }: Props) {
             width:
               activeIndex <= 0
                 ? "0%"
-                : `${(activeIndex / (STEP_LABELS.length - 1)) * 76}%`,
+                : `${(activeIndex / (stepLabelKeys.length - 1)) * 76}%`,
           }}
         />
 
-        {STEP_LABELS.map((label, index) => {
+        {stepLabelKeys.map((key, index) => {
           const isActive = index === activeIndex;
           const isCompleted = index < activeIndex;
+          const label = t(key);
 
           return (
-            <View key={label} className="z-10 items-center" style={{ width: 68 }}>
+            <View key={key} className="z-10 items-center" style={{ width: 68 }}>
               <View
                 className={`h-8 w-8 items-center justify-center rounded-full ${
                   isCompleted

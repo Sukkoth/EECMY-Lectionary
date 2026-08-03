@@ -1,6 +1,7 @@
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { Manifest, YearOption } from "../../app/settings/check-updates/types";
+import { useTranslation } from "@/lib/i18n";
 
 type LangPackVersion = {
   year: number;
@@ -35,6 +36,8 @@ function YearSelectionStep({
   syncedReadingVersions = [],
   isDark,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
       <View className="mb-5">
@@ -42,13 +45,13 @@ function YearSelectionStep({
           className="text-lg text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
-          Select Data Year
+          {t("selectDataYear")}
         </Text>
         <Text
           className="text-muted dark:text-muted-dark mt-0.5 text-sm"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
-          Choose a liturgical year to inspect available languages and content.
+          {t("chooseLiturgicalYear")}
         </Text>
       </View>
 
@@ -128,7 +131,7 @@ function YearSelectionStep({
                     className="text-xs text-green-600 dark:text-green-400"
                     style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
                   >
-                    All Synced
+                    {t("allSynced")}
                   </Text>
                 </View>
               ) : (
@@ -138,7 +141,7 @@ function YearSelectionStep({
                     className="text-primary text-xs"
                     style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
                   >
-                    Select Year
+                    {t("selectYear")}
                   </Text>
                 </View>
               )}
@@ -152,7 +155,7 @@ function YearSelectionStep({
                     className="text-xs text-green-600 dark:text-green-400"
                     style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
-                    {syncedCount} synced
+                    {syncedCount} {t("synced")}
                   </Text>
                 </View>
               )}
@@ -163,7 +166,7 @@ function YearSelectionStep({
                     className="text-primary text-xs"
                     style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
-                    {availableCount} available
+                    {availableCount} {t("available")}
                   </Text>
                 </View>
               )}
@@ -174,7 +177,7 @@ function YearSelectionStep({
                     className="text-xs text-amber-600 dark:text-amber-400"
                     style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
-                    Liturgical data update
+                    {t("liturgicalDataUpdate")}
                   </Text>
                 </View>
               )}
@@ -183,7 +186,7 @@ function YearSelectionStep({
                   className="text-muted dark:text-muted-dark text-xs"
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                 >
-                  No content package available
+                  {t("noContentPackageAvailable")}
                 </Text>
               )}
             </View>
@@ -193,7 +196,7 @@ function YearSelectionStep({
                 className="text-muted dark:text-muted-dark text-xs"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
-                {yearOption.languages.length} {yearOption.languages.length === 1 ? "Language" : "Languages"} available
+                {yearOption.languages.length} {t("languagesAvailable")}
               </Text>
               <Ionicons
                 name="chevron-forward"

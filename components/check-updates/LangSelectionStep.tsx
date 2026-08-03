@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { YearOption } from "../../app/settings/check-updates/types";
+import { useTranslation } from "@/lib/i18n";
 
 type DownloadedVersion = {
   version: string;
@@ -60,6 +61,7 @@ function LangSelectionStep({
   syncedLangPackVersions = [],
   isDark,
 }: Props) {
+  const { t } = useTranslation();
   const [isStarting, setIsStarting] = useState(false);
   const canProceed = totalSelectedItems > 0;
 
@@ -274,10 +276,8 @@ function LangSelectionStep({
                     style={{ fontFamily: "ReadingFont" }}
                   >
                     {langAllSynced
-                      ? "All content synced"
-                      : `${totalUnsyncedCount} update ${
-                          totalUnsyncedCount === 1 ? "available" : "s available"
-                        }`}
+                      ? t("allContentSynced")
+                      : `${totalUnsyncedCount} ${t("updateAvailable")}`}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -289,7 +289,7 @@ function LangSelectionStep({
                     className="text-xs text-green-600 dark:text-green-400 font-semibold"
                     style={{ fontFamily: "ReadingFont" }}
                   >
-                    Synced
+                    {t("synced")}
                   </Text>
                 </View>
               ) : (
@@ -322,7 +322,7 @@ function LangSelectionStep({
                   className="mb-1 mt-2 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
                   style={{ fontFamily: "ReadingFont" }}
                 >
-                  Bible Versions
+                  {t("bibleVersions")}
                 </Text>
 
                 {lang.versions.map((version) => {
@@ -353,7 +353,7 @@ function LangSelectionStep({
                           >
                             {version.contentVersion > 0
                               ? `v${version.contentVersion}`
-                              : "Installed"}
+                              : t("installed")}
                           </Text>
                         </View>
                         <View className="rounded-full bg-green-500/15 px-2 py-0.5">
@@ -361,7 +361,7 @@ function LangSelectionStep({
                             className="text-[10px] text-green-600 dark:text-green-400 font-semibold"
                             style={{ fontFamily: "ReadingFont" }}
                           >
-                            Synced
+                            {t("synced")}
                           </Text>
                         </View>
                       </View>
@@ -410,7 +410,7 @@ function LangSelectionStep({
                         >
                           {version.contentVersion > 0
                             ? `v${version.contentVersion}`
-                            : "Available"}
+                            : t("available")}
                         </Text>
                       </View>
                       <View className="rounded-full bg-primary/10 px-2 py-0.5">
@@ -418,7 +418,7 @@ function LangSelectionStep({
                           className="text-[10px] text-primary font-semibold"
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          Available
+                          {t("available")}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -430,7 +430,7 @@ function LangSelectionStep({
                   className="mb-1 mt-3 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
                   style={{ fontFamily: "ReadingFont" }}
                 >
-                  Liturgical Data Pack
+                  {t("liturgicalDataPack")}
                 </Text>
 
                 {(() => {
@@ -452,13 +452,13 @@ function LangSelectionStep({
                             className="text-sm text-[#2D2A24]/80 dark:text-[#E8E4DC]/80 font-normal"
                             style={{ fontFamily: "ReadingFont" }}
                           >
-                            Liturgical Data Pack
+                            {t("liturgicalDataPack")}
                           </Text>
                           <Text
                             className="text-xs text-muted dark:text-muted-dark mt-0.5"
                             style={{ fontFamily: "ReadingFont" }}
                           >
-                            Holidays, Feasts & Daily Info
+                            {t("holidaysFeastsDailyInfo")}
                           </Text>
                         </View>
                         <View className="rounded-full bg-green-500/15 px-2 py-0.5">
@@ -466,7 +466,7 @@ function LangSelectionStep({
                             className="text-[10px] text-green-600 dark:text-green-400 font-semibold"
                             style={{ fontFamily: "ReadingFont" }}
                           >
-                            Synced
+                            {t("synced")}
                           </Text>
                         </View>
                       </View>
@@ -505,13 +505,13 @@ function LangSelectionStep({
                           }`}
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          Liturgical Data Pack
+                          {t("liturgicalDataPack")}
                         </Text>
                         <Text
                           className="text-xs text-muted dark:text-muted-dark mt-0.5"
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          Holidays, Feasts & Daily Info
+                          {t("holidaysFeastsDailyInfo")}
                         </Text>
                       </View>
                       <View className="rounded-full bg-amber-500/10 px-2 py-0.5">
@@ -519,7 +519,7 @@ function LangSelectionStep({
                           className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold"
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          Update Available
+                          {t("updateAvailable")}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -537,7 +537,7 @@ function LangSelectionStep({
           className="text-sm text-muted dark:text-muted-dark"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
-          Selected Packages
+          {t("selectedPackages")}
         </Text>
         <Text
           className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -580,12 +580,12 @@ function LangSelectionStep({
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
           {isStarting
-            ? "Preparing Download…"
+            ? t("preparingDownload")
             : canProceed
-              ? `Download ${totalSelectedItems} ${totalSelectedItems === 1 ? "Item" : "Items"}`
+              ? `${t("startDownload")} (${totalSelectedItems})`
               : yearAllSynced
-                ? "All Content Synced"
-                : "Select Items to Download"}
+                ? t("allContentSynced")
+                : t("selectContentPackages")}
         </Text>
       </TouchableOpacity>
     </ScrollView>

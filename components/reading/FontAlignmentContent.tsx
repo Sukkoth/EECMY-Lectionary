@@ -2,6 +2,7 @@ import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useSettings } from "@/lib/SettingsContext";
 import type { TextAlignment } from "@/lib/settings";
+import { useTranslation } from "@/lib/i18n";
 
 const FONT_MIN = 12;
 const FONT_MAX = 32;
@@ -146,6 +147,7 @@ export default function FontAlignmentContent({
   viewType,
 }: FontAlignmentContentProps) {
   const { settings, setAllSettings } = useSettings();
+  const { t } = useTranslation();
   const isDark = useColorScheme() === "dark";
 
   if (viewType === "settings") {
@@ -160,13 +162,13 @@ export default function FontAlignmentContent({
             className="text-center text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Font & Alignment
+            {t("fontAndAlignment")}
           </Text>
           <Text
             className="text-muted dark:text-muted-dark mt-1 text-center text-xs font-normal"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Customize reader text size and alignment
+            {t("customizeReaderText")}
           </Text>
         </View>
 
@@ -176,16 +178,16 @@ export default function FontAlignmentContent({
             className="text-primary mb-2 text-xs font-semibold uppercase tracking-wider"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Font Size
+            {t("fontSize")}
           </Text>
           <SizeControl
-            label="Single Reading"
+            label={t("singleReading")}
             value={settings.fontSizeSimple}
             onChange={(v) => update({ fontSizeSimple: v })}
           />
           <View className="my-1 border-b border-stone-200/40 dark:border-stone-800/40" />
           <SizeControl
-            label="Sunday Readings"
+            label={t("sundayReadings")}
             value={settings.fontSizeExpanded}
             onChange={(v) => update({ fontSizeExpanded: v })}
           />
@@ -197,16 +199,16 @@ export default function FontAlignmentContent({
             className="text-primary mb-2 text-xs font-semibold uppercase tracking-wider"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Text Alignment
+            {t("textAlignment")}
           </Text>
           <AlignControl
-            label="Single Reading"
+            label={t("singleReading")}
             value={settings.alignSimple}
             onChange={(v) => update({ alignSimple: v })}
           />
           <View className="my-1 border-b border-stone-200/40 dark:border-stone-800/40" />
           <AlignControl
-            label="Sunday Readings"
+            label={t("sundayReadings")}
             value={settings.alignExpanded}
             onChange={(v) => update({ alignExpanded: v })}
           />

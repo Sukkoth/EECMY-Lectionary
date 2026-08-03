@@ -18,14 +18,19 @@ import { useHydratedFavourites, useRemoveFavourite, useClearFavourites, FAVOURIT
 import { useQueryClient } from "@tanstack/react-query";
 import { type HydratedFavourite } from "@/lib/FavouriteRepository";
 
-function formatDate(iso: string): string {
+import { useTranslation } from "@/lib/i18n";
+import { formatDisplayDate } from "@/lib/ethiopianCalendar";
+import type { CalendarStyle } from "@/lib/settings";
+
+function formatDate(iso: string, calendarStyle: CalendarStyle, lang: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return formatDisplayDate(d, calendarStyle, lang).dateString;
 }
 
 export default function FavouritesScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings } = useSettings();
+  const { t, lang } = useTranslation();
   const { data: favourites = [], isLoading } = useHydratedFavourites(settings.language, settings.version);
   const removeMut = useRemoveFavourite();
   const clearMut = useClearFavourites();
@@ -67,7 +72,7 @@ export default function FavouritesScreen() {
   // ─── Empty state ────────────────────────────────────────────
   if (favourites.length === 0) {
     return (
-      <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" >
+      <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
         <View className="mt-8 flex-1 items-center justify-center px-8">
           <View className="bg-surface dark:bg-surface-dark mb-6 rounded-full p-5">
             <Ionicons
@@ -80,25 +85,18 @@ export default function FavouritesScreen() {
             className="mb-2 text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            No favourites yet
-          </Text>
-          <Text
-            className="text-muted dark:text-muted-dark mb-8 text-center text-sm leading-5"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-          >
-            Save your favourite passages to revisit them later. Start by exploring
-            today&rsquo;s readings.
+            {t("noFavouritesYet")}
           </Text>
           <TouchableOpacity
             activeOpacity={0.7}
-            className="bg-primary rounded-xl px-5 py-2.5"
+            className="bg-primary rounded-xl px-5 py-2.5 mt-4"
             onPress={() => router.push("/reading")}
           >
             <Text
               className="text-center text-base text-white"
               style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
             >
-              Browse Today&rsquo;s Readings
+              {t("todaysReading")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -117,7 +115,7 @@ export default function FavouritesScreen() {
               className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
-              Favourites
+              {t("favourites")}
             </Text>
             <View className="bg-primary-dimmed ml-3 rounded-full px-2.5 py-0.5">
               <Text
@@ -141,7 +139,7 @@ export default function FavouritesScreen() {
               className="text-center text-sm text-red-600 dark:text-red-400"
               style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
             >
-              Clear All
+              {t("clearAll")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -159,7 +157,7 @@ export default function FavouritesScreen() {
               className="mb-2 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
-              {fav.reference || "Reading"}
+              {fav.reference || t("reading")}
             </Text>
 
             {/* Passage preview — 2 lines max */}
@@ -177,7 +175,7 @@ export default function FavouritesScreen() {
                 className="text-muted dark:text-muted-dark text-xs"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Saved {formatDate(fav.createdAt)}
+                {t("saved")} {formatDate(fav.createdAt, settings.calendarStyle, lang)}
               </Text>
               <View className="flex-row items-center">
                 <TouchableOpacity
@@ -227,13 +225,13 @@ export default function FavouritesScreen() {
               className="mb-2 text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
-              Clear All
+              {t("clearAll")}
             </Text>
             <Text
               className="mb-6 text-base text-[#2D2A24]/70 dark:text-[#E8E4DC]/70"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
-              Remove all favourites? This action cannot be undone.
+              {t("confirmClearAllFavourites")}
             </Text>
             <View className="flex-row justify-end gap-3">
               <TouchableOpacity
@@ -245,7 +243,7 @@ export default function FavouritesScreen() {
                   className="text-center text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                   style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                 >
-                  Cancel
+                  {t("cancel")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -260,7 +258,7 @@ export default function FavouritesScreen() {
                   className="text-center text-base text-white"
                   style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                 >
-                  Clear
+                  {t("clear")}
                 </Text>
               </TouchableOpacity>
             </View>

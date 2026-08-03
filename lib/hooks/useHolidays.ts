@@ -2,7 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useSQLiteContext } from "expo-sqlite";
 import type { HolidayRow } from "../types";
 import {
-  ETHIOPIAN_MONTH_NAMES_AM,
+  ETHIOPIAN_MONTH_NAMES_SHORT_AM,
+  ETHIOPIAN_MONTH_NAMES_SHORT_OM,
+  ETHIOPIAN_MONTH_NAMES_SHORT_EN,
+  GREGORIAN_MONTH_NAMES_SHORT_AM,
+  GREGORIAN_MONTH_NAMES_SHORT_OM,
+  GREGORIAN_MONTH_NAMES_SHORT_EN,
   gregorianToEthiopian,
 } from "../ethiopianCalendar";
 
@@ -17,10 +22,16 @@ export function useHolidays(language: string) {
   return useQuery({
     queryKey: HOLIDAY_KEYS.language(language),
     queryFn: async (): Promise<HolidayRow[]> => {
-      const rows = await db.getAllAsync<HolidayRow>(
+      let rows = await db.getAllAsync<HolidayRow>(
         "SELECT * FROM Holiday WHERE language = ? ORDER BY date",
         [language],
       );
+      if (rows.length === 0 && language !== "am") {
+        // Fall back to Amharic if requested language holidays are not available in SQLite DB
+        rows = await db.getAllAsync<HolidayRow>(
+          "SELECT * FROM Holiday WHERE language = 'am' ORDER BY date",
+        );
+      }
       return rows.map((row) => ({
         ...row,
         type: row.type.toLowerCase() as HolidayRow["type"],
@@ -28,21 +39,6 @@ export function useHolidays(language: string) {
     },
   });
 }
-
-const MONTH_NAMES_SHORT = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
 
 export type DisplayHoliday = HolidayRow & {
   displayDay: number;
@@ -54,11 +50,15 @@ export function getHolidaysForActiveMonth(
   activeYear: number,
   activeMonth: number,
   isEth: boolean,
+  lang: string = "am",
 ): { map: Map<number, HolidayRow[]>; list: DisplayHoliday[] } {
   const map = new Map<number, HolidayRow[]>();
   const list: DisplayHoliday[] = [];
 
   if (!holidays) return { map, list };
+
+  const ethShorts = lang === "om" ? ETHIOPIAN_MONTH_NAMES_SHORT_OM : lang === "en" ? ETHIOPIAN_MONTH_NAMES_SHORT_EN : ETHIOPIAN_MONTH_NAMES_SHORT_AM;
+  const gcShorts = lang === "om" ? GREGORIAN_MONTH_NAMES_SHORT_OM : lang === "am" ? GREGORIAN_MONTH_NAMES_SHORT_AM : GREGORIAN_MONTH_NAMES_SHORT_EN;
 
   for (const h of holidays) {
     const [yStr, mStr, dStr] = h.date.split("-");
@@ -70,7 +70,7 @@ export function getHolidaysForActiveMonth(
       // Convert Gregorian date from DB to Ethiopian date (using noon UTC to prevent timezone shifts)
       const eth = gregorianToEthiopian(new Date(`${h.date}T12:00:00Z`));
       if (eth.year === activeYear && eth.month === activeMonth) {
-        const ethMonthName = ETHIOPIAN_MONTH_NAMES_AM[eth.month] ?? "";
+        const ethMonthName = ethShorts[eth.month] ?? "";
 
         const existing = map.get(eth.day) ?? [];
         existing.push(h);
@@ -84,7 +84,7 @@ export function getHolidaysForActiveMonth(
       }
     } else {
       if (gcYear === activeYear && gcMonth === activeMonth) {
-        const gcMonthName = MONTH_NAMES_SHORT[gcMonth] ?? "Jan";
+        const gcMonthName = gcShorts[gcMonth] ?? "";
 
         const existing = map.get(gcDay) ?? [];
         existing.push(h);

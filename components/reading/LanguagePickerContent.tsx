@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "@/lib/SettingsContext";
+import { useTranslation } from "@/lib/i18n";
 
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
@@ -13,6 +14,7 @@ export default function LanguagePickerContent({
   hideHeader,
 }: LanguagePickerContentProps) {
   const isDark = useColorScheme() === "dark";
+  const { t } = useTranslation();
   const { settings, setAllSettings, availableLanguages, languagesError } =
     useSettings();
 
@@ -48,13 +50,13 @@ export default function LanguagePickerContent({
             className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Language & Version
+            {t("scriptureLanguageAndVersion")}
           </Text>
           <Text
             className="text-muted dark:text-muted-dark mt-1 text-center text-xs font-normal"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Select your preferred Bible translation
+            {t("selectBibleTranslation")}
           </Text>
         </View>
       )}
@@ -79,7 +81,7 @@ export default function LanguagePickerContent({
             className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
             style={{ fontFamily: "ReadingFont" }}
           >
-            No translations available yet
+            {t("noTranslationsAvailable")}
           </Text>
         </View>
       )}

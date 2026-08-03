@@ -2,9 +2,11 @@ import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme 
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import FontAlignmentContent from "@/components/reading/FontAlignmentContent";
+import { useTranslation } from "@/lib/i18n";
 
 export default function FontAlignmentSettingsScreen() {
   const isDark = useColorScheme() === "dark";
+  const { t } = useTranslation();
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
@@ -22,7 +24,7 @@ export default function FontAlignmentSettingsScreen() {
             className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Font & Alignment
+            {t("fontAndAlignment")}
           </Text>
         </View>
       </View>

@@ -16,63 +16,22 @@ import {
   getHolidaysForActiveMonth,
 } from "@/lib/hooks/useHolidays";
 import { useSettings } from "@/lib/SettingsContext";
+import { useTranslation } from "@/lib/i18n";
 import { HOLIDAY_COLORS } from "@/constants";
 import {
-  ETHIOPIAN_MONTH_NAMES,
-  ETHIOPIAN_MONTH_NAMES_AM,
   gregorianToEthiopian,
   ethiopianToGregorian,
   getDaysInEthiopianMonth,
   getEvangelistYear,
+  formatEvangelistYear,
   getSubMonthSpanString,
+  formatMonth,
 } from "@/lib/ethiopianCalendar";
 
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-const MONTH_NAMES_SHORT = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function formatMonth(month: number, isEth: boolean): string {
-  if (isEth) {
-    return ETHIOPIAN_MONTH_NAMES_AM[month] ?? "";
-  }
-  const validGcMonth = Math.max(0, Math.min(11, month));
-  return MONTH_NAMES[validGcMonth] ?? "";
-}
-
-function formatYear(year: number, month: number, isEth: boolean): string {
-  if (isEth) {
-    const ev = getEvangelistYear(year);
-    return `${year} • ዘመነ ${ev.nameAmharic}`;
-  }
-  const ethDate = gregorianToEthiopian(new Date(year, month, 15));
-  const ev = getEvangelistYear(ethDate.year);
-  return `${year} • Year of ${ev.name}`;
+function formatYear(year: number, month: number, isEth: boolean, lang: string = "am"): string {
+  const targetEthYear = isEth ? year : gregorianToEthiopian(new Date(year, month, 15)).year;
+  const evText = formatEvangelistYear(targetEthYear, lang);
+  return `${year} • ${evText}`;
 }
 
 export default function CalendarScreen() {
@@ -80,6 +39,7 @@ export default function CalendarScreen() {
   const today = useMemo(() => new Date(), []);
   const isDark = useColorScheme() === "dark";
   const { settings, updateSetting } = useSettings();
+  const { t, lang } = useTranslation();
   const isEth = settings.calendarStyle === "ethiopian";
 
   const getInitialCurrent = useCallback(() => {
@@ -122,11 +82,11 @@ export default function CalendarScreen() {
     setCurrent(getInitialCurrent());
   }, [getInitialCurrent]);
 
-  const { data: allHolidays } = useHolidays(settings.language);
+  const { data: allHolidays } = useHolidays(lang);
 
   const { map: holidayMap, list: holidays } = useMemo(
-    () => getHolidaysForActiveMonth(allHolidays, current.year, current.month, isEth),
-    [allHolidays, current.year, current.month, isEth],
+    () => getHolidaysForActiveMonth(allHolidays, current.year, current.month, isEth, lang),
+    [allHolidays, current.year, current.month, isEth, lang],
   );
 
   const panResponder = useRef(
@@ -155,19 +115,19 @@ export default function CalendarScreen() {
             className="text-3xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {formatMonth(current.month, isEth)}
+            {formatMonth(current.month, isEth, lang)}
           </Text>
           <Text
             className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {formatYear(current.year, current.month, isEth)}
+            {formatYear(current.year, current.month, isEth, lang)}
           </Text>
           <Text
             className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {getSubMonthSpanString(current.year, current.month, isEth)}
+            {getSubMonthSpanString(current.year, current.month, isEth, lang)}
           </Text>
         </View>
 
@@ -183,7 +143,7 @@ export default function CalendarScreen() {
                 className="text-primary text-xs font-semibold"
                 style={{ fontFamily: "ReadingFont" }}
               >
-                Today
+                {t("today")}
               </Text>
             </TouchableOpacity>
           )}
@@ -225,7 +185,7 @@ export default function CalendarScreen() {
           className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-wider"
           style={{ fontFamily: "ReadingFont" }}
         >
-          Calendar System
+          {t("calendarSystem")}
         </Text>
 
         <View className="bg-stone-200/60 dark:bg-stone-800/60 flex-row items-center rounded-full p-0.5 border border-stone-200/60 dark:border-stone-800/60">
@@ -238,7 +198,7 @@ export default function CalendarScreen() {
               className={`text-xs font-semibold ${isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
               style={{ fontFamily: "ReadingFont" }}
             >
-              Ethiopian (EC)
+              {t("ethiopianEC")}
             </Text>
           </TouchableOpacity>
 
@@ -251,7 +211,7 @@ export default function CalendarScreen() {
               className={`text-xs font-semibold ${!isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
               style={{ fontFamily: "ReadingFont" }}
             >
-              Gregorian (GC)
+              {t("gregorianGC")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -279,14 +239,14 @@ export default function CalendarScreen() {
             className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Holidays & Events
+            {t("holidaysAndEvents")}
           </Text>
           <View className="bg-primary/10 rounded-full px-2.5 py-0.5">
             <Text
               className="text-primary text-[11px] font-semibold"
               style={{ fontFamily: "ReadingFont" }}
             >
-              {holidays.length} {holidays.length === 1 ? "event" : "events"}
+              {holidays.length} {holidays.length === 1 ? t("event") : t("events")}
             </Text>
           </View>
         </View>
@@ -298,7 +258,7 @@ export default function CalendarScreen() {
               className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
-              No specific feasts listed for this month
+              {t("noHolidaysThisMonth")}
             </Text>
           </View>
         ) : (
