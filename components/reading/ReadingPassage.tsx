@@ -8,7 +8,7 @@ type ReadingPassageProps = {
 
 export default function ReadingPassage({ text, fontSize, align }: ReadingPassageProps) {
   return (
-    <View className="mb-6 flex-1 justify-center">
+    <View className="mb-8">
       <Text
         className="text-[#2D2A24] dark:text-[#E8E4DC]"
         style={{

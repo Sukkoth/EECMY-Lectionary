@@ -60,7 +60,8 @@ function formatMonth(month: number, isEth: boolean): string {
   if (isEth) {
     return ETHIOPIAN_MONTH_NAMES_AM[month] ?? "";
   }
-  return MONTH_NAMES[month] ?? "";
+  const validGcMonth = Math.max(0, Math.min(11, month));
+  return MONTH_NAMES[validGcMonth] ?? "";
 }
 
 function formatYear(year: number, month: number, isEth: boolean): string {
