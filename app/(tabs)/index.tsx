@@ -7,14 +7,16 @@ import {
   useColorScheme,
   ActivityIndicator,
   Appearance,
+  Animated,
   type DimensionValue,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
 import { useStreak } from "@/lib/hooks/useStreak";
+import { useCheckContentUpdate } from "@/lib/hooks/useCheckContentUpdate";
 import {
   formatDisplayDate,
   gregorianToEthiopian,
@@ -44,6 +46,30 @@ export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
+  const { hasUpdate, checkUpdate } = useCheckContentUpdate();
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (hasUpdate) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+  }, [hasUpdate, pulseAnim]);
+
   const readingDate = new Date();
   const ethDate = gregorianToEthiopian(readingDate);
   const evangelist = getEvangelistYear(ethDate.year);
@@ -58,7 +84,8 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       refetchStreak();
-    }, [refetchStreak]),
+      checkUpdate();
+    }, [refetchStreak, checkUpdate]),
   );
 
   const isMulti = dayData && dayData.readings.length > 1;
@@ -90,22 +117,41 @@ export default function HomeScreen() {
         {/* HEADER */}
         <View className="mb-6 flex-row items-center justify-between">
           <Text
-            className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
+            className="flex-1 text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {t("appTitle")}
           </Text>
-          <TouchableOpacity
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-            className="bg-surface dark:bg-surface-dark rounded-full p-2"
-          >
-            <Ionicons
-              name={isDark ? "moon-outline" : "sunny-outline"}
-              size={22}
-              color={isDark ? "#E8E4DC" : "#2D2A24"}
-            />
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            {hasUpdate && (
+              <TouchableOpacity
+                onPress={() => router.push("/settings/check-updates/content")}
+                activeOpacity={0.7}
+              >
+                <Animated.View
+                  className="bg-primary/15 rounded-full p-2"
+                  style={{ transform: [{ scale: pulseAnim }] }}
+                >
+                  <Ionicons
+                    name="cloud-download-outline"
+                    size={22}
+                    color="#3b82f6"
+                  />
+                </Animated.View>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+              className="bg-surface dark:bg-surface-dark rounded-full p-2"
+            >
+              <Ionicons
+                name={isDark ? "moon-outline" : "sunny-outline"}
+                size={22}
+                color={isDark ? "#E8E4DC" : "#2D2A24"}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* DATE CARD */}
