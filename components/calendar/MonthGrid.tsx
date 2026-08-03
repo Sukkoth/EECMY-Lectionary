@@ -56,9 +56,18 @@ export default memo(function MonthGrid({
   calendarStyle = "ethiopian",
 }: MonthGridProps) {
   const isEth = calendarStyle === "ethiopian";
+
+  const resolvedEthYear = useMemo(() => {
+    if (!isEth) return year;
+    if (year > 2020) {
+      return gregorianToEthiopian(new Date(Date.UTC(year, month, 15, 12))).year;
+    }
+    return year;
+  }, [isEth, year, month]);
+
   const weeks = useMemo(() => {
-    return isEth ? getEthiopianWeeks(year, month) : getWeeks(year, month);
-  }, [year, month, isEth]);
+    return isEth ? getEthiopianWeeks(resolvedEthYear, month) : getWeeks(year, month);
+  }, [resolvedEthYear, year, month, isEth]);
 
   const ethToday = useMemo(() => gregorianToEthiopian(new Date()), []);
   const gcToday = useMemo(() => {
@@ -110,15 +119,21 @@ export default memo(function MonthGrid({
                     }
 
                     let targetGc = { year, month, day };
+                    let subDay = 0;
                     let today = false;
 
                     if (isEth) {
-                      targetGc = ethiopianToGregorian(year, month, day);
+                      targetGc = ethiopianToGregorian(resolvedEthYear, month, day);
+                      subDay = targetGc.day;
                       today =
-                        ethToday.year === year &&
+                        ethToday.year === resolvedEthYear &&
                         ethToday.month === month &&
                         ethToday.day === day;
                     } else {
+                      const eth = gregorianToEthiopian(
+                        new Date(Date.UTC(year, month, day, 12)),
+                      );
+                      subDay = eth.day;
                       today =
                         gcToday.year === year &&
                         gcToday.month === month &&
@@ -151,16 +166,28 @@ export default memo(function MonthGrid({
                             today ? "bg-primary" : ""
                           }`}
                         >
-                          <Text
-                            className={`text-xl ${
-                              today
-                                ? "text-white font-semibold"
-                                : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
-                            }`}
-                            style={{ fontFamily: "ReadingFont" }}
-                          >
-                            {day}
-                          </Text>
+                          <View className="flex-row items-start">
+                            <Text
+                              className={`text-xl ${
+                                today
+                                  ? "text-white font-semibold"
+                                  : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                              }`}
+                              style={{ fontFamily: "ReadingFont" }}
+                            >
+                              {day}
+                            </Text>
+                            <Text
+                              className={`ml-0.5 text-[10px] ${
+                                today
+                                  ? "text-white/80 font-medium"
+                                  : "text-muted dark:text-muted-dark opacity-70 font-medium"
+                              }`}
+                              style={{ fontFamily: "ReadingFont" }}
+                            >
+                              {subDay}
+                            </Text>
+                          </View>
                         </View>
 
                         {/* Holiday dots indicator */}

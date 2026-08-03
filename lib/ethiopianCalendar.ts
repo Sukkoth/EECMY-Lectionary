@@ -47,26 +47,21 @@ export function ethiopianToGregorian(
   monthIndex: number,
   ethDay: number,
 ): { year: number; month: number; day: number } {
-  try {
-    const validMonthIndex = Math.max(0, Math.min(12, monthIndex));
-    const maxDays = getDaysInEthiopianMonth(ethYear, validMonthIndex);
-    const validDay = Math.max(1, Math.min(maxDays, ethDay));
+  const validMonthIndex = Math.max(0, Math.min(12, monthIndex));
+  const maxDays = getDaysInEthiopianMonth(ethYear, validMonthIndex);
+  const validDay = Math.max(1, Math.min(maxDays, ethDay));
 
-    // EthDateTime uses 1-indexed month (1..13)
-    const eth = new EthDateTime(ethYear, validMonthIndex + 1, validDay);
-    const gc = eth.toEuropeanDate();
-    return {
-      year: gc.getUTCFullYear(),
-      month: gc.getUTCMonth(),
-      day: gc.getUTCDate(),
-    };
-  } catch {
-    return {
-      year: ethYear,
-      month: Math.max(0, Math.min(11, monthIndex)),
-      day: Math.max(1, Math.min(28, ethDay)),
-    };
-  }
+  // 1 Meskerem ethYear is Sept 11 (or Sept 12 if previous Ethiopian year (ethYear - 1) was a leap year with 6 Pagume days)
+  const sepDay = (ethYear - 1) % 4 === 3 ? 12 : 11;
+  const meskerem1 = new Date(Date.UTC(ethYear + 7, 8, sepDay, 12, 0, 0));
+  const daysOffset = validMonthIndex * 30 + (validDay - 1);
+  const gcDate = new Date(meskerem1.getTime() + daysOffset * 86400000);
+
+  return {
+    year: gcDate.getUTCFullYear(),
+    month: gcDate.getUTCMonth(),
+    day: gcDate.getUTCDate(),
+  };
 }
 
 /** Convert Gregorian Date to Ethiopian date (0-indexed month: 0..12) */
