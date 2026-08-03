@@ -9,6 +9,8 @@ import {
   ethiopianToGregorian,
   gregorianToEthiopian,
   getEcWeekNumber,
+  ETHIOPIAN_MONTH_NAMES_SHORT_AM,
+  GREGORIAN_MONTH_NAMES_SHORT,
 } from "@/lib/ethiopianCalendar";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -75,13 +77,13 @@ export default memo(function MonthGrid({
     return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
   }, []);
 
-  const paddingX = 48;
+  const paddingX = 32;
   const cellWidth = Math.floor((width - paddingX) / 7);
 
   return (
-    <View style={{ width }} className="px-6">
+    <View style={{ width }} className="px-3">
       {/* Sleek Modern Card Surface */}
-      <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-4">
+      <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-3">
         {/* Day labels header */}
         <View className="mb-3 flex-row items-center border-b border-stone-200/40 dark:border-stone-800/40 pb-2.5">
           {DAY_LABELS.map((label, index) => {
@@ -120,11 +122,13 @@ export default memo(function MonthGrid({
 
                     let targetGc = { year, month, day };
                     let subDay = 0;
+                    let subMonthIndex = 0;
                     let today = false;
 
                     if (isEth) {
                       targetGc = ethiopianToGregorian(resolvedEthYear, month, day);
                       subDay = targetGc.day;
+                      subMonthIndex = targetGc.month;
                       today =
                         ethToday.year === resolvedEthYear &&
                         ethToday.month === month &&
@@ -134,11 +138,18 @@ export default memo(function MonthGrid({
                         new Date(Date.UTC(year, month, day, 12)),
                       );
                       subDay = eth.day;
+                      subMonthIndex = eth.month;
                       today =
                         gcToday.year === year &&
                         gcToday.month === month &&
                         gcToday.day === day;
                     }
+
+                    // Show month abbreviation on Day 1 of sub-month or on the first day of the grid card (day === 1)
+                    const showSubMonthLabel = subDay === 1 || day === 1;
+                    const subLabel = showSubMonthLabel
+                      ? `${isEth ? GREGORIAN_MONTH_NAMES_SHORT[subMonthIndex] : ETHIOPIAN_MONTH_NAMES_SHORT_AM[subMonthIndex]} ${subDay}`
+                      : `${subDay}`;
 
                     const dayHolidays = holidays.get(day) ?? [];
                     const types = [...new Set(dayHolidays.map((h) => h.type))];
@@ -162,13 +173,13 @@ export default memo(function MonthGrid({
                       >
                         {/* Day number container */}
                         <View
-                          className={`h-10 w-10 items-center justify-center rounded-2xl ${
+                          className={`h-11 w-11 items-center justify-center rounded-2xl ${
                             today ? "bg-primary" : ""
                           }`}
                         >
                           <View className="flex-row items-start">
                             <Text
-                              className={`text-xl ${
+                              className={`text-2xl ${
                                 today
                                   ? "text-white font-semibold"
                                   : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
@@ -178,14 +189,17 @@ export default memo(function MonthGrid({
                               {day}
                             </Text>
                             <Text
-                              className={`ml-0.5 text-[10px] ${
+                              className={`ml-0.5 text-xs ${
                                 today
-                                  ? "text-white/80 font-medium"
-                                  : "text-muted dark:text-muted-dark opacity-70 font-medium"
+                                  ? "text-white/90 font-semibold"
+                                  : showSubMonthLabel
+                                    ? "text-primary dark:text-blue-400 font-semibold"
+                                    : "text-muted dark:text-muted-dark opacity-75 font-medium"
                               }`}
                               style={{ fontFamily: "ReadingFont" }}
+                              numberOfLines={1}
                             >
-                              {subDay}
+                              {subLabel}
                             </Text>
                           </View>
                         </View>

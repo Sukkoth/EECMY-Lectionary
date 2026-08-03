@@ -32,6 +32,37 @@ export const ETHIOPIAN_MONTH_NAMES_AM = [
   "ጳጉሜ",
 ] as const;
 
+export const ETHIOPIAN_MONTH_NAMES_SHORT_AM = [
+  "መስ",
+  "ጥቅ",
+  "ኅዳ",
+  "ታኅ",
+  "ጥር",
+  "የካ",
+  "መጋ",
+  "ሚያ",
+  "ግን",
+  "ሰኔ",
+  "ሐም",
+  "ነሐ",
+  "ጳጉ",
+] as const;
+
+export const GREGORIAN_MONTH_NAMES_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
 /** Get the number of days in an Ethiopian month (0-indexed month: 0..12) */
 export function getDaysInEthiopianMonth(ethYear: number, monthIndex: number): number {
   if (monthIndex < 0 || monthIndex > 12) return 30;
@@ -153,4 +184,41 @@ export function formatDisplayDate(
   });
 
   return { weekday, dateString, fullString };
+}
+
+/** Generate the secondary calendar month span subtitle for header */
+export function getSubMonthSpanString(year: number, month: number, isEth: boolean): string {
+  if (isEth) {
+    const daysInMonth = getDaysInEthiopianMonth(year, month);
+    const firstGc = ethiopianToGregorian(year, month, 1);
+    const lastGc = ethiopianToGregorian(year, month, daysInMonth);
+
+    const m1 = GREGORIAN_MONTH_NAMES_SHORT[firstGc.month];
+    const m2 = GREGORIAN_MONTH_NAMES_SHORT[lastGc.month];
+
+    if (m1 === m2) {
+      return `${m1} ${firstGc.day}–${lastGc.day}, ${lastGc.year}`;
+    }
+    return `${m1} ${firstGc.day} – ${m2} ${lastGc.day}, ${lastGc.year}`;
+  }
+
+  // GC Mode: find Ethiopian sub-months in this GC month
+  const daysInGcMonth = new Date(year, month + 1, 0).getDate();
+  const firstEth = gregorianToEthiopian(new Date(Date.UTC(year, month, 1, 12)));
+  const lastEth = gregorianToEthiopian(new Date(Date.UTC(year, month, daysInGcMonth, 12)));
+
+  // Check if Pagume (month index 12) falls inside this GC month (e.g. September 6..10)
+  const pagumeEth = gregorianToEthiopian(new Date(Date.UTC(year, month, 7, 12)));
+  const hasPagume = pagumeEth.month === 12;
+
+  const e1 = ETHIOPIAN_MONTH_NAMES_AM[firstEth.month];
+  const e2 = ETHIOPIAN_MONTH_NAMES_AM[lastEth.month];
+
+  if (hasPagume) {
+    return `${e1} ${firstEth.day} – ጳጉሜ – ${e2} ${lastEth.day}`;
+  }
+  if (firstEth.month === lastEth.month) {
+    return `${e1} ${firstEth.day}–${lastEth.day}`;
+  }
+  return `${e1} ${firstEth.day} – ${e2} ${lastEth.day}`;
 }

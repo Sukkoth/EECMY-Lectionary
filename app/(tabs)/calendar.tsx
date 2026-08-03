@@ -24,6 +24,7 @@ import {
   ethiopianToGregorian,
   getDaysInEthiopianMonth,
   getEvangelistYear,
+  getSubMonthSpanString,
 } from "@/lib/ethiopianCalendar";
 
 const MONTH_NAMES = [
@@ -161,6 +162,12 @@ export default function CalendarScreen() {
             style={{ fontFamily: "ReadingFont" }}
           >
             {formatYear(current.year, current.month, isEth)}
+          </Text>
+          <Text
+            className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            {getSubMonthSpanString(current.year, current.month, isEth)}
           </Text>
         </View>
 
