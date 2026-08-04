@@ -13,7 +13,7 @@ type SettingsContextValue = {
 
 const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
-  appLanguage: "am",
+  appLanguage: "en",
   version: "niv",
   fontSizeSimple: 20,
   fontSizeExpanded: 18,
@@ -21,6 +21,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   alignExpanded: "justify",
   theme: "light",
   calendarStyle: "ethiopian",
+  reminderEnabled: false,
+  reminderTime: "07:00",
+  timeFormat: "12h",
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);

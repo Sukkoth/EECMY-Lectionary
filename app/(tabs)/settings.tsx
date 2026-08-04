@@ -1,14 +1,38 @@
-import { Text, View, TouchableOpacity, useColorScheme, Pressable, SafeAreaView, Appearance } from "react-native";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  useColorScheme,
+  Pressable,
+  SafeAreaView,
+  Appearance,
+  ScrollView,
+} from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 
+function formatTimeString(timeStr: string, format: "12h" | "24h" = "12h"): string {
+  const [hStr, mStr] = timeStr.split(":");
+  const h = parseInt(hStr, 10) || 7;
+  const m = parseInt(mStr, 10) || 0;
+  if (format === "24h") {
+    const hh = String(h).padStart(2, "0");
+    const mm = String(m).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+  const period = h >= 12 ? "PM" : "AM";
+  const displayHour = h % 12 === 0 ? 12 : h % 12;
+  const displayMin = String(m).padStart(2, "0");
+  return `${displayHour}:${displayMin} ${period}`;
+}
+
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { settings, updateSetting } = useSettings();
-  const { t, lang } = useTranslation();
+  const { t } = useTranslation();
 
   const toggleTheme = () => {
     const newTheme = isDark ? "light" : "dark";
@@ -31,7 +55,11 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6 pt-12">
+      <ScrollView
+        className="flex-1 px-6 pt-12"
+        contentContainerStyle={{ paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Title */}
         <Text
           className="mb-6 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -174,8 +202,42 @@ export default function SettingsScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* Daily Reading Reminder Row -> Sub-page */}
+        <TouchableOpacity
+          onPress={() => router.push("/settings/daily-reminder")}
+          activeOpacity={0.7}
+          className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="notifications-outline" size={20} color="#3b82f6" />
+            </View>
+            <View>
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {t("dailyReminder")}
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {settings.reminderEnabled
+                  ? formatTimeString(settings.reminderTime || "07:00", settings.timeFormat || "12h")
+                  : "Off"}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={isDark ? "#737373" : "#A3A3A3"}
+          />
+        </TouchableOpacity>
+
         {/* Appearance */}
-        <View className="bg-surface dark:bg-surface-dark rounded-2xl px-5 py-4">
+        <View className="bg-surface dark:bg-surface-dark mb-4 rounded-2xl px-5 py-4">
           <Pressable
             onPress={toggleTheme}
             className="flex-row items-center justify-between active:opacity-80"
@@ -241,7 +303,7 @@ export default function SettingsScreen() {
             color={isDark ? "#737373" : "#A3A3A3"}
           />
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

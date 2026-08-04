@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSQLiteContext } from "expo-sqlite";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
+import { scheduleDailyReminder } from "@/lib/NotificationService";
 
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
@@ -29,6 +31,8 @@ export default function LanguagePickerContent({
     setExpanded((prev) => ({ ...prev, [language]: !prev[language] }));
   };
 
+  const db = useSQLiteContext();
+
   const handleVersionSelect = async (
     langCode: string,
     versionCode: string,
@@ -38,6 +42,22 @@ export default function LanguagePickerContent({
       language: langCode,
       version: versionCode,
     });
+
+    if (settings.reminderEnabled) {
+      const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
+      const hour = parseInt(hStr, 10) || 7;
+      const minute = parseInt(mStr, 10) || 0;
+      await scheduleDailyReminder(
+        hour,
+        minute,
+        db,
+        langCode,
+        versionCode,
+        t("appTitle"),
+        30,
+      );
+    }
+
     onVersionSelect?.();
   };
 

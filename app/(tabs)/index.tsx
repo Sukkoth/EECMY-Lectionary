@@ -16,6 +16,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
 import { useStreak } from "@/lib/hooks/useStreak";
+import { useSQLiteContext } from "expo-sqlite";
+import { scheduleDailyReminder } from "@/lib/NotificationService";
 import { useCheckContentUpdate } from "@/lib/hooks/useCheckContentUpdate";
 import {
   formatDisplayDate,
@@ -80,12 +82,36 @@ export default function HomeScreen() {
     settings.version,
   );
   const { data: streak, refetch: refetchStreak } = useStreak();
+  const db = useSQLiteContext();
 
   useFocusEffect(
     useCallback(() => {
       refetchStreak();
       checkUpdate();
-    }, [refetchStreak, checkUpdate]),
+      if (settings.reminderEnabled) {
+        const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
+        const hour = parseInt(hStr, 10) || 7;
+        const minute = parseInt(mStr, 10) || 0;
+        scheduleDailyReminder(
+          hour,
+          minute,
+          db,
+          settings.language,
+          settings.version,
+          t("appTitle"),
+          30,
+        );
+      }
+    }, [
+      refetchStreak,
+      checkUpdate,
+      settings.reminderEnabled,
+      settings.reminderTime,
+      settings.language,
+      settings.version,
+      db,
+      t,
+    ]),
   );
 
   const isMulti = dayData && dayData.readings.length > 1;

@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 export type TextAlignment = "left" | "center" | "justify";
 export type CalendarStyle = "gregorian" | "ethiopian";
 export type AppLanguage = "am" | "en" | "om";
+export type TimeFormat = "12h" | "24h";
 
 export type AppSettings = {
   language: string;
@@ -14,6 +15,9 @@ export type AppSettings = {
   alignExpanded: TextAlignment;
   theme: "light" | "dark";
   calendarStyle: CalendarStyle;
+  reminderEnabled: boolean;
+  reminderTime: string; // "HH:mm" format, e.g. "07:00"
+  timeFormat: TimeFormat;
 };
 
 const KEYS = {
@@ -26,6 +30,9 @@ const KEYS = {
   alignExpanded: "yeilet_align_expanded",
   theme: "yeilet_theme",
   calendarStyle: "yeilet_calendar_style",
+  reminderEnabled: "yeilet_reminder_enabled",
+  reminderTime: "yeilet_reminder_time",
+  timeFormat: "yeilet_time_format",
   onboardingComplete: "yeilet_onboarding_complete",
 };
 
@@ -39,22 +46,40 @@ const DEFAULTS: AppSettings = {
   alignExpanded: "justify",
   theme: "light",
   calendarStyle: "ethiopian",
+  reminderEnabled: false,
+  reminderTime: "07:00",
+  timeFormat: "12h",
 };
 
 export async function loadSettings(): Promise<AppSettings> {
   try {
-    const [language, appLanguage, version, fontSizeSimple, fontSizeExpanded, alignSimple, alignExpanded, theme, calendarStyle] =
-      await Promise.all([
-        SecureStore.getItemAsync(KEYS.language),
-        SecureStore.getItemAsync(KEYS.appLanguage),
-        SecureStore.getItemAsync(KEYS.version),
-        SecureStore.getItemAsync(KEYS.fontSizeSimple),
-        SecureStore.getItemAsync(KEYS.fontSizeExpanded),
-        SecureStore.getItemAsync(KEYS.alignSimple),
-        SecureStore.getItemAsync(KEYS.alignExpanded),
-        SecureStore.getItemAsync(KEYS.theme),
-        SecureStore.getItemAsync(KEYS.calendarStyle),
-      ]);
+    const [
+      language,
+      appLanguage,
+      version,
+      fontSizeSimple,
+      fontSizeExpanded,
+      alignSimple,
+      alignExpanded,
+      theme,
+      calendarStyle,
+      reminderEnabled,
+      reminderTime,
+      timeFormat,
+    ] = await Promise.all([
+      SecureStore.getItemAsync(KEYS.language),
+      SecureStore.getItemAsync(KEYS.appLanguage),
+      SecureStore.getItemAsync(KEYS.version),
+      SecureStore.getItemAsync(KEYS.fontSizeSimple),
+      SecureStore.getItemAsync(KEYS.fontSizeExpanded),
+      SecureStore.getItemAsync(KEYS.alignSimple),
+      SecureStore.getItemAsync(KEYS.alignExpanded),
+      SecureStore.getItemAsync(KEYS.theme),
+      SecureStore.getItemAsync(KEYS.calendarStyle),
+      SecureStore.getItemAsync(KEYS.reminderEnabled),
+      SecureStore.getItemAsync(KEYS.reminderTime),
+      SecureStore.getItemAsync(KEYS.timeFormat),
+    ]);
 
     const validAppLang: AppLanguage =
       appLanguage === "am" || appLanguage === "en" || appLanguage === "om"
@@ -71,6 +96,9 @@ export async function loadSettings(): Promise<AppSettings> {
       alignExpanded: parseAlignment(alignExpanded, DEFAULTS.alignExpanded),
       theme: theme === "light" || theme === "dark" ? theme : DEFAULTS.theme,
       calendarStyle: calendarStyle === "ethiopian" || calendarStyle === "gregorian" ? calendarStyle : DEFAULTS.calendarStyle,
+      reminderEnabled: reminderEnabled === "true",
+      reminderTime: reminderTime ?? DEFAULTS.reminderTime,
+      timeFormat: timeFormat === "24h" ? "24h" : "12h",
     };
   } catch {
     return { ...DEFAULTS };
@@ -88,7 +116,23 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     SecureStore.setItemAsync(KEYS.alignExpanded, settings.alignExpanded),
     SecureStore.setItemAsync(KEYS.theme, settings.theme),
     SecureStore.setItemAsync(KEYS.calendarStyle, settings.calendarStyle),
+    SecureStore.setItemAsync(KEYS.reminderEnabled, String(settings.reminderEnabled)),
+    SecureStore.setItemAsync(KEYS.reminderTime, settings.reminderTime),
+    SecureStore.setItemAsync(KEYS.timeFormat, settings.timeFormat),
   ]);
+}
+
+export async function loadOnboardingComplete(): Promise<boolean> {
+  try {
+    const val = await SecureStore.getItemAsync(KEYS.onboardingComplete);
+    return val === "true";
+  } catch {
+    return false;
+  }
+}
+
+export async function saveOnboardingComplete(complete: boolean): Promise<void> {
+  await SecureStore.setItemAsync(KEYS.onboardingComplete, String(complete));
 }
 
 function safeParseInt(value: string, fallback: number): number {
@@ -99,17 +143,4 @@ function safeParseInt(value: string, fallback: number): number {
 function parseAlignment(value: string | null, fallback: TextAlignment): TextAlignment {
   if (value === "left" || value === "center" || value === "justify") return value;
   return fallback;
-}
-
-export async function loadOnboardingComplete(): Promise<boolean> {
-  try {
-    const value = await SecureStore.getItemAsync(KEYS.onboardingComplete);
-    return value === "true";
-  } catch {
-    return false;
-  }
-}
-
-export async function saveOnboardingComplete(complete: boolean): Promise<void> {
-  await SecureStore.setItemAsync(KEYS.onboardingComplete, String(complete));
 }

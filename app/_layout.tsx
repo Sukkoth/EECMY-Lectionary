@@ -8,6 +8,7 @@ import { setBackgroundColorAsync } from "expo-system-ui";
 import { SQLiteProvider } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as Notifications from "expo-notifications";
 import { SettingsProvider } from "@/lib/SettingsContext";
 import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -34,6 +35,18 @@ function AppContent() {
       router.replace("/(tabs)");
     }
   }, [isOnboardingComplete, loading, segments]);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const targetUrl = response.notification.request.content.data?.url;
+      if (targetUrl) {
+        router.push(targetUrl as any);
+      } else {
+        router.push("/reading" as any);
+      }
+    });
+    return () => subscription.remove();
+  }, [router]);
 
   if (loading) {
     return (
@@ -97,7 +110,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SQLiteProvider
-        databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME!}
+        databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME || "lectionary-v1.db"}
         assetSource={{ assetId: require("../assets/db/readings.db") }}
       >
         <QueryClientProvider client={queryClient}>
