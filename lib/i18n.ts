@@ -400,7 +400,7 @@ export function getDayLabels(lang: string): string[] {
 
 export function useTranslation() {
   const { settings } = useSettings();
-  const lang = settings.appLanguage || (settings.language as "en" | "am" | "om") || "am";
+  const lang = settings.appLanguage || "en";
 
   const t = (key: TranslationKey): string => {
     return translations[lang]?.[key] ?? translations.en[key] ?? key;
