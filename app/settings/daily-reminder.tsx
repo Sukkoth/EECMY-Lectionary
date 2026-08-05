@@ -365,7 +365,7 @@ export default function DailyReminderScreen() {
                     className="bg-primary/10 rounded-full px-4 py-1.5"
                   >
                     <Text
-                      className="text-primary text-sm font-bold"
+                      className="text-primary text-sm font-semibold"
                       style={{ fontFamily: "ReadingFont" }}
                     >
                       {t("done")}
