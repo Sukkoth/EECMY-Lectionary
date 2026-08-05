@@ -16,11 +16,11 @@ const FEATURES = [
   },
   {
     icon: "calendar-outline" as const,
-    title: "Church Calendar",
-    subtitle: "Follow the seasons of the Church",
+    title: "Dual Calendar System",
+    subtitle: "Ethiopian (EC) & Gregorian (GC)",
     description:
-      "Browse the calendar to see upcoming readings, Sundays, and special observances. Easily navigate any day of the church year.",
-    highlight: "Seasons • Sundays • Holy days",
+      "Seamlessly switch between Ethiopian (EC) and Gregorian (GC) calendars to follow daily readings, Sundays, and holy days in your preferred calendar system.",
+    highlight: "Ethiopian (EC) • Gregorian (GC)",
   },
   {
     icon: "heart-outline" as const,

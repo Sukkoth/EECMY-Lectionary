@@ -87,6 +87,21 @@ export default function CompletionScreen() {
           >
             {versionName}
           </Text>
+          <View className="my-2 h-px w-16 bg-stone-200 dark:bg-stone-700" />
+          <Text
+            className="text-sm text-muted dark:text-muted-dark"
+            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          >
+            Calendar System
+          </Text>
+          <Text
+            className="text-lg text-[#2D2A24] dark:text-[#E8E4DC]"
+            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+          >
+            {settings.calendarStyle === "ethiopian"
+              ? "Ethiopian (EC)"
+              : "Gregorian (GC)"}
+          </Text>
         </View>
 
         {/* Start Reading Button */}
