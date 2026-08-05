@@ -8,7 +8,7 @@ export default function LectionaryScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings } = useSettings();
 
-  const lang = settings.language as GlossaryLanguage;
+  const lang = (settings.appLanguage || settings.language) as GlossaryLanguage;
   const content = GLOSSARY_CONTENT[lang] ?? GLOSSARY_CONTENT.en;
 
   return (

@@ -39,6 +39,14 @@ export const translations = {
     clear: "Clear",
 
     reference: "Reference",
+    whatIsLectionary: "What is the Lectionary?",
+    whatIsLectionaryDesc: "An introductory guide to the lectionary",
+    churchYearTitle: "Church Year",
+    churchYearDesc: "The liturgical calendar of the Church",
+    creedsTitle: "Creeds",
+    creedsDesc: "Historic Christian creeds used in worship",
+    lordsPrayerTitle: "The Lord's Prayer",
+    lordsPrayerDesc: "The prayer taught by Jesus",
 
     settings: "Settings",
     appearance: "Appearance",
@@ -168,6 +176,14 @@ export const translations = {
     clear: "አጥፋ",
 
     reference: "መጣቀሻ",
+    whatIsLectionary: "ሥርዓተ ንባብ (ሌክቲዮናሪ) ምንድን ነው?",
+    whatIsLectionaryDesc: "ስለ ሥርዓተ ንባቡ አጠቃላይ መግቢያ",
+    churchYearTitle: "የቤተ ክርስቲያን ዓመት",
+    churchYearDesc: "የቤተ ክርስቲያን ዘመናትና የሥርዓተ አምልኮ ካሌንደር",
+    creedsTitle: "የሃይማኖት መግለጫዎች",
+    creedsDesc: "በአምልኮ ውስጥ የሚጸለዩ ጥንታዊ የሃይማኖት መግለጫዎች",
+    lordsPrayerTitle: "የጌታ ጸሎት",
+    lordsPrayerDesc: "ኢየሱስ ደቀ መዛሙርቱን ያስተማረው ጸሎት",
 
     settings: "ማስተካከያ",
     appearance: "ገጽታ",
@@ -297,6 +313,14 @@ export const translations = {
     clear: "Haqi",
 
     reference: "Wabiilee",
+    whatIsLectionary: "Sirni Dubbisaa (Lectionary) Maali?",
+    whatIsLectionaryDesc: "Gara sirna dubbisaatti seensa bal'aa",
+    churchYearTitle: "Waggaa Waldaa Kiristaanaa",
+    churchYearDesc: "Kalendarii sirna lektiyonaarii Waldaa Kiristaanaa",
+    creedsTitle: "Ibsa ejjennaa Amantaa",
+    creedsDesc: "Ibsawwan amantaa kiristaanaa durii",
+    lordsPrayerTitle: "Kadhannaa Gooftaa",
+    lordsPrayerDesc: "Kadhannaa Yesuus bartoota isaa barsiise",
 
     settings: "Sirreeffama",
     appearance: "Bifa",

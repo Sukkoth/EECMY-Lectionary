@@ -14,7 +14,7 @@ export default function CreedsScreen() {
   const { settings } = useSettings();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  const lang = settings.language as GlossaryLanguage;
+  const lang = (settings.appLanguage || settings.language) as GlossaryLanguage;
   const content = GLOSSARY_CONTENT[lang] ?? GLOSSARY_CONTENT.en;
 
   const handleToggle = (index: number) => {
