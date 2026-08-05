@@ -113,7 +113,11 @@ export default function ReadingScreen() {
 
   const currentDayData = readingQueries.data[CENTER_INDEX];
   const viewType = (currentDayData?.readings.length ?? 0) === 1 ? "simple" : "expanded";
-  const displayDate = formatDisplayDate(centerDate, settings.calendarStyle);
+  const displayDate = formatDisplayDate(
+    centerDate,
+    settings.calendarStyle,
+    settings.appLanguage || settings.language,
+  );
   const weekday = displayDate.weekday;
   const formattedDate = displayDate.dateString;
   const liturgicalDay = currentDayData?.dayInfo?.title ?? null;
