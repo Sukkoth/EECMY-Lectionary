@@ -25,6 +25,7 @@ import {
   getEvangelistYear,
   formatEvangelistYear,
 } from "@/lib/ethiopianCalendar";
+import * as Notifications from 'expo-notifications';
 
 import { useTranslation, getDayLabels } from "@/lib/i18n";
 
@@ -92,15 +93,19 @@ export default function HomeScreen() {
         const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
         const hour = parseInt(hStr, 10) || 7;
         const minute = parseInt(mStr, 10) || 0;
-        scheduleDailyReminder(
-          hour,
-          minute,
-          db,
-          settings.language,
-          settings.version,
-          t("appTitle"),
-          30,
-        );
+        Notifications.getAllScheduledNotificationsAsync().then(({ length }) => {
+          if (length < 15) {
+            scheduleDailyReminder(
+              hour,
+              minute,
+              db,
+              settings.language,
+              settings.version,
+              t("appTitle"),
+              30,
+            )
+          }
+        });
       }
     }, [
       refetchStreak,
