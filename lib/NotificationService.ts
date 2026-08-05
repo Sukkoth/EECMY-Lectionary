@@ -5,9 +5,10 @@ import { ReadingsDB, type DayData } from "./database";
 // Configure notification behavior when app is in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
     shouldPlaySound: true,
-    shouldSetBadge: false,
+    shouldSetBadge: true,
+    shouldShowList: true,
   }),
 });
 
