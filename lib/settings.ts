@@ -47,8 +47,8 @@ const DEFAULTS: AppSettings = {
   theme: "light",
   calendarStyle: "ethiopian",
   reminderEnabled: false,
-  reminderTime: "07:00",
-  timeFormat: "12h",
+  reminderTime: "08:30",
+  timeFormat: "24h",
 };
 
 export async function loadSettings(): Promise<AppSettings> {
@@ -81,14 +81,10 @@ export async function loadSettings(): Promise<AppSettings> {
       SecureStore.getItemAsync(KEYS.timeFormat),
     ]);
 
-    const validAppLang: AppLanguage =
-      appLanguage === "am" || appLanguage === "en" || appLanguage === "om"
-        ? appLanguage
-        : (language === "om" || language === "en" ? language : "am");
 
     return {
       language: language ?? DEFAULTS.language,
-      appLanguage: validAppLang,
+      appLanguage: appLanguage as AppLanguage || 'en',
       version: version ?? DEFAULTS.version,
       fontSizeSimple: fontSizeSimple ? safeParseInt(fontSizeSimple, DEFAULTS.fontSizeSimple) : DEFAULTS.fontSizeSimple,
       fontSizeExpanded: fontSizeExpanded ? safeParseInt(fontSizeExpanded, DEFAULTS.fontSizeExpanded) : DEFAULTS.fontSizeExpanded,
