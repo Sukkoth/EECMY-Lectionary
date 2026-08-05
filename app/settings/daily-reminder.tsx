@@ -17,7 +17,11 @@ import { useSQLiteContext } from "expo-sqlite";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
-import { scheduleDailyReminder, cancelAllReminders } from "@/lib/NotificationService";
+import {
+  scheduleDailyReminder,
+  cancelAllReminders,
+  requestNotificationPermissions,
+} from "@/lib/NotificationService";
 import { ReadingsDB, type DayData } from "@/lib/database";
 
 function formatTimeString(timeStr: string, format: "12h" | "24h" = "12h"): string {
@@ -172,10 +176,14 @@ export default function DailyReminderScreen() {
               value={settings.reminderEnabled}
               onValueChange={async (value) => {
                 if (value) {
+                  const granted = await requestNotificationPermissions();
+                  if (!granted) return;
+
+                  await updateSetting("reminderEnabled", true);
                   const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
                   const hour = parseInt(hStr, 10) || 7;
                   const minute = parseInt(mStr, 10) || 0;
-                  const success = await scheduleDailyReminder(
+                  scheduleDailyReminder(
                     hour,
                     minute,
                     db,
@@ -183,13 +191,10 @@ export default function DailyReminderScreen() {
                     settings.version,
                     t("appTitle"),
                     30,
-                  );
-                  if (success) {
-                    updateSetting("reminderEnabled", true);
-                  }
+                  ).catch(() => {});
                 } else {
-                  await cancelAllReminders();
-                  updateSetting("reminderEnabled", false);
+                  await updateSetting("reminderEnabled", false);
+                  cancelAllReminders().catch(() => {});
                 }
               }}
               trackColor={{ false: isDark ? "#3f3f46" : "#e4e4e7", true: "#3b82f6" }}
