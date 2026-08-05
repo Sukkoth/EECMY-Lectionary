@@ -94,7 +94,7 @@ export default function HomeScreen() {
         const hour = parseInt(hStr, 10) || 7;
         const minute = parseInt(mStr, 10) || 0;
         Notifications.getAllScheduledNotificationsAsync().then(({ length }) => {
-          if (length < 15) {
+          if (length < 5) {
             scheduleDailyReminder(
               hour,
               minute,
@@ -102,8 +102,8 @@ export default function HomeScreen() {
               settings.language,
               settings.version,
               t("appTitle"),
-              30,
-            )
+              21,
+            );
           }
         });
       }
