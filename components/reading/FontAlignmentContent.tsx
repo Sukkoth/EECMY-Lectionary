@@ -4,8 +4,9 @@ import { useSettings } from "@/lib/SettingsContext";
 import type { TextAlignment } from "@/lib/settings";
 import { useTranslation } from "@/lib/i18n";
 
-const FONT_MIN = 12;
-const FONT_MAX = 32;
+const FONT_MIN = 14;
+const FONT_MAX_SIMPLE = 32;
+const FONT_MAX_EXPANDED = 32;
 const FONT_STEP = 2;
 
 const ALIGNMENTS: { value: TextAlignment }[] = [
@@ -31,48 +32,53 @@ function AlignmentIndicator({
         ? "align-center"
         : "align-justify";
 
-  return <Feather name={iconName} size={18} color={color} />;
+  return <Feather name={iconName} size={22} color={color} />;
 }
 
 function SizeControl({
   label,
   value,
   onChange,
+  max = FONT_MAX_SIMPLE,
+  min = FONT_MIN,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  max?: number;
+  min?: number;
 }) {
   const isDark = useColorScheme() === "dark";
   const textColor = isDark ? "#E8E4DC" : "#2D2A24";
 
-  const dec = () => onChange(Math.max(FONT_MIN, value - FONT_STEP));
-  const inc = () => onChange(Math.min(FONT_MAX, value + FONT_STEP));
+  const dec = () => onChange(Math.max(min, value - FONT_STEP));
+  const inc = () => onChange(Math.min(max, value + FONT_STEP));
 
   return (
-    <View className="flex-row items-center justify-between py-2">
+    <View className="flex-row items-center justify-between py-2.5">
       <Text
-        className="text-sm font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
+        className="text-base font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
         style={{ fontFamily: "ReadingFont" }}
       >
         {label}
       </Text>
-      <View className="flex-row items-center gap-3">
+      <View className="flex-row items-center gap-4">
         <TouchableOpacity
           onPress={dec}
           activeOpacity={0.6}
-          disabled={value <= FONT_MIN}
+          disabled={value <= min}
+          className="p-1"
         >
           <Ionicons
             name="remove-circle-outline"
-            size={26}
+            size={34}
             color={
-              value <= FONT_MIN ? (isDark ? "#525252" : "#D4D4D4") : "#3b82f6"
+              value <= min ? (isDark ? "#525252" : "#D4D4D4") : "#3b82f6"
             }
           />
         </TouchableOpacity>
         <Text
-          className="min-w-[28px] text-center text-base font-semibold"
+          className="min-w-[44px] text-center text-lg font-semibold"
           style={{ fontFamily: "ReadingFont", color: textColor }}
         >
           {value}pt
@@ -80,13 +86,14 @@ function SizeControl({
         <TouchableOpacity
           onPress={inc}
           activeOpacity={0.6}
-          disabled={value >= FONT_MAX}
+          disabled={value >= max}
+          className="p-1"
         >
           <Ionicons
             name="add-circle-outline"
-            size={26}
+            size={34}
             color={
-              value >= FONT_MAX ? (isDark ? "#525252" : "#D4D4D4") : "#3b82f6"
+              value >= max ? (isDark ? "#525252" : "#D4D4D4") : "#3b82f6"
             }
           />
         </TouchableOpacity>
@@ -107,14 +114,14 @@ function AlignControl({
   const isDark = useColorScheme() === "dark";
 
   return (
-    <View className="flex-row items-center justify-between py-2">
+    <View className="flex-row items-center justify-between py-2.5">
       <Text
-        className="text-sm font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
+        className="text-base font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
         style={{ fontFamily: "ReadingFont" }}
       >
         {label}
       </Text>
-      <View className="flex-row items-center gap-2">
+      <View className="flex-row items-center gap-3">
         {ALIGNMENTS.map((a) => {
           const active = value === a.value;
           return (
@@ -122,9 +129,9 @@ function AlignControl({
               key={a.value}
               onPress={() => onChange(a.value)}
               activeOpacity={0.6}
-              className={`rounded-xl border px-3.5 py-2 ${
+              className={`rounded-2xl border px-4 py-2.5 ${
                 active
-                  ? "border-blue-500 bg-blue-500/10"
+                  ? "border-blue-500 bg-blue-500/15"
                   : isDark
                     ? "border-stone-800 bg-bg-warm-dark/50"
                     : "border-stone-200 bg-bg-warm/50"
@@ -173,7 +180,7 @@ export default function FontAlignmentContent({
         </View>
 
         {/* Font Size Card */}
-        <View className="will-change-variable bg-surface dark:bg-surface-dark mb-3 rounded-2xl border border-stone-200/60 p-4 dark:border-stone-800/60">
+        <View className="will-change-variable bg-surface dark:bg-surface-dark mb-4 rounded-2xl border border-stone-200/60 p-5 dark:border-stone-800/60">
           <Text
             className="text-primary mb-2 text-xs font-semibold uppercase tracking-wider"
             style={{ fontFamily: "ReadingFont" }}
@@ -183,18 +190,22 @@ export default function FontAlignmentContent({
           <SizeControl
             label={t("singleReading")}
             value={settings.fontSizeSimple}
+            max={FONT_MAX_SIMPLE}
+            min={FONT_MIN}
             onChange={(v) => update({ fontSizeSimple: v })}
           />
           <View className="my-1 border-b border-stone-200/40 dark:border-stone-800/40" />
           <SizeControl
             label={t("sundayReadings")}
             value={settings.fontSizeExpanded}
+            max={FONT_MAX_EXPANDED}
+            min={FONT_MIN}
             onChange={(v) => update({ fontSizeExpanded: v })}
           />
         </View>
 
         {/* Text Alignment Card */}
-        <View className="will-change-variable bg-surface dark:bg-surface-dark mb-3 rounded-2xl border border-stone-200/60 p-4 dark:border-stone-800/60">
+        <View className="will-change-variable bg-surface dark:bg-surface-dark mb-4 rounded-2xl border border-stone-200/60 p-5 dark:border-stone-800/60">
           <Text
             className="text-primary mb-2 text-xs font-semibold uppercase tracking-wider"
             style={{ fontFamily: "ReadingFont" }}
@@ -219,6 +230,7 @@ export default function FontAlignmentContent({
 
   // Minimal layout for "simple" or "expanded" view in reader bottom sheet
   const isSimple = viewType === "simple";
+  const maxFont = isSimple ? FONT_MAX_SIMPLE : FONT_MAX_EXPANDED;
   const fontSize = isSimple
     ? settings.fontSizeSimple
     : settings.fontSizeExpanded;
@@ -227,7 +239,9 @@ export default function FontAlignmentContent({
   const updateFont = (v: number) => {
     setAllSettings({
       ...settings,
-      ...(isSimple ? { fontSizeSimple: v } : { fontSizeExpanded: v }),
+      ...(isSimple
+        ? { fontSizeSimple: Math.min(maxFont, Math.max(FONT_MIN, v)) }
+        : { fontSizeExpanded: Math.min(maxFont, Math.max(FONT_MIN, v)) }),
     });
   };
 
@@ -240,26 +254,26 @@ export default function FontAlignmentContent({
 
   return (
     <View className="px-6">
-      <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-2xl border border-stone-200/60 p-4 dark:border-stone-800/60">
+      <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-2xl border border-stone-200/60 p-5 dark:border-stone-800/60">
         {/* Font Size Row */}
-        <View className="flex-row items-center justify-between py-1">
+        <View className="flex-row items-center justify-between py-2">
           <Text
-            className="text-xs font-semibold uppercase tracking-wider text-[#2D2A24] dark:text-[#E8E4DC]"
+            className="text-sm font-semibold uppercase tracking-wider text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
             Text Size ({fontSize}pt)
           </Text>
-          <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center gap-3">
             <TouchableOpacity
               onPress={() =>
                 updateFont(Math.max(FONT_MIN, fontSize - FONT_STEP))
               }
               activeOpacity={0.6}
               disabled={fontSize <= FONT_MIN}
-              className="bg-bg-warm/50 dark:bg-bg-warm-dark/50 rounded-xl border border-stone-200/60 px-3 py-1.5 dark:border-stone-800/60"
+              className="bg-bg-warm/60 dark:bg-bg-warm-dark/60 min-w-[54px] items-center justify-center rounded-2xl border border-stone-200/60 px-4 py-2.5 dark:border-stone-800/60"
             >
               <Text
-                className="text-sm font-semibold"
+                className="text-lg font-semibold"
                 style={{
                   fontFamily: "ReadingFont",
                   color:
@@ -277,18 +291,18 @@ export default function FontAlignmentContent({
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() =>
-                updateFont(Math.min(FONT_MAX, fontSize + FONT_STEP))
+                updateFont(Math.min(maxFont, fontSize + FONT_STEP))
               }
               activeOpacity={0.6}
-              disabled={fontSize >= FONT_MAX}
-              className="bg-bg-warm/50 dark:bg-bg-warm-dark/50 rounded-xl border border-stone-200/60 px-3 py-1.5 dark:border-stone-800/60"
+              disabled={fontSize >= maxFont}
+              className="bg-bg-warm/60 dark:bg-bg-warm-dark/60 min-w-[54px] items-center justify-center rounded-2xl border border-stone-200/60 px-4 py-2.5 dark:border-stone-800/60"
             >
               <Text
-                className="text-sm font-semibold"
+                className="text-lg font-semibold"
                 style={{
                   fontFamily: "ReadingFont",
                   color:
-                    fontSize >= FONT_MAX
+                    fontSize >= maxFont
                       ? isDark
                         ? "#525252"
                         : "#D4D4D4"
@@ -303,17 +317,17 @@ export default function FontAlignmentContent({
           </View>
         </View>
 
-        <View className="my-2 border-b border-stone-200/40 dark:border-stone-800/40" />
+        <View className="my-2.5 border-b border-stone-200/40 dark:border-stone-800/40" />
 
         {/* Alignment Row */}
-        <View className="flex-row items-center justify-between py-1">
+        <View className="flex-row items-center justify-between py-2">
           <Text
-            className="text-xs font-semibold uppercase tracking-wider text-[#2D2A24] dark:text-[#E8E4DC]"
+            className="text-sm font-semibold uppercase tracking-wider text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont" }}
           >
             Indent
           </Text>
-          <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center gap-3">
             {ALIGNMENTS.map((a) => {
               const active = align === a.value;
               return (
@@ -321,9 +335,9 @@ export default function FontAlignmentContent({
                   key={a.value}
                   onPress={() => updateAlign(a.value)}
                   activeOpacity={0.6}
-                  className={`rounded-xl border px-3.5 py-2 ${
+                  className={`rounded-2xl border px-4 py-2.5 ${
                     active
-                      ? "border-blue-500 bg-blue-500/10"
+                      ? "border-blue-500 bg-blue-500/15"
                       : isDark
                         ? "border-stone-800 bg-bg-warm-dark/50"
                         : "border-stone-200 bg-bg-warm/50"
