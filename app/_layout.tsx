@@ -1,6 +1,6 @@
 import { Stack, useSegments, useRouter } from "expo-router";
 import { StatusBar, setStatusBarBackgroundColor } from "expo-status-bar";
-import { useColorScheme, ActivityIndicator, View } from "react-native";
+import { useColorScheme, ActivityIndicator, View, Platform } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
@@ -16,6 +16,25 @@ import { queryClient } from "@/lib/queryClient";
 import "./global.css";
 
 SplashScreen.preventAutoHideAsync();
+
+
+async function setupNotifications() {
+  /** This is required to use notification, especially on android v8+ */
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+      showBadge: true,
+      enableLights: true,
+      enableVibrate: true,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+  }
+};
+
+setupNotifications()
 
 function AppContent() {
   const colorScheme = useColorScheme();
