@@ -38,7 +38,7 @@ const KEYS = {
 
 const DEFAULTS: AppSettings = {
   language: "en",
-  appLanguage: "am",
+  appLanguage: "en",
   version: "niv",
   fontSizeSimple: 20,
   fontSizeExpanded: 18,
