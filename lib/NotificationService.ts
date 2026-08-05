@@ -44,6 +44,9 @@ export async function scheduleDailyReminder(
   const now = new Date();
   const verUpper = (version || "niv").toUpperCase();
 
+  const targets: Array<{ targetDate: Date; body: string }> = [];
+
+  // Phase 1: Build all notification payloads in memory from SQLite DB
   for (let i = 0; i < daysAheadCount; i++) {
     const targetDate = new Date();
     targetDate.setDate(now.getDate() + i);
@@ -91,18 +94,29 @@ export async function scheduleDailyReminder(
       body = "Open the app to read today's lectionary passage.";
     }
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: appTitle,
-        body: body,
-        sound: true,
-        data: { url: "/reading" },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: targetDate,
-      },
-    });
+    targets.push({ targetDate, body });
+  }
+
+  // Phase 2: Parallel Batch Scheduling (5 items per concurrent chunk)
+  const CONCURRENCY = 5;
+  for (let c = 0; c < targets.length; c += CONCURRENCY) {
+    const chunk = targets.slice(c, c + CONCURRENCY);
+    await Promise.all(
+      chunk.map(async (item) => {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: appTitle,
+            body: item.body,
+            sound: true,
+            data: { url: "/reading" },
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: item.targetDate,
+          },
+        });
+      })
+    );
   }
 
   return true;

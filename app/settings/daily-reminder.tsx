@@ -107,17 +107,19 @@ export default function DailyReminderScreen() {
       const mStr = String(minute).padStart(2, "0");
       const newTime = `${hStr}:${mStr}`;
 
-      updateSetting("reminderTime", newTime);
+      await updateSetting("reminderTime", newTime);
 
-      await scheduleDailyReminder(
-        hour,
-        minute,
-        db,
-        settings.language,
-        settings.version,
-        t("appTitle"),
-        30,
-      );
+      if (settings.reminderEnabled) {
+        await scheduleDailyReminder(
+          hour,
+          minute,
+          db,
+          settings.language,
+          settings.version,
+          t("appTitle"),
+          30,
+        );
+      }
     }
   };
 
