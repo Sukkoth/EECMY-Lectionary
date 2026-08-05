@@ -69,7 +69,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const normalized: AppSettings = { ...saved, language, version };
+      const normalized: AppSettings = {
+        ...saved,
+        appLanguage: saved.appLanguage || "en",
+        language,
+        version,
+      };
 
       setSettings(normalized);
       setAvailableLanguages(languages);
