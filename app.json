@@ -46,7 +46,7 @@
         {
           "icon": "./assets/images/android-icon-foreground.png",
           "color": "#3b82f6",
-          "defaultChannel": "eecmy-lectionary"
+          "defaultChannel": "default"
         }
       ],
       "@react-native-community/datetimepicker",
