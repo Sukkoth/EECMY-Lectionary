@@ -1,8 +1,12 @@
 import { Share, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Octicons from '@expo/vector-icons/Octicons';
+import Octicons from "@expo/vector-icons/Octicons";
 import type { ReadingRow } from "@/lib/database";
-import { useFavourites, useAddFavourite, useRemoveFavourite } from "@/lib/hooks/useFavourites";
+import {
+  useFavourites,
+  useAddFavourite,
+  useRemoveFavourite,
+} from "@/lib/hooks/useFavourites";
 import { FormattedText, stripFormattedTags } from "@/lib/formatText";
 
 type ReadingCardProps = {
@@ -13,11 +17,19 @@ type ReadingCardProps = {
   align: "left" | "center" | "justify";
 };
 
-export default function ReadingCard({ date, reading, sectionLabel, fontSize, align }: ReadingCardProps) {
+export default function ReadingCard({
+  date,
+  reading,
+  sectionLabel,
+  fontSize,
+  align,
+}: ReadingCardProps) {
   const { data: favourites = [] } = useFavourites();
   const addMut = useAddFavourite();
   const removeMut = useRemoveFavourite();
-  const favourited = favourites.some((f) => f.date === date && f.order === reading.order);
+  const favourited = favourites.some(
+    (f) => f.date === date && f.order === reading.order,
+  );
 
   const handleToggleFavourite = () => {
     if (favourited) {
@@ -55,7 +67,11 @@ export default function ReadingCard({ date, reading, sectionLabel, fontSize, ali
         {/* Actions */}
         <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={handleToggleFavourite} activeOpacity={0.7}>
-            <Ionicons name={favourited ? "star" : "star-outline"} size={20} color="#3b82f6" />
+            <Ionicons
+              name={favourited ? "star" : "star-outline"}
+              size={20}
+              color="#3b82f6"
+            />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
             <Octicons name="share-android" size={20} color="#3b82f6" />
@@ -68,7 +84,13 @@ export default function ReadingCard({ date, reading, sectionLabel, fontSize, ali
         text={reading.text}
         fontSize={fontSize}
         className="text-[#2D2A24] dark:text-[#E8E4DC]"
-        style={{ fontFamily: "ReadingFont", fontWeight: "400", fontSize, textAlign: align, lineHeight: fontSize * 1.75 }}
+        style={{
+          fontFamily: "ReadingFont",
+          fontWeight: "400",
+          fontSize,
+          textAlign: align,
+          lineHeight: fontSize * 1.75,
+        }}
       />
     </View>
   );

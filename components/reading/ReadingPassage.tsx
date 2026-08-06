@@ -7,7 +7,11 @@ type ReadingPassageProps = {
   align: "left" | "center" | "justify";
 };
 
-export default function ReadingPassage({ text, fontSize, align }: ReadingPassageProps) {
+export default function ReadingPassage({
+  text,
+  fontSize,
+  align,
+}: ReadingPassageProps) {
   return (
     <View className="mb-8">
       <FormattedText
