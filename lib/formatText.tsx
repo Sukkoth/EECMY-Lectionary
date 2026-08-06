@@ -23,11 +23,13 @@ export interface FormattedTextProps {
   className?: string;
   fontSize?: number;
   numberOfLines?: number;
+  selectable?: boolean;
+  selectionColor?: string;
 }
 
 /**
  * React Native component that formats verse numbers (<v>1</v> or <v>1</>) and words of Jesus (<red>...</red>)
- * seamlessly inside parent typography styles.
+ * seamlessly inside parent typography styles with native text selection support.
  */
 export function FormattedText({
   text,
@@ -35,10 +37,16 @@ export function FormattedText({
   className,
   fontSize = 18,
   numberOfLines,
+  selectable = true,
+  selectionColor,
 }: FormattedTextProps) {
   const isDark = useColorScheme() === "dark";
 
   if (!text) return null;
+
+  const defaultSelectionColor = isDark
+    ? "rgba(96, 165, 250, 0.35)"
+    : "rgba(59, 130, 246, 0.3)";
 
   // Pattern matching <v>...</v> or <v>...</> OR <red>...</red>
   const regex = /(<v>[^<]+<\/(?:v>|>))|(<red>[\s\S]*?<\/red>)/gi;
@@ -106,7 +114,13 @@ export function FormattedText({
   }
 
   return (
-    <Text style={style} className={className} numberOfLines={numberOfLines}>
+    <Text
+      selectable={selectable}
+      selectionColor={selectionColor ?? defaultSelectionColor}
+      style={style}
+      className={className}
+      numberOfLines={numberOfLines}
+    >
       {parts}
     </Text>
   );
