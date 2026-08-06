@@ -15,9 +15,10 @@ type ReadingSwiperProps = {
   data: SwiperItem[];
   onPageChange: (date: Date, position: number) => void;
   rebuildKey: number;
+  targetOrder?: number;
 };
 
-export function ReadingSwiper({ data, onPageChange, rebuildKey }: ReadingSwiperProps) {
+export function ReadingSwiper({ data, onPageChange, rebuildKey, targetOrder }: ReadingSwiperProps) {
   const pagerRef = useRef<PagerView>(null);
 
   const handlePageSelected = useCallback(
@@ -45,9 +46,13 @@ export function ReadingSwiper({ data, onPageChange, rebuildKey }: ReadingSwiperP
       initialPage={CENTER_INDEX}
       onPageSelected={handlePageSelected}
     >
-      {data.map((item) => (
+      {data.map((item, index) => (
         <View key={toDateString(item.date)} style={{ flex: 1 }}>
-          <DayPage date={item.date} dayData={item.dayData} />
+          <DayPage
+            date={item.date}
+            dayData={item.dayData}
+            targetOrder={index === CENTER_INDEX ? targetOrder : undefined}
+          />
         </View>
       ))}
     </PagerView>

@@ -10,9 +10,10 @@ import { useTranslation } from "@/lib/i18n";
 type DayPageProps = {
   date: Date;
   dayData: DayData | null;
+  targetOrder?: number;
 };
 
-export function DayPage({ date, dayData }: DayPageProps) {
+export function DayPage({ date, dayData, targetOrder }: DayPageProps) {
   const { settings } = useSettings();
   const { t } = useTranslation();
   const dateStr = toDateString(date);
@@ -45,7 +46,13 @@ export function DayPage({ date, dayData }: DayPageProps) {
   // Multiple readings — show expanded view
   return (
     <View className="flex-1">
-      <ExpandedView date={dateStr} readings={dayData.readings} fontSize={settings.fontSizeExpanded} align={settings.alignExpanded} />
+      <ExpandedView
+        date={dateStr}
+        readings={dayData.readings}
+        fontSize={settings.fontSizeExpanded}
+        align={settings.alignExpanded}
+        targetOrder={targetOrder}
+      />
     </View>
   );
 }

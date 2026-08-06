@@ -50,7 +50,7 @@ export default function FavouritesScreen() {
 
   function handleRead(fav: HydratedFavourite) {
     const [year, month, day] = fav.date.split("-");
-    router.push(`/reading?year=${year}&month=${month}&day=${day}`);
+    router.push(`/reading?year=${year}&month=${month}&day=${day}&order=${fav.order}`);
   }
 
   function handleShare(fav: HydratedFavourite) {

@@ -29,7 +29,10 @@ export default function ReadingScreen() {
     year?: string;
     month?: string;
     day?: string;
+    order?: string;
   }>();
+
+  const targetOrder = params.order != null ? parseInt(params.order, 10) : undefined;
 
   const initialDate = useMemo(() => {
     return params.year != null && params.month != null && params.day != null
@@ -195,6 +198,7 @@ export default function ReadingScreen() {
         data={swiperData}
         onPageChange={handlePageChange}
         rebuildKey={rebuildKey}
+        targetOrder={targetOrder}
       />
       <LanguageSwitcherSheet ref={sheetRef} onChange={handleSheetChange} viewType={viewType} />
     </View>
