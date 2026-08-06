@@ -118,7 +118,6 @@ export async function scheduleDailyReminder(
               title: appTitle,
               body: item.body,
               sound: true,
-              channelId: "default",
               data: { url: "/reading" },
             },
             trigger: {
