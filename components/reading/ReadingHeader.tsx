@@ -1,18 +1,17 @@
 import { forwardRef } from "react";
 import { Text, TouchableOpacity, View, useColorScheme, Appearance } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import AntDesign from '@expo/vector-icons/AntDesign';
+import AntDesign from "@expo/vector-icons/AntDesign";
 import { useSettings } from "@/lib/SettingsContext";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 type ReadingHeaderProps = {
   weekday: string;
   formattedDate: string;
-  title: string | null;
 };
 
 const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
-  ({ weekday, formattedDate, title }, ref) => {
+  ({ weekday, formattedDate }, ref) => {
     const isDark = useColorScheme() === "dark";
     const { updateSetting } = useSettings();
 
@@ -24,8 +23,8 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
 
     return (
       <View className="border-b border-stone-200 px-6 pb-4 pt-12 dark:border-stone-800">
-        <View className="flex-row items-start justify-between">
-          {/* Left: weekday + date + liturgical day title */}
+        <View className="flex-row items-center justify-between">
+          {/* Left: weekday + date */}
           <View className="flex-1">
             <Text
               className="text-[22px] leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -33,17 +32,9 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
             >
               {weekday}, {formattedDate}
             </Text>
-
-              <Text
-                className="text-muted dark:text-muted-dark mt-0.5 text-xs uppercase tracking-widest"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-              >
-                {title ?? " "}
-              </Text>
-
           </View>
 
-          {/* Right: language switch + theme toggle + close */}
+          {/* Right: ellipsis options + theme toggle */}
           <View className="flex-row items-center gap-3">
             <TouchableOpacity
               onPress={() => (ref as React.RefObject<BottomSheetModal>).current?.present()}

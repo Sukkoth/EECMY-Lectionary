@@ -32,13 +32,47 @@ export function DayPage({ date, dayData, targetOrder }: DayPageProps) {
     );
   }
 
-  // Single reading — show passage + footer
+  // Single reading — show passage + footer (with dayInfo on top if present)
   if (dayData.readings.length === 1) {
     const reading = dayData.readings[0];
+    const hasDayInfo = Boolean(
+      dayData.dayInfo && (dayData.dayInfo.title || dayData.dayInfo.description)
+    );
+
     return (
       <View className="flex-1 justify-center px-8">
-        <ReadingPassage text={reading.text} fontSize={settings.fontSizeSimple} align={settings.alignSimple} />
-        <ReadingFooter date={dateStr} order={reading.order} reference={reading.reference} text={reading.text} version={reading.version} />
+        {hasDayInfo && (
+          <View className="mb-6 items-center px-4">
+            {dayData.dayInfo?.title && (
+              <Text
+                className="mb-2 text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {dayData.dayInfo.title}
+              </Text>
+            )}
+            {dayData.dayInfo?.description && (
+              <Text
+                className="text-center text-base leading-relaxed text-muted dark:text-muted-dark"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {dayData.dayInfo.description}
+              </Text>
+            )}
+          </View>
+        )}
+        <ReadingPassage
+          text={reading.text}
+          fontSize={settings.fontSizeSimple}
+          align={settings.alignSimple}
+        />
+        <ReadingFooter
+          date={dateStr}
+          order={reading.order}
+          reference={reading.reference}
+          text={reading.text}
+          version={reading.version}
+        />
       </View>
     );
   }
@@ -49,6 +83,7 @@ export function DayPage({ date, dayData, targetOrder }: DayPageProps) {
       <ExpandedView
         date={dateStr}
         readings={dayData.readings}
+        dayInfo={dayData.dayInfo}
         fontSize={settings.fontSizeExpanded}
         align={settings.alignExpanded}
         targetOrder={targetOrder}

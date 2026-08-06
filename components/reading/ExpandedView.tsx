@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, Easing, ScrollView, View } from "react-native";
+import { Animated, Easing, ScrollView, Text, View } from "react-native";
 import ReadingCard from "./ReadingCard";
 import type { ReadingRow } from "@/lib/database";
 
@@ -12,6 +12,7 @@ const SECTION_LABELS: Record<string, string> = {
 type ExpandedViewProps = {
   date: string;
   readings: ReadingRow[];
+  dayInfo?: { title: string | null; description: string | null } | null;
   fontSize: number;
   align: "left" | "center" | "justify";
   targetOrder?: number;
@@ -20,6 +21,7 @@ type ExpandedViewProps = {
 export default function ExpandedView({
   date,
   readings,
+  dayInfo,
   fontSize,
   align,
   targetOrder,
@@ -53,12 +55,35 @@ export default function ExpandedView({
     }
   }, [targetOrder, animatedY]);
 
+  const hasDayInfo = Boolean(dayInfo && (dayInfo.title || dayInfo.description));
+
   return (
     <ScrollView
       ref={scrollViewRef}
       contentContainerStyle={{ paddingBottom: 48 }}
       showsVerticalScrollIndicator={false}
     >
+      {hasDayInfo && (
+        <View className="mb-8 items-center px-4 pt-2">
+          {dayInfo?.title && (
+            <Text
+              className="mb-2 text-center text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+            >
+              {dayInfo.title}
+            </Text>
+          )}
+          {dayInfo?.description && (
+            <Text
+              className="text-center text-base leading-relaxed text-muted dark:text-muted-dark"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              {dayInfo.description}
+            </Text>
+          )}
+        </View>
+      )}
+
       {readings.map((reading, index) => (
         <View
           key={`${reading.section}-${reading.order}`}

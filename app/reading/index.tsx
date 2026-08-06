@@ -152,7 +152,6 @@ export default function ReadingScreen() {
   );
   const weekday = displayDate.weekday;
   const formattedDate = displayDate.dateString;
-  const liturgicalDay = currentDayData?.dayInfo?.title ?? null;
 
   const handleSheetChange = useCallback((index: number) => {
     setSheetIndex(index);
@@ -221,7 +220,6 @@ export default function ReadingScreen() {
         ref={sheetRef}
         weekday={weekday}
         formattedDate={formattedDate}
-        title={liturgicalDay}
       />
       <ReadingSwiper
         data={swiperData}
