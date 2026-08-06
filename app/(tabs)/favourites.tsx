@@ -155,10 +155,10 @@ export default function FavouritesScreen() {
             <Ionicons
               name="trash-outline"
               size={15}
-              color={isDark ? "#A3A3A3" : "#6B6560"}
+              color={isDark ? "#ef4444" : "#dc2626"}
             />
             <Text
-              className="text-xs font-semibold text-stone-700 dark:text-stone-300"
+              className="text-xs font-semibold text-red-600 dark:text-red-400"
               style={{ fontFamily: "ReadingFont" }}
             >
               {t("clearAll")}
@@ -231,7 +231,7 @@ export default function FavouritesScreen() {
                   <Ionicons
                     name="trash-outline"
                     size={17}
-                    color={isDark ? "#A3A3A3" : "#6B6560"}
+                    color={isDark ? "#ef4444" : "#dc2626"}
                   />
                 </TouchableOpacity>
               </View>
@@ -276,7 +276,7 @@ export default function FavouritesScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 activeOpacity={0.7}
-                className="rounded-xl bg-stone-800 dark:bg-stone-700 px-5 py-2.5"
+                className="rounded-xl bg-red-600 dark:bg-red-500 px-5 py-2.5"
                 onPress={() => {
                   setShowClearConfirm(false);
                   clearMut.mutate();
