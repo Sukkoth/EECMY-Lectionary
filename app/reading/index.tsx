@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation, router } from "expo-router";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { READING_KEYS, usePrefetchReadings } from "@/lib/hooks/useReading";
@@ -32,7 +32,36 @@ export default function ReadingScreen() {
     order?: string;
   }>();
 
-  const targetOrder = params.order != null ? parseInt(params.order, 10) : undefined;
+  /**
+   * One-time target scroll order (e.g. order=3 when navigating from Favourites to a specific reading).
+   *
+   * WHY THIS EFFECT IS NEEDED:
+   * ReadingSwiper uses a 5-day sliding window array (`pages`) that re-computes whenever the user
+   * swipes left or right between dates. When swiping away and returning to the original date,
+   * React unmounts and remounts the target `DayPage` / `ExpandedView` component.
+   *
+   * If `params.order` remained in route memory or state, the newly mounted component would read
+   * `order=3` and re-trigger the auto-scroll animation every time the user swiped back to this day.
+   *
+   * By immediately consuming `targetOrder` (clearing state to `undefined` and clearing URL params via
+   * `router.setParams({ order: undefined })`), we ensure auto-scrolling executes ONLY ONCE during initial
+   * navigation, allowing subsequent page swipes to retain natural top positioning.
+   */
+  const [targetOrder, setTargetOrder] = useState<number | undefined>(() => {
+    return params.order != null ? parseInt(params.order, 10) : undefined;
+  });
+
+  useEffect(() => {
+    if (targetOrder != null) {
+      const timer = setTimeout(() => {
+        setTargetOrder(undefined);
+        if (params.order != null) {
+          router.setParams({ order: undefined });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [targetOrder, params.order]);
 
   const initialDate = useMemo(() => {
     return params.year != null && params.month != null && params.day != null

@@ -47,7 +47,7 @@ export default function ExpandedView({
             animatedY.removeListener(listenerId);
           });
         }
-      }, 250);
+      }, 200);
 
       return () => clearTimeout(timer);
     }
