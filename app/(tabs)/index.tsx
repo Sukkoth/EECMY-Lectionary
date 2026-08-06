@@ -19,6 +19,7 @@ import { useStreak } from "@/lib/hooks/useStreak";
 import { useSQLiteContext } from "expo-sqlite";
 import { scheduleDailyReminder } from "@/lib/NotificationService";
 import { useCheckContentUpdate } from "@/lib/hooks/useCheckContentUpdate";
+import { FormattedText } from "@/lib/formatText";
 import {
   formatDisplayDate,
   gregorianToEthiopian,
@@ -343,12 +344,11 @@ export default function HomeScreen() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
                 >
-                  <Text
+                  <FormattedText
+                    text={dayData.readings[0]?.text}
                     className="text-center text-2xl leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                  >
-                    {dayData.readings[0]?.text}
-                  </Text>
+                    style={{ fontFamily: "ReadingFont", fontWeight: "400", textAlign: "center" }}
+                  />
                   <Text
                     className="text-muted dark:text-muted-dark mt-6 text-center text-xl leading-tight"
                     style={{ fontFamily: "ReadingFont", fontWeight: "400" }}

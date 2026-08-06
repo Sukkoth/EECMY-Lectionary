@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { FormattedText } from "@/lib/formatText";
 
 type ReadingPassageProps = {
   text: string;
@@ -9,7 +10,9 @@ type ReadingPassageProps = {
 export default function ReadingPassage({ text, fontSize, align }: ReadingPassageProps) {
   return (
     <View className="mb-8">
-      <Text
+      <FormattedText
+        text={text}
+        fontSize={fontSize}
         className="text-[#2D2A24] dark:text-[#E8E4DC]"
         style={{
           fontFamily: "ReadingFont",
@@ -18,9 +21,7 @@ export default function ReadingPassage({ text, fontSize, align }: ReadingPassage
           textAlign: align,
           lineHeight: fontSize * 1.75,
         }}
-      >
-        {text}
-      </Text>
+      />
     </View>
   );
 }

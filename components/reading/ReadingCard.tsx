@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Octicons from '@expo/vector-icons/Octicons';
 import type { ReadingRow } from "@/lib/database";
 import { useFavourites, useAddFavourite, useRemoveFavourite } from "@/lib/hooks/useFavourites";
+import { FormattedText, stripFormattedTags } from "@/lib/formatText";
 
 type ReadingCardProps = {
   date: string;
@@ -28,7 +29,7 @@ export default function ReadingCard({ date, reading, sectionLabel, fontSize, ali
 
   const handleShare = () => {
     Share.share({
-      message: `${reading.text}\n\n${reading.reference} (${reading.version.toUpperCase()})`,
+      message: `${stripFormattedTags(reading.text)}\n\n${reading.reference} (${reading.version.toUpperCase()})`,
     });
   };
 
@@ -63,12 +64,12 @@ export default function ReadingCard({ date, reading, sectionLabel, fontSize, ali
       </View>
 
       {/* Verse text */}
-      <Text
+      <FormattedText
+        text={reading.text}
+        fontSize={fontSize}
         className="text-[#2D2A24] dark:text-[#E8E4DC]"
         style={{ fontFamily: "ReadingFont", fontWeight: "400", fontSize, textAlign: align, lineHeight: fontSize * 1.75 }}
-      >
-        {reading.text}
-      </Text>
+      />
     </View>
   );
 }

@@ -17,6 +17,7 @@ import { useSettings } from "@/lib/SettingsContext";
 import { useHydratedFavourites, useRemoveFavourite, useClearFavourites, FAVOURITE_KEYS } from "@/lib/hooks/useFavourites";
 import { useQueryClient } from "@tanstack/react-query";
 import { type HydratedFavourite } from "@/lib/FavouriteRepository";
+import { FormattedText, stripFormattedTags } from "@/lib/formatText";
 
 import { useTranslation } from "@/lib/i18n";
 import { formatDisplayDate } from "@/lib/ethiopianCalendar";
@@ -53,7 +54,7 @@ export default function FavouritesScreen() {
   }
 
   function handleShare(fav: HydratedFavourite) {
-    Share.share({ message: `${fav.text}\n\n${fav.reference}` });
+    Share.share({ message: `${stripFormattedTags(fav.text)}\n\n${fav.reference}` });
   }
 
   function handleDelete(fav: HydratedFavourite) {
@@ -161,13 +162,12 @@ export default function FavouritesScreen() {
             </Text>
 
             {/* Passage preview — 2 lines max */}
-            <Text
+            <FormattedText
+              text={fav.text}
               className="text-muted dark:text-muted-dark mb-4 text-sm leading-5"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               numberOfLines={2}
-            >
-              {fav.text}
-            </Text>
+            />
 
             {/* Footer row: date | actions */}
             <View className="flex-row items-center justify-between">

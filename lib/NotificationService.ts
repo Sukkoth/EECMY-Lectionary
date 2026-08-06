@@ -1,6 +1,7 @@
 import * as Notifications from "expo-notifications";
 import type { SQLiteDatabase } from "expo-sqlite";
 import { ReadingsDB, type DayData } from "./database";
+import { stripFormattedTags } from "./formatText";
 
 // Configure notification behavior when app is in foreground
 Notifications.setNotificationHandler({
@@ -78,7 +79,8 @@ export async function scheduleDailyReminder(
     if (dayData && dayData.readings.length > 0) {
       if (dayData.readings.length === 1) {
         const reading = dayData.readings[0];
-        const text = reading.text?.trim() ?? "";
+        const rawText = reading.text?.trim() ?? "";
+        const text = stripFormattedTags(rawText);
         const ref = reading.reference?.trim() ?? "";
 
         if (text.length > 0 && text.length <= 240) {
