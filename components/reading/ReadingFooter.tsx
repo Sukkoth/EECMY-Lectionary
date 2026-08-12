@@ -35,7 +35,7 @@ export default function ReadingFooter({ date, order, reference, text, version }:
     <View className="items-center">
       {/* Reference */}
       <Text
-        className="text-muted dark:text-muted-dark text-center text-sm"
+        className="text-muted dark:text-muted-dark text-center text-xl"
         style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
       >
         {reference}

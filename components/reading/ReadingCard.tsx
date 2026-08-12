@@ -47,36 +47,20 @@ export default function ReadingCard({
 
   return (
     <View className="px-6 py-5">
-      {/* Header row: section (left) + actions (right) */}
-      <View className="mb-3 flex-row items-center justify-between">
-        <View className="flex-1">
-          <Text
-            className="text-muted dark:text-muted-dark text-xs uppercase tracking-widest"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-          >
-            {sectionLabel}
-          </Text>
-          <Text
-            className="text-primary text-3xl"
-            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-          >
-            {reading.reference}
-          </Text>
-        </View>
-
-        {/* Actions */}
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity onPress={handleToggleFavourite} activeOpacity={0.7}>
-            <Ionicons
-              name={favourited ? "star" : "star-outline"}
-              size={20}
-              color="#3b82f6"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleShare} activeOpacity={0.7}>
-            <Octicons name="share-android" size={20} color="#3b82f6" />
-          </TouchableOpacity>
-        </View>
+      {/* Header section label & reference */}
+      <View className="mb-3">
+        <Text
+          className="text-muted dark:text-muted-dark text-xs uppercase tracking-widest"
+          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        >
+          {sectionLabel}
+        </Text>
+        <Text
+          className="text-primary text-2xl"
+          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+        >
+          {reading.reference}
+        </Text>
       </View>
 
       {/* Verse text */}
@@ -92,6 +76,28 @@ export default function ReadingCard({
           lineHeight: fontSize * 1.75,
         }}
       />
+
+      {/* Centered Actions row at the end of the content */}
+      <View className="mt-5 flex-row items-center justify-center gap-8">
+        <TouchableOpacity
+          onPress={handleToggleFavourite}
+          activeOpacity={0.7}
+          className="items-center"
+        >
+          <Ionicons
+            name={favourited ? "star" : "star-outline"}
+            size={24}
+            color="#3b82f6"
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleShare}
+          activeOpacity={0.7}
+          className="items-center"
+        >
+          <Octicons name="share-android" size={20} color="#3b82f6" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
