@@ -18,9 +18,11 @@ const ALIGNMENTS: { value: TextAlignment }[] = [
 function AlignmentIndicator({
   align,
   active,
+  size = 24,
 }: {
   align: TextAlignment;
   active: boolean;
+  size?: number;
 }) {
   const isDark = useColorScheme() === "dark";
   const color = active ? "#3b82f6" : isDark ? "#A3A3A3" : "#6B6560";
@@ -32,7 +34,7 @@ function AlignmentIndicator({
         ? "align-center"
         : "align-justify";
 
-  return <Feather name={iconName} size={22} color={color} />;
+  return <Feather name={iconName} size={size} color={color} />;
 }
 
 function SizeControl({
@@ -253,101 +255,106 @@ export default function FontAlignmentContent({
   };
 
   return (
-    <View className="px-6">
-      <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-2xl border border-stone-200/60 p-5 dark:border-stone-800/60">
-        {/* Font Size Row */}
-        <View className="flex-row items-center justify-between py-2">
-          <Text
-            className="text-sm font-semibold uppercase tracking-wider text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont" }}
+    <View className="px-6 pt-2 mb-2">
+      {/* Header */}
+      <View className="mb-5 items-center justify-center">
+        <Text
+          className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
+          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+        >
+          {t("fontAndAlignment")}
+        </Text>
+        <Text
+          className="text-muted dark:text-muted-dark mt-1 text-center text-xs font-normal"
+          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        >
+          {t("customizeReaderText")}
+        </Text>
+      </View>
+
+      {/* Apple Reader Style Unified Capsule Toolbar */}
+      <View className="bg-surface dark:bg-surface-dark rounded-2xl border border-stone-200/70 dark:border-stone-800/70 p-3.5 flex-row items-center justify-between shadow-sm">
+        {/* Left: Font Stepper Controls (Substantial Square Buttons) */}
+        <View className="flex-row items-center gap-2.5">
+          <TouchableOpacity
+            onPress={() =>
+              updateFont(Math.max(FONT_MIN, fontSize - FONT_STEP))
+            }
+            activeOpacity={0.7}
+            disabled={fontSize <= FONT_MIN}
+            className="h-13 w-13 items-center justify-center rounded-2xl bg-bg-warm/80 dark:bg-bg-warm-dark/80 border border-stone-200/60 dark:border-stone-800/60"
           >
-            Text Size ({fontSize}pt)
-          </Text>
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity
-              onPress={() =>
-                updateFont(Math.max(FONT_MIN, fontSize - FONT_STEP))
-              }
-              activeOpacity={0.6}
-              disabled={fontSize <= FONT_MIN}
-              className="bg-bg-warm/60 dark:bg-bg-warm-dark/60 min-w-[54px] items-center justify-center rounded-2xl border border-stone-200/60 px-4 py-2.5 dark:border-stone-800/60"
+            <Text
+              className="text-lg font-semibold text-center"
+              style={{
+                fontFamily: "ReadingFont",
+                fontWeight: "600",
+                color:
+                  fontSize <= FONT_MIN
+                    ? isDark
+                      ? "#525252"
+                      : "#D4D4D4"
+                    : isDark
+                      ? "#E8E4DC"
+                      : "#2D2A24",
+              }}
             >
-              <Text
-                className="text-lg font-semibold"
-                style={{
-                  fontFamily: "ReadingFont",
-                  color:
-                    fontSize <= FONT_MIN
-                      ? isDark
-                        ? "#525252"
-                        : "#D4D4D4"
-                      : isDark
-                        ? "#E8E4DC"
-                        : "#2D2A24",
-                }}
-              >
-                A−
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() =>
-                updateFont(Math.min(maxFont, fontSize + FONT_STEP))
-              }
-              activeOpacity={0.6}
-              disabled={fontSize >= maxFont}
-              className="bg-bg-warm/60 dark:bg-bg-warm-dark/60 min-w-[54px] items-center justify-center rounded-2xl border border-stone-200/60 px-4 py-2.5 dark:border-stone-800/60"
+              A−
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() =>
+              updateFont(Math.min(maxFont, fontSize + FONT_STEP))
+            }
+            activeOpacity={0.7}
+            disabled={fontSize >= maxFont}
+            className="h-13 w-13 items-center justify-center rounded-2xl bg-bg-warm/80 dark:bg-bg-warm-dark/80 border border-stone-200/60 dark:border-stone-800/60"
+          >
+            <Text
+              className="text-2xl font-semibold text-center"
+              style={{
+                fontFamily: "ReadingFont",
+                fontWeight: "600",
+                color:
+                  fontSize >= maxFont
+                    ? isDark
+                      ? "#525252"
+                      : "#D4D4D4"
+                    : isDark
+                      ? "#E8E4DC"
+                      : "#2D2A24",
+              }}
             >
-              <Text
-                className="text-lg font-semibold"
-                style={{
-                  fontFamily: "ReadingFont",
-                  color:
-                    fontSize >= maxFont
-                      ? isDark
-                        ? "#525252"
-                        : "#D4D4D4"
-                      : isDark
-                        ? "#E8E4DC"
-                        : "#2D2A24",
-                }}
-              >
-                A+
-              </Text>
-            </TouchableOpacity>
-          </View>
+              A+
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View className="my-2.5 border-b border-stone-200/40 dark:border-stone-800/40" />
+        {/* Center Vertical Divider Line */}
+        <View className="h-8 w-px bg-stone-200/80 dark:bg-stone-800/80 mx-2" />
 
-        {/* Alignment Row */}
-        <View className="flex-row items-center justify-between py-2">
-          <Text
-            className="text-sm font-semibold uppercase tracking-wider text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            Indent
-          </Text>
-          <View className="flex-row items-center gap-3">
-            {ALIGNMENTS.map((a) => {
-              const active = align === a.value;
-              return (
-                <TouchableOpacity
-                  key={a.value}
-                  onPress={() => updateAlign(a.value)}
-                  activeOpacity={0.6}
-                  className={`rounded-2xl border px-4 py-2.5 ${
-                    active
-                      ? "border-blue-500 bg-blue-500/15"
-                      : isDark
-                        ? "border-stone-800 bg-bg-warm-dark/50"
-                        : "border-stone-200 bg-bg-warm/50"
-                  }`}
-                >
-                  <AlignmentIndicator align={a.value} active={active} />
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+        {/* Right: Text Alignment Controls (Substantial Square Buttons) */}
+        <View className="flex-row items-center gap-2.5">
+          {ALIGNMENTS.map((a) => {
+            const active = align === a.value;
+            return (
+              <TouchableOpacity
+                key={a.value}
+                onPress={() => updateAlign(a.value)}
+                activeOpacity={0.7}
+                className={`h-13 w-13 items-center justify-center rounded-2xl border ${
+                  active
+                    ? "border-primary/50 bg-primary/15"
+                    : isDark
+                      ? "border-stone-800/60 bg-bg-warm-dark/40"
+                      : "border-stone-200/60 bg-bg-warm/40"
+                }`}
+              >
+                <AlignmentIndicator align={a.value} active={active} size={24} />
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     </View>
