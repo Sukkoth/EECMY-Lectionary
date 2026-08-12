@@ -44,7 +44,7 @@ export default function ContentUpdateScreen() {
   const isDark = useColorScheme() === "dark";
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
-  const { settings } = useSettings();
+  const { settings, refreshAvailableLanguages } = useSettings();
   const { t } = useTranslation();
 
   const [step, setStep] = useState<WizardStep>("idle");
@@ -364,23 +364,10 @@ export default function ContentUpdateScreen() {
           if (items?.includes("__holidays__")) {
             queryClient.refetchQueries({ queryKey: ["holidays", lang.code], type: "all" });
           }
-          const readingVersions = items?.filter((v) => !v.startsWith("__")) ?? [];
-          for (const versionCode of readingVersions) {
-            if (lang.code === settings.language && versionCode === settings.version) {
-              queryClient.invalidateQueries({
-                predicate: (query) => {
-                  const key = query.queryKey;
-                  return (
-                    key[0] === "readings" &&
-                    key[2] === lang.code &&
-                    key[3] === versionCode
-                  );
-                },
-              });
-            }
-          }
         }
       }
+      await refreshAvailableLanguages();
+      queryClient.invalidateQueries();
       setStep("success");
     } catch (err) {
       if (abortRef.current) return;
@@ -408,6 +395,7 @@ export default function ContentUpdateScreen() {
     setDownloadedLangPacks({});
     setProgress(0);
     setError(null);
+    router.replace("/(tabs)");
   }, []);
 
   return (
