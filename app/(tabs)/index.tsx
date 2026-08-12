@@ -48,7 +48,7 @@ function getWeekStart(date: Date): string {
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
-  const { settings, updateSetting } = useSettings();
+  const { settings, updateSetting, availableLanguages } = useSettings();
   const { t, lang } = useTranslation();
   const { hasUpdate, checkUpdate } = useCheckContentUpdate();
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -227,7 +227,7 @@ export default function HomeScreen() {
               {queryError?.message ?? "Failed to load readings."}
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/settings/check-updates")}
+              onPress={() => router.push("/settings/check-updates/content")}
               activeOpacity={0.7}
               className="bg-primary mt-6 rounded-xl px-6 py-3"
             >
@@ -256,7 +256,7 @@ export default function HomeScreen() {
               Readings may not have been downloaded yet.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/settings/check-updates")}
+              onPress={() => router.push("/settings/check-updates/content")}
               activeOpacity={0.7}
               className="bg-primary mt-6 rounded-xl px-6 py-3"
             >

@@ -5,6 +5,7 @@ import {
   getSyncedReadingVersions,
   getSyncedLangPackVersions,
 } from "../content";
+import { gregorianToEthiopian } from "../ethiopianCalendar";
 
 export function useCheckContentUpdate() {
   const db = useSQLiteContext();
@@ -20,6 +21,8 @@ export function useCheckContentUpdate() {
         return;
       }
 
+      const currentEthYear = gregorianToEthiopian(new Date()).year;
+
       const [readingVersions, langPackVersions] = await Promise.all([
         getSyncedReadingVersions(db),
         getSyncedLangPackVersions(db),
@@ -28,6 +31,11 @@ export function useCheckContentUpdate() {
       let updateFound = false;
 
       for (const yearOpt of manifest.years) {
+        // Only check for updates for current year and subsequent years (ignore past years)
+        if (yearOpt.year < currentEthYear) {
+          continue;
+        }
+
         for (const langOpt of yearOpt.languages) {
           // Check Bible Versions
           for (const verOpt of langOpt.versions) {
