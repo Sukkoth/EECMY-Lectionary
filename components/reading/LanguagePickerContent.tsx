@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -22,6 +21,7 @@ export default function LanguagePickerContent({
   const { settings, setAllSettings, availableLanguages, languagesError } =
     useSettings();
   const { isOnboardingComplete, completeOnboarding } = useOnboarding();
+  const db = useSQLiteContext();
 
   const handleDownloadContent = async () => {
     if (!isOnboardingComplete) {
@@ -29,19 +29,6 @@ export default function LanguagePickerContent({
     }
     router.push("/settings/check-updates/content");
   };
-
-  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
-    const selected = availableLanguages.find(
-      (l) => l.code === settings.language,
-    );
-    return selected ? { [selected.language]: true } : {};
-  });
-
-  const toggleLanguage = (language: string) => {
-    setExpanded((prev) => ({ ...prev, [language]: !prev[language] }));
-  };
-
-  const db = useSQLiteContext();
 
   const handleVersionSelect = async (
     langCode: string,
@@ -71,8 +58,18 @@ export default function LanguagePickerContent({
     onVersionSelect?.();
   };
 
+  // Flatten all available versions across all languages into a unified list
+  const allVersions = availableLanguages.flatMap((lang) =>
+    lang.versions.map((ver) => ({
+      langCode: lang.code,
+      langName: lang.language,
+      versionCode: ver.code,
+      versionLabel: ver.label,
+    })),
+  );
+
   return (
-    <View className="px-6">
+    <View className="px-6 pb-2">
       {/* Header */}
       {!hideHeader && (
         <View className="mb-5 items-center justify-center">
@@ -155,115 +152,86 @@ export default function LanguagePickerContent({
         </View>
       )}
 
-      {/* Language Group Cards */}
-      {availableLanguages.map((lang) => {
-        const isExpanded = expanded[lang.language] ?? false;
-        const activeVersion = lang.versions.find(
-          (v) =>
-            settings.language === lang.code && settings.version === v.code,
-        );
+      {/* Unified Vertical Translation List across All Languages */}
+      {allVersions.length > 0 && (
+        <View className="space-y-2">
+          {allVersions.map((item) => {
+            const isActive =
+              settings.language === item.langCode &&
+              settings.version === item.versionCode;
 
-        return (
-          <View
-            key={lang.language}
-            className="will-change-variable bg-surface dark:bg-surface-dark rounded-2xl border border-stone-200/60 dark:border-stone-800/60 p-4 mb-3"
-          >
-            {/* Language Header Card */}
-            <TouchableOpacity
-              onPress={() => toggleLanguage(lang.language)}
-              activeOpacity={0.75}
-              className="flex-row items-center justify-between"
-            >
-              <View className="flex-row items-center gap-2.5 flex-1">
-                <Text
-                  className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC] uppercase tracking-wider"
-                  style={{ fontFamily: "ReadingFont" }}
-                >
-                  {lang.language}
-                </Text>
+            return (
+              <TouchableOpacity
+                key={`${item.langCode}-${item.versionCode}`}
+                onPress={() =>
+                  handleVersionSelect(item.langCode, item.versionCode)
+                }
+                activeOpacity={0.75}
+                className={`flex-row items-center justify-between rounded-2xl p-4 my-1 border transition-all ${
+                  isActive
+                    ? "bg-surface dark:bg-surface-dark border-l-4 border-l-primary border-stone-200/80 dark:border-stone-800/80 shadow-sm"
+                    : "bg-surface dark:bg-surface-dark border border-stone-200/60 dark:border-stone-800/60 opacity-80"
+                }`}
+              >
+                <View className="flex-1 flex-row items-center gap-3.5 pr-2">
+                  <View
+                    className={`h-9 w-9 rounded-full items-center justify-center ${
+                      isActive
+                        ? "bg-primary/10"
+                        : "bg-stone-200/50 dark:bg-stone-800/50"
+                    }`}
+                  >
+                    <Ionicons
+                      name={isActive ? "checkmark-circle" : "book-outline"}
+                      size={20}
+                      color={isActive ? "#3b82f6" : isDark ? "#A8A29E" : "#78716C"}
+                    />
+                  </View>
 
-                {activeVersion && (
-                  <View className="bg-primary/10 rounded-full px-2.5 py-0.5">
+                  <View className="flex-1">
                     <Text
-                      className="text-[10px] text-primary font-semibold uppercase tracking-wider"
+                      className={`text-base ${
+                        isActive
+                          ? "text-primary font-semibold"
+                          : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                      }`}
                       style={{ fontFamily: "ReadingFont" }}
                     >
-                      {activeVersion.code} Active
+                      {item.versionLabel}
+                    </Text>
+
+                    <Text
+                      className="text-muted dark:text-muted-dark text-xs mt-0.5"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      {item.langName}
                     </Text>
                   </View>
-                )}
-              </View>
+                </View>
 
-              <View className="bg-bg-warm dark:bg-bg-warm-dark rounded-full p-1.5 border border-stone-200/40 dark:border-stone-800/40">
-                <Ionicons
-                  name={isExpanded ? "chevron-up" : "chevron-down"}
-                  size={16}
-                  color={isDark ? "#E8E4DC" : "#2D2A24"}
-                />
-              </View>
-            </TouchableOpacity>
-
-            {/* Version Options Container */}
-            {isExpanded && (
-              <View className="mt-3 pt-3 border-t border-stone-200/40 dark:border-stone-800/40 space-y-1.5">
-                {lang.versions.map((version) => {
-                  const isActive =
-                    settings.language === lang.code &&
-                    settings.version === version.code;
-
-                  return (
-                    <TouchableOpacity
-                      key={version.code}
-                      onPress={() =>
-                        handleVersionSelect(lang.code, version.code)
-                      }
-                      activeOpacity={0.7}
-                      className={`flex-row items-center justify-between rounded-xl p-3.5 my-1 ${
-                        isActive
-                          ? "bg-primary/10 border border-primary/40"
-                          : "bg-bg-warm/50 dark:bg-bg-warm-dark/50 border border-stone-200/40 dark:border-stone-800/40"
-                      }`}
-                    >
-                      <View className="flex-1 flex-row items-center gap-3">
-                        {isActive ? (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={18}
-                            color="#3b82f6"
-                          />
-                        ) : (
-                          <View className="h-4 w-4 rounded-full border border-stone-300 dark:border-stone-700" />
-                        )}
-                        <Text
-                          className={`text-base ${
-                            isActive
-                              ? "text-primary font-semibold"
-                              : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
-                          }`}
-                          style={{ fontFamily: "ReadingFont" }}
-                        >
-                          {version.label}
-                        </Text>
-                      </View>
-
-                      <Text
-                        className={`text-xs uppercase font-semibold px-2 py-0.5 rounded-md ${
-                          isActive
-                            ? "bg-primary/15 text-primary"
-                            : "text-muted dark:text-muted-dark opacity-70"
-                        }`}
-                        style={{ fontFamily: "ReadingFont" }}
-                      >
-                        {version.code}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        );
-      })}
+                <View
+                  className={`px-2.5 py-1 rounded-lg border ${
+                    isActive
+                      ? "bg-primary/10 border-primary/25"
+                      : "bg-bg-warm/80 dark:bg-bg-warm-dark/80 border-stone-200/50 dark:border-stone-800/50"
+                  }`}
+                >
+                  <Text
+                    className={`text-[11px] uppercase font-semibold ${
+                      isActive
+                        ? "text-primary"
+                        : "text-muted dark:text-muted-dark opacity-70"
+                    }`}
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {item.versionCode}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
