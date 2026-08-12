@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useSettings } from "@/lib/SettingsContext";
+import { useOnboarding } from "@/lib/OnboardingContext";
 import { useTranslation } from "@/lib/i18n";
 import { scheduleDailyReminder } from "@/lib/NotificationService";
 
@@ -19,6 +21,14 @@ export default function LanguagePickerContent({
   const { t } = useTranslation();
   const { settings, setAllSettings, availableLanguages, languagesError } =
     useSettings();
+  const { isOnboardingComplete, completeOnboarding } = useOnboarding();
+
+  const handleDownloadContent = async () => {
+    if (!isOnboardingComplete) {
+      await completeOnboarding();
+    }
+    router.push("/settings/check-updates/content");
+  };
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const selected = availableLanguages.find(
@@ -93,16 +103,55 @@ export default function LanguagePickerContent({
         </View>
       )}
 
-      {/* Empty state */}
+      {/* Empty state with Download + Skip buttons */}
       {!languagesError && availableLanguages.length === 0 && (
-        <View className="bg-surface dark:bg-surface-dark rounded-2xl p-6 items-center justify-center border border-stone-200/50 dark:border-stone-800/50">
-          <Ionicons name="book-outline" size={24} color="#6b6560" />
+        <View className="bg-surface dark:bg-surface-dark rounded-3xl p-6 items-center justify-center border border-stone-200/60 dark:border-stone-800/60 shadow-sm">
+          <View className="bg-primary/10 rounded-2xl p-4 mb-3">
+            <Ionicons name="cloud-download-outline" size={28} color="#3b82f6" />
+          </View>
           <Text
-            className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
+            className="text-[#2D2A24] dark:text-[#E8E4DC] text-center text-lg font-semibold mb-1"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {t("noTranslationsAvailable")}
+            No Translations Installed
           </Text>
+          <Text
+            className="text-muted dark:text-muted-dark text-center text-xs mb-5 px-2"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            Download a scripture content pack to start reading your daily lectionary.
+          </Text>
+
+          {/* Primary Action: Download Content Pack */}
+          <TouchableOpacity
+            onPress={handleDownloadContent}
+            activeOpacity={0.8}
+            className="w-full bg-primary rounded-xl py-3.5 items-center justify-center flex-row gap-2 mb-3"
+          >
+            <Ionicons name="cloud-download" size={18} color="#ffffff" />
+            <Text
+              className="text-white text-sm font-semibold"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              Download Content Pack
+            </Text>
+          </TouchableOpacity>
+
+          {/* Secondary Action: Continue without downloading */}
+          {onVersionSelect && (
+            <TouchableOpacity
+              onPress={onVersionSelect}
+              activeOpacity={0.7}
+              className="py-2 px-4"
+            >
+              <Text
+                className="text-muted dark:text-muted-dark text-xs font-medium underline"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                Skip for now — Continue to App
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 

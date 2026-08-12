@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import { getAvailableLanguages, getLanguage, type LanguageEntry } from "./languages";
@@ -9,6 +9,7 @@ type SettingsContextValue = {
   languagesError: string | null;
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => Promise<void>;
   setAllSettings: (next: AppSettings) => Promise<void>;
+  refreshAvailableLanguages: () => Promise<LanguageEntry[]>;
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -35,55 +36,60 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [languagesError, setLanguagesError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
+  const refreshAvailableLanguages = useCallback(async (): Promise<LanguageEntry[]> => {
+    try {
+      const languages = await getAvailableLanguages(db);
+      setAvailableLanguages(languages);
+      setLanguagesError(null);
+
+      setSettings((prev) => {
+        let { language, version } = prev;
+        const langEntry = getLanguage(language, languages);
+
+        if (!langEntry) {
+          if (languages.length > 0) {
+            language = languages[0].code;
+            version = languages[0].versions[0]?.code ?? version;
+          }
+        } else {
+          const versionExists = langEntry.versions.some((v) => v.code === version);
+          if (!versionExists) {
+            version = langEntry.versions[0]?.code ?? version;
+          }
+        }
+
+        const normalized: AppSettings = {
+          ...prev,
+          language,
+          version,
+        };
+
+        if (normalized.language !== prev.language || normalized.version !== prev.version) {
+          saveSettings(normalized);
+        }
+
+        return normalized;
+      });
+
+      return languages;
+    } catch (err: any) {
+      const msg = err?.message ?? "Failed to load languages.";
+      setLanguagesError(msg);
+      return [];
+    }
+  }, [db]);
+
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
-      // Independent fetches — one failure doesn't lose the other's result
-      const [saved, languages] = await Promise.all([
-        loadSettings().catch(() => DEFAULT_SETTINGS),
-        getAvailableLanguages(db).catch((err: Error) => {
-          setLanguagesError(err?.message ?? "Failed to load languages.");
-          return [] as LanguageEntry[];
-        }),
-      ]);
-
+      const saved = await loadSettings().catch(() => DEFAULT_SETTINGS);
       if (cancelled) return;
 
-      // Validate settings against available languages
-      let { language, version } = saved;
-      const langEntry = getLanguage(language, languages);
+      const languages = await refreshAvailableLanguages();
+      if (cancelled) return;
 
-      if (!langEntry) {
-        // Saved language not available — fall back to first available
-        if (languages.length > 0) {
-          language = languages[0].code;
-          version = languages[0].versions[0]?.code ?? version;
-        }
-        // if languages is empty, keep saved settings as-is
-      } else {
-        // Language exists — validate version
-        const versionExists = langEntry.versions.some((v) => v.code === version);
-        if (!versionExists) {
-          version = langEntry.versions[0]?.code ?? version;
-        }
-      }
-
-      const normalized: AppSettings = {
-        ...saved,
-        appLanguage: saved.appLanguage || "en",
-        language,
-        version,
-      };
-
-      setSettings(normalized);
-      setAvailableLanguages(languages);
       setLoaded(true);
-
-      // Persist if language or version was corrected
-      if (normalized.language !== saved.language || normalized.version !== saved.version) {
-        saveSettings(normalized);
-      }
     }
 
     init();
@@ -91,8 +97,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [db]);
-
+  }, [refreshAvailableLanguages]);
 
   const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     const next = { ...settings, [key]: value };
@@ -105,15 +110,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     await saveSettings(next);
   };
 
-
-
   if (!loaded) {
     return null;
   }
 
   return (
     <SettingsContext.Provider
-      value={{ settings, availableLanguages, languagesError, updateSetting, setAllSettings }}
+      value={{
+        settings,
+        availableLanguages,
+        languagesError,
+        updateSetting,
+        setAllSettings,
+        refreshAvailableLanguages,
+      }}
     >
       {children}
     </SettingsContext.Provider>

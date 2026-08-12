@@ -133,13 +133,13 @@ export default function RootLayout() {
         assetSource={{ assetId: require("../assets/db/readings.db") }}
       >
         <QueryClientProvider client={queryClient}>
-          <BottomSheetModalProvider>
-            <SettingsProvider>
-              <OnboardingProvider>
+          <SettingsProvider>
+            <OnboardingProvider>
+              <BottomSheetModalProvider>
                 <AppContent />
-              </OnboardingProvider>
-            </SettingsProvider>
-          </BottomSheetModalProvider>
+              </BottomSheetModalProvider>
+            </OnboardingProvider>
+          </SettingsProvider>
         </QueryClientProvider>
       </SQLiteProvider>
     </GestureHandlerRootView>
