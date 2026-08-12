@@ -1,10 +1,12 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "react-native";
+import { useTranslation } from "@/lib/i18n";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -25,35 +27,35 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("home"),
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
-          title: "Calendar",
+          title: t("calendar"),
           tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="favourites"
         options={{
-          title: "Favourites",
+          title: t("favourites"),
           tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="glossary"
         options={{
-          title: "Reference",
+          title: t("reference"),
           tabBarIcon: ({ color, size }) => <Ionicons name="book" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
+          title: t("settings"),
           tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
         }}
       />

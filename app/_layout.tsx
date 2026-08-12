@@ -1,33 +1,40 @@
 import { Stack, useSegments, useRouter } from "expo-router";
 import { StatusBar, setStatusBarBackgroundColor } from "expo-status-bar";
-import { useColorScheme, ActivityIndicator, View } from "react-native";
+import { useColorScheme, ActivityIndicator, View, Platform } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { setBackgroundColorAsync } from "expo-system-ui";
-import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
+import { SQLiteProvider } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SettingsProvider, useSettings } from "@/lib/SettingsContext";
-import { FavouriteProvider } from "@/lib/FavouriteContext";
+import * as Notifications from "expo-notifications";
+import { SettingsProvider } from "@/lib/SettingsContext";
 import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
-import { ensureHolidaysLoaded } from "@/lib/HolidayCache";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import "./global.css";
 
 SplashScreen.preventAutoHideAsync();
 
-function HolidayDataLoader() {
-  const db = useSQLiteContext();
-  const { settings } = useSettings();
 
-  useEffect(() => {
-    ensureHolidaysLoaded(db, settings.language).catch((err) => {
-      console.warn("[HolidayCache] Failed to load holidays:", err);
+async function setupNotifications() {
+  /** This is required to use notification, especially on android v8+ */
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+      showBadge: true,
+      enableLights: true,
+      enableVibrate: true,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
-  }, [db, settings.language]);
+  }
+};
 
-  return null;
-}
+setupNotifications()
 
 function AppContent() {
   const colorScheme = useColorScheme();
@@ -48,6 +55,18 @@ function AppContent() {
     }
   }, [isOnboardingComplete, loading, segments]);
 
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const targetUrl = response.notification.request.content.data?.url;
+      if (targetUrl) {
+        router.push(targetUrl as any);
+      } else {
+        router.push("/reading" as any);
+      }
+    });
+    return () => subscription.remove();
+  }, [router]);
+
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: isDark ? "#11100E" : "#F8F6F3" }}>
@@ -58,7 +77,6 @@ function AppContent() {
 
   return (
     <>
-      <HolidayDataLoader />
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         initialRouteName={isOnboardingComplete ? "(tabs)" : "onboarding"}
@@ -111,18 +129,18 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SQLiteProvider
-        databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME!}
+        databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME || "lectionary-v1.db"}
         assetSource={{ assetId: require("../assets/db/readings.db") }}
       >
-        <BottomSheetModalProvider>
+        <QueryClientProvider client={queryClient}>
           <SettingsProvider>
             <OnboardingProvider>
-              <FavouriteProvider>
+              <BottomSheetModalProvider>
                 <AppContent />
-              </FavouriteProvider>
+              </BottomSheetModalProvider>
             </OnboardingProvider>
           </SettingsProvider>
-        </BottomSheetModalProvider>
+        </QueryClientProvider>
       </SQLiteProvider>
     </GestureHandlerRootView>
   );

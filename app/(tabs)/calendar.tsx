@@ -1,181 +1,321 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import {
   PanResponder,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
   useColorScheme,
   useWindowDimensions,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import {
-  ensureHolidaysLoaded,
-  getHolidaysForMonth,
-  getHolidaysListForMonth,
-} from "@/lib/HolidayCache";
-import { useSQLiteContext } from "expo-sqlite";
+  useHolidays,
+  getHolidaysForActiveMonth,
+} from "@/lib/hooks/useHolidays";
 import { useSettings } from "@/lib/SettingsContext";
+import { useTranslation } from "@/lib/i18n";
 import { HOLIDAY_COLORS } from "@/constants";
+import {
+  gregorianToEthiopian,
+  ethiopianToGregorian,
+  getDaysInEthiopianMonth,
+  getEvangelistYear,
+  formatEvangelistYear,
+  getSubMonthSpanString,
+  formatMonth,
+} from "@/lib/ethiopianCalendar";
 
-
-function formatMonthYear(year: number, month: number): string {
-  return new Date(year, month).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function formatShortDate(dateStr: string): string {
-  const [, m, d] = dateStr.split("-").map(Number);
-  const date = new Date(2000, m - 1, d);
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function addMonths(year: number, month: number, delta: number): { year: number; month: number } {
-  const total = month + delta;
-  const newYear = year + Math.floor(total / 12);
-  const newMonth = ((total % 12) + 12) % 12;
-  return { year: newYear, month: newMonth };
+function formatYear(year: number, month: number, isEth: boolean, lang: string = "am"): string {
+  const targetEthYear = isEth ? year : gregorianToEthiopian(new Date(year, month, 15)).year;
+  const evText = formatEvangelistYear(targetEthYear, lang);
+  return `${year} • ${evText}`;
 }
 
 export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const today = useMemo(() => new Date(), []);
   const isDark = useColorScheme() === "dark";
-  const { settings } = useSettings();
+  const { settings, updateSetting } = useSettings();
+  const { t, lang } = useTranslation();
+  const isEth = settings.calendarStyle === "ethiopian";
 
-  const [current, setCurrent] = useState(() => ({
-    year: today.getFullYear(),
-    month: today.getMonth(),
-  }));
-  const db = useSQLiteContext();
+  const getInitialCurrent = useCallback(() => {
+    if (isEth) {
+      const eth = gregorianToEthiopian(today);
+      return { year: eth.year, month: eth.month };
+    }
+    return { year: today.getFullYear(), month: today.getMonth() };
+  }, [isEth, today]);
 
-  useEffect(() => {
-    ensureHolidaysLoaded(db, settings.language).then(() => {
-      setCurrent((prev) => ({ ...prev }));
-    }).catch((err) => {
-      console.warn("[Calendar] Failed to load holidays:", err);
-    });
-  }, [settings.language, db]);
+  const [current, setCurrent] = useState(getInitialCurrent);
+  const [prevIsEth, setPrevIsEth] = useState(isEth);
 
-  // ── Data from cache (synchronous) ──
-  const holidayMap = useMemo(
-    () => getHolidaysForMonth(current.year, current.month),
-    [current],
+  // Synchronously reset calendar view to today's date when calendar system toggles (avoids render flashing)
+  if (prevIsEth !== isEth) {
+    setPrevIsEth(isEth);
+    const now = new Date();
+    if (isEth) {
+      const eth = gregorianToEthiopian(now);
+      setCurrent({ year: eth.year, month: eth.month });
+    } else {
+      setCurrent({ year: now.getFullYear(), month: now.getMonth() });
+    }
+  }
+
+  const addMonthDelta = useCallback(
+    (delta: number) => {
+      setCurrent((prev) => {
+        const totalMonths = isEth ? 13 : 12;
+        const total = prev.month + delta;
+        const newYear = prev.year + Math.floor(total / totalMonths);
+        const newMonth = ((total % totalMonths) + totalMonths) % totalMonths;
+        return { year: newYear, month: newMonth };
+      });
+    },
+    [isEth],
   );
-  const holidays = useMemo(
-    () => getHolidaysListForMonth(current.year, current.month),
-    [current],
+
+  const handleJumpToToday = useCallback(() => {
+    setCurrent(getInitialCurrent());
+  }, [getInitialCurrent]);
+
+  const { data: allHolidays } = useHolidays(lang);
+
+  const { map: holidayMap, list: holidays } = useMemo(
+    () => getHolidaysForActiveMonth(allHolidays, current.year, current.month, isEth, lang),
+    [allHolidays, current.year, current.month, isEth, lang],
   );
 
-  // ── PanResponder for swipe ──
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) =>
         Math.abs(gs.dx) > 10 && Math.abs(gs.dx) > Math.abs(gs.dy),
       onPanResponderRelease: (_, gs) => {
         if (Math.abs(gs.dx) > 50) {
-          setCurrent((prev) => addMonths(prev.year, prev.month, gs.dx > 0 ? -1 : 1));
+          addMonthDelta(gs.dx > 0 ? -1 : 1);
         }
       },
-    })
+    }),
   ).current;
 
+  const ethToday = useMemo(() => gregorianToEthiopian(today), [today]);
+  const isCurrentTodayMonth = isEth
+    ? current.year === ethToday.year && current.month === ethToday.month
+    : current.year === today.getFullYear() && current.month === today.getMonth();
+
   return (
-    <View className="flex-1 bg-bg-warm dark:bg-bg-warm-dark" >
-      {/* Header with nav buttons */}
-      <View className="flex-row items-center justify-between px-6 pt-14 pb-4">
-        <TouchableOpacity
-          onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, -1))}
-          className="p-2"
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="chevron-back" size={24} color={isDark ? "#E8E4DC" : "#2D2A24"} />
-        </TouchableOpacity>
-        <Text
-          className="flex-1 text-center text-lg text-[#2D2A24] dark:text-[#E8E4DC]"
-          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-        >
-          {formatMonthYear(current.year, current.month)}
-        </Text>
-        <TouchableOpacity
-          onPress={() => setCurrent((prev) => addMonths(prev.year, prev.month, 1))}
-          className="p-2"
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="chevron-forward" size={24} color={isDark ? "#E8E4DC" : "#2D2A24"} />
-        </TouchableOpacity>
+    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+      {/* Top Header Bar */}
+      <View className="flex-row items-center justify-between px-6 pt-12 pb-4">
+        <View>
+          <Text
+            className="text-3xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            {formatMonth(current.month, isEth, lang)}
+          </Text>
+          <Text
+            className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            {formatYear(current.year, current.month, isEth, lang)}
+          </Text>
+          <Text
+            className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            {getSubMonthSpanString(current.year, current.month, isEth, lang)}
+          </Text>
+        </View>
+
+        <View className="flex-row items-center gap-2">
+          {!isCurrentTodayMonth && (
+            <TouchableOpacity
+              onPress={handleJumpToToday}
+              activeOpacity={0.75}
+              className="bg-primary/10 flex-row items-center gap-1 rounded-full px-3 py-1.5"
+            >
+              <Ionicons name="today-outline" size={14} color="#3b82f6" />
+              <Text
+                className="text-primary text-xs font-semibold"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {t("today")}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Capsule Chevron Controls */}
+          <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-2xl border border-stone-200/60 p-1 dark:border-stone-800/60">
+            <TouchableOpacity
+              onPress={() => addMonthDelta(-1)}
+              className="p-1.5"
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={18}
+                color={isDark ? "#E8E4DC" : "#2D2A24"}
+              />
+            </TouchableOpacity>
+            <View className="mx-0.5 my-auto h-4 w-[1px] bg-stone-200 dark:bg-stone-800" />
+            <TouchableOpacity
+              onPress={() => addMonthDelta(1)}
+              className="p-1.5"
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={isDark ? "#E8E4DC" : "#2D2A24"}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
-      {/* Month grid — single instance, data replaced on swipe */}
+      {/* Calendar System Segmented Bar */}
+      <View className="mb-3 flex-row items-center justify-between px-6">
+        <Text
+          className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-wider"
+          style={{ fontFamily: "ReadingFont" }}
+        >
+          {t("calendarSystem")}
+        </Text>
+
+        <View className="bg-stone-200/60 dark:bg-stone-800/60 flex-row items-center rounded-full p-0.5 border border-stone-200/60 dark:border-stone-800/60">
+          <TouchableOpacity
+            onPress={() => updateSetting("calendarStyle", "ethiopian")}
+            activeOpacity={0.7}
+            className={`rounded-full px-3 py-1 ${isEth ? "bg-primary" : ""}`}
+          >
+            <Text
+              className={`text-xs font-semibold ${isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {t("ethiopianEC")}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => updateSetting("calendarStyle", "gregorian")}
+            activeOpacity={0.7}
+            className={`rounded-full px-3 py-1 ${!isEth ? "bg-primary" : ""}`}
+          >
+            <Text
+              className={`text-xs font-semibold ${!isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {t("gregorianGC")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Swipeable Month Grid */}
       <View {...panResponder.panHandlers}>
         <MonthGrid
+          key={`grid-${isEth ? "eth" : "gc"}-${current.year}-${current.month}`}
           year={current.year}
           month={current.month}
           holidays={holidayMap}
           width={screenWidth}
+          calendarStyle={settings.calendarStyle}
         />
       </View>
 
-      {/* Divider */}
-      <View className="mx-6 border-b border-stone-200 dark:border-stone-800" />
+      {/* Section Divider */}
+      <View className="mx-6 my-4 border-b border-stone-200/50 dark:border-stone-800/50" />
 
-      {/* Holiday list */}
-      <View className="flex-1 px-6 pt-4">
-        <Text
-          className="text-muted dark:text-muted-dark mb-3 text-sm uppercase tracking-widest"
-          style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-        >
-          Holidays
-        </Text>
-        {holidays.length === 0 ? (
+      {/* Holidays List */}
+      <View className="flex-1 px-6">
+        <View className="mb-3 flex-row items-center justify-between">
           <Text
-            className="text-muted dark:text-muted-dark text-base"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-widest"
+            style={{ fontFamily: "ReadingFont" }}
           >
-            No holidays this month
+            {t("holidaysAndEvents")}
           </Text>
+          <View className="bg-primary/10 rounded-full px-2.5 py-0.5">
+            <Text
+              className="text-primary text-[11px] font-semibold"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {holidays.length} {holidays.length === 1 ? t("event") : t("events")}
+            </Text>
+          </View>
+        </View>
+
+        {holidays.length === 0 ? (
+          <View className="will-change-variable bg-surface dark:bg-surface-dark my-2 items-center justify-center rounded-2xl border border-stone-200/40 p-6 dark:border-stone-800/40">
+            <Ionicons name="sparkles-outline" size={22} color="#6b6560" />
+            <Text
+              className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              {t("noHolidaysThisMonth")}
+            </Text>
+          </View>
         ) : (
-          <View className="flex-1">
-            {holidays.map((item, i) => (
-              <View key={i} className="flex-row items-start py-2">
-                <Text
-                  className="text-muted dark:text-muted-dark w-16 text-base"
-                  style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 28 }}
+          >
+            {holidays.map((item, i) => {
+              const monthShort = item.displayMonthName;
+              const dayNum = item.displayDay;
+              const key = item.id ?? `${item.date}-${item.name}-${i}`;
+              return (
+                <View
+                  key={key}
+                  className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
                 >
-                  {formatShortDate(item.date)}
-                </Text>
-                <View className="ml-2 flex-1">
-                  <Text
-                    className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-                  >
-                    {item.name}
-                  </Text>
-                  <View className="mt-0.5 flex-row items-center gap-1.5">
-                    <View
-                      className="h-2 w-2 rounded-full"
-                      style={{
-                        backgroundColor:
-                          HOLIDAY_COLORS[item.type] ?? "#9CA3AF",
-                      }}
-                    />
+                  {/* Left Color Accent Bar */}
+                  <View
+                    className="mr-3.5 h-10 w-1.5 rounded-full"
+                    style={{
+                      backgroundColor: HOLIDAY_COLORS[item.type] ?? "#3b82f6",
+                    }}
+                  />
+
+                  {/* Feast Info */}
+                  <View className="flex-1">
                     <Text
-                      className="text-muted dark:text-muted-dark text-sm capitalize"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                      className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                      style={{ fontFamily: "ReadingFont" }}
                     >
-                      {item.type}
+                      {item.name}
                     </Text>
+                    <View className="mt-1 flex-row items-center gap-2">
+                      <Text
+                        className="text-primary text-xs font-semibold uppercase tracking-wider"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {monthShort} {dayNum}
+                      </Text>
+                      <Text className="text-muted dark:text-muted-dark text-xs">
+                        •
+                      </Text>
+                      <Text
+                        className="text-muted dark:text-muted-dark text-xs font-medium capitalize"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {item.type}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))}
-          </View>
+              );
+            })}
+          </ScrollView>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

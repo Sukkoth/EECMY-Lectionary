@@ -9,18 +9,19 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "@/lib/i18n";
 
 const CURRENT_VERSION = "1.0.0";
 
 export default function AppUpdateScreen() {
   const isDark = useColorScheme() === "dark";
+  const { t } = useTranslation();
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<"idle" | "uptodate" | "available">("idle");
 
   const handleCheck = () => {
     setChecking(true);
     setResult("idle");
-    // Mock: simulate network delay
     setTimeout(() => {
       setChecking(false);
       setResult("uptodate");
@@ -29,9 +30,9 @@ export default function AppUpdateScreen() {
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6">
+      <View className="flex-1 px-6 pt-12">
         {/* Header */}
-        <View className="mb-8 mt-8 flex-row items-center gap-4">
+        <View className="mb-6 flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.7}
@@ -43,7 +44,7 @@ export default function AppUpdateScreen() {
             className="text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            App Update
+            {t("appUpdate")}
           </Text>
         </View>
 
@@ -56,11 +57,11 @@ export default function AppUpdateScreen() {
             className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
-            Current Version
+            {t("currentVersion")}
           </Text>
           <Text
             className="mt-1 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
+            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {CURRENT_VERSION}
           </Text>
@@ -74,7 +75,7 @@ export default function AppUpdateScreen() {
               className="flex-1 text-base text-green-600 dark:text-green-400"
               style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
             >
-              You&apos;re up to date!
+              {t("youreUpToDate")}
             </Text>
           </View>
         )}
@@ -85,7 +86,7 @@ export default function AppUpdateScreen() {
               className="text-center text-base text-blue-600 dark:text-blue-400"
               style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
             >
-              New version available
+              {t("newVersionAvailable")}
             </Text>
           </View>
         )}
@@ -99,12 +100,12 @@ export default function AppUpdateScreen() {
         >
           {checking ? (
             <>
-              <ActivityIndicator size="small" color="white" />
+              <ActivityIndicator color="white" size="small" />
               <Text
                 className="text-center text-base text-white"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Checking...
+                {t("checking")}
               </Text>
             </>
           ) : (
@@ -114,7 +115,7 @@ export default function AppUpdateScreen() {
                 className="text-center text-base text-white"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Check for Updates
+                {t("checkForUpdates")}
               </Text>
             </>
           )}

@@ -1,12 +1,38 @@
-import { Text, View, TouchableOpacity, useColorScheme, Pressable, SafeAreaView, Appearance } from "react-native";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  useColorScheme,
+  Pressable,
+  SafeAreaView,
+  Appearance,
+  ScrollView,
+} from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "@/lib/SettingsContext";
+import { useTranslation } from "@/lib/i18n";
+
+function formatTimeString(timeStr: string, format: "12h" | "24h" = "12h"): string {
+  const [hStr, mStr] = timeStr.split(":");
+  const h = parseInt(hStr, 10) || 7;
+  const m = parseInt(mStr, 10) || 0;
+  if (format === "24h") {
+    const hh = String(h).padStart(2, "0");
+    const mm = String(m).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+  const period = h >= 12 ? "PM" : "AM";
+  const displayHour = h % 12 === 0 ? 12 : h % 12;
+  const displayMin = String(m).padStart(2, "0");
+  return `${displayHour}:${displayMin} ${period}`;
+}
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { settings, updateSetting } = useSettings();
+  const { t } = useTranslation();
 
   const toggleTheme = () => {
     const newTheme = isDark ? "light" : "dark";
@@ -14,18 +40,67 @@ export default function SettingsScreen() {
     Appearance.setColorScheme(newTheme);
   };
 
+  const getLanguageLabel = () => {
+    const appLang = settings.appLanguage || settings.language;
+    if (appLang === "en") return "English";
+    if (appLang === "om") return "Afaan Oromoo";
+    return "አማርኛ";
+  };
+
+  const getScriptureLangLabel = () => {
+    if (settings.language === "en") return "English";
+    if (settings.language === "om") return "Afaan Oromoo";
+    return "አማርኛ";
+  };
+
   return (
-    <SafeAreaView className="bg-bg-warm  dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6 mt-6">
+    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+      <ScrollView
+        className="flex-1 px-6 pt-12"
+        contentContainerStyle={{ paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Title */}
         <Text
-          className="mt-8 mb-8 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
+          className="mb-6 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
-          Settings
+          {t("settings")}
         </Text>
 
-        {/* Language & Version */}
+        {/* App Language Settings Row */}
+        <TouchableOpacity
+          onPress={() => router.push("/settings/app-language")}
+          activeOpacity={0.7}
+          className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="globe-outline" size={20} color="#3b82f6" />
+            </View>
+            <View>
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {t("appLanguage")}
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {getLanguageLabel()}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={isDark ? "#737373" : "#A3A3A3"}
+          />
+        </TouchableOpacity>
+
+        {/* Bible Translation Content & Version */}
         <TouchableOpacity
           onPress={() => router.push("/settings/language")}
           activeOpacity={0.7}
@@ -40,13 +115,13 @@ export default function SettingsScreen() {
                 className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Language & Version
+                {t("scriptureLanguageAndVersion")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-sm"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                {settings.language === "en" ? "English" : "አማርኛ"} — {settings.version.toUpperCase()}
+                {getScriptureLangLabel()} — {settings.version.toUpperCase()}
               </Text>
             </View>
           </View>
@@ -72,7 +147,7 @@ export default function SettingsScreen() {
                 className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Font & Alignment
+                {t("fontAndAlignment")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-sm"
@@ -89,8 +164,80 @@ export default function SettingsScreen() {
           />
         </TouchableOpacity>
 
+        {/* Calendar System */}
+        <TouchableOpacity
+          onPress={() => {
+            const nextStyle = settings.calendarStyle === "ethiopian" ? "gregorian" : "ethiopian";
+            updateSetting("calendarStyle", nextStyle);
+          }}
+          activeOpacity={0.7}
+          className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="calendar-outline" size={20} color="#3b82f6" />
+            </View>
+            <View>
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {t("calendarSystem")}
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {settings.calendarStyle === "ethiopian"
+                  ? t("ethiopianEC")
+                  : t("gregorianGC")}
+              </Text>
+            </View>
+          </View>
+          <Text
+            className="text-muted dark:text-muted-dark text-sm"
+            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          >
+            {settings.calendarStyle === "ethiopian" ? t("ethiopian") : t("gregorian")}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Daily Reading Reminder Row -> Sub-page */}
+        <TouchableOpacity
+          onPress={() => router.push("/settings/daily-reminder")}
+          activeOpacity={0.7}
+          className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="notifications-outline" size={20} color="#3b82f6" />
+            </View>
+            <View>
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {t("dailyReminder")}
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {settings.reminderEnabled
+                  ? formatTimeString(settings.reminderTime || "07:00", settings.timeFormat || "12h")
+                  : "Off"}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={isDark ? "#737373" : "#A3A3A3"}
+          />
+        </TouchableOpacity>
+
         {/* Appearance */}
-        <View className="bg-surface dark:bg-surface-dark rounded-2xl px-5 py-4">
+        <View className="bg-surface dark:bg-surface-dark mb-4 rounded-2xl px-5 py-4">
           <Pressable
             onPress={toggleTheme}
             className="flex-row items-center justify-between active:opacity-80"
@@ -107,14 +254,14 @@ export default function SettingsScreen() {
                 className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Appearance
+                {t("appearance")}
               </Text>
             </View>
             <Text
               className="text-muted dark:text-muted-dark text-sm capitalize"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
-              {colorScheme === "dark" ? "Dark" : "Light"}
+              {colorScheme === "dark" ? t("darkMode") : t("lightMode")}
             </Text>
           </Pressable>
         </View>
@@ -124,7 +271,7 @@ export default function SettingsScreen() {
           className="text-primary mb-3 ml-1 mt-6 text-xs uppercase tracking-widest"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
-          Updates
+          {t("updates")}
         </Text>
         <TouchableOpacity
           onPress={() => router.push("/settings/check-updates")}
@@ -140,13 +287,13 @@ export default function SettingsScreen() {
                 className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Check for Updates
+                {t("checkUpdates")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-sm"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                App & content updates
+                {t("appAndContentUpdates")}
               </Text>
             </View>
           </View>
@@ -156,7 +303,7 @@ export default function SettingsScreen() {
             color={isDark ? "#737373" : "#A3A3A3"}
           />
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -8,12 +8,12 @@ export default function LectionaryScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings } = useSettings();
 
-  const lang = settings.language as GlossaryLanguage;
+  const lang = (settings.appLanguage || settings.language) as GlossaryLanguage;
   const content = GLOSSARY_CONTENT[lang] ?? GLOSSARY_CONTENT.en;
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="border-b border-stone-200 px-6 pb-4 pt-10 dark:border-stone-800">
+      <View className="border-b border-stone-200 px-6 pb-4 pt-12 dark:border-stone-800">
         <View className="flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => router.back()}

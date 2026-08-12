@@ -7,18 +7,28 @@ import {
   useColorScheme,
   ActivityIndicator,
   Appearance,
+  Animated,
   type DimensionValue,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { loadStreak } from "@/lib/StreakService";
-import type { ReadingStreak } from "@/lib/types";
-import { useSQLiteContext } from "expo-sqlite";
-import { useCallback, useMemo, useState } from "react";
-import { ReadingsDB, type DayData } from "@/lib/database";
+import { useCallback, useEffect, useRef } from "react";
 import { useSettings } from "@/lib/SettingsContext";
+import { useTodayReading } from "@/lib/hooks/useTodayReading";
+import { useStreak } from "@/lib/hooks/useStreak";
+import { useSQLiteContext } from "expo-sqlite";
+import { scheduleDailyReminder } from "@/lib/NotificationService";
+import { useCheckContentUpdate } from "@/lib/hooks/useCheckContentUpdate";
+import { FormattedText } from "@/lib/formatText";
+import {
+  formatDisplayDate,
+  gregorianToEthiopian,
+  getEvangelistYear,
+  formatEvangelistYear,
+} from "@/lib/ethiopianCalendar";
+import * as Notifications from 'expo-notifications';
 
-const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+import { useTranslation, getDayLabels } from "@/lib/i18n";
 
 const SECTION_LABELS: Record<string, string> = {
   OLD_TESTAMENT: "Old Testament",
@@ -26,60 +36,94 @@ const SECTION_LABELS: Record<string, string> = {
   GOSPEL: "Gospel",
 };
 
+function getWeekStart(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
+  const { settings, updateSetting, availableLanguages } = useSettings();
+  const { t, lang } = useTranslation();
+  const { hasUpdate, checkUpdate } = useCheckContentUpdate();
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (hasUpdate) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+  }, [hasUpdate, pulseAnim]);
+
+  const readingDate = new Date();
+  const ethDate = gregorianToEthiopian(readingDate);
+  const evangelist = getEvangelistYear(ethDate.year);
+
+  const { data: dayData, isLoading, error: queryError } = useTodayReading(
+    readingDate,
+    settings.language,
+    settings.version,
+  );
+  const { data: streak, refetch: refetchStreak } = useStreak();
   const db = useSQLiteContext();
-  const readingDate = useMemo(() => new Date(), []);
-  const { settings, updateSetting } = useSettings();
-
-  const [dayData, setDayData] = useState<DayData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [streak, setStreak] = useState<ReadingStreak | null>(null);
-
-  function getWeekStart(date: Date): string {
-    const d = new Date(date);
-    const day = d.getDay();
-    d.setDate(d.getDate() - day);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${dd}`;
-  }
-
-  const fetchReadings = useCallback(() => {
-    const readingsDB = new ReadingsDB(db);
-    readingsDB
-      .getReadingsForDate(readingDate, settings.language, settings.version)
-      .then((result) => {
-        setDayData(result);
-      })
-      .catch((err) => {
-        setError(err?.message ?? "Failed to load readings. Please try again.");
-        setDayData(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [db, readingDate, settings.language, settings.version]);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      fetchReadings();
-      loadStreak().then(setStreak);
-    }, [fetchReadings]),
+      refetchStreak();
+      checkUpdate();
+      if (settings.reminderEnabled) {
+        const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
+        const hour = parseInt(hStr, 10) || 7;
+        const minute = parseInt(mStr, 10) || 0;
+        Notifications.getAllScheduledNotificationsAsync().then(({ length }) => {
+          if (length < 5) {
+            scheduleDailyReminder(
+              hour,
+              minute,
+              db,
+              settings.language,
+              settings.version,
+              t("appTitle"),
+              21,
+            );
+          }
+        });
+      }
+    }, [
+      refetchStreak,
+      checkUpdate,
+      settings.reminderEnabled,
+      settings.reminderTime,
+      settings.language,
+      settings.version,
+      db,
+      t,
+    ]),
   );
 
   const isMulti = dayData && dayData.readings.length > 1;
 
   const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return formatDisplayDate(date, settings.calendarStyle, lang).fullString;
   };
 
   const currentWeekStart = getWeekStart(new Date());
@@ -101,48 +145,78 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="mt-8 flex-1 px-6">
+      <View className="flex-1 px-6 pt-12">
         {/* HEADER */}
-        <View className="mb-7 mt-4 flex-row items-center justify-between">
+        <View className="mb-6 flex-row items-center justify-between">
           <Text
-            className="text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
+            className="flex-1 text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Yeilet Readings
+            {t("appTitle")}
           </Text>
-          <TouchableOpacity
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-            className="bg-surface dark:bg-surface-dark rounded-full p-2"
-          >
-            <Ionicons
-              name={isDark ? "moon-outline" : "sunny-outline"}
-              size={22}
-              color={isDark ? "#E8E4DC" : "#2D2A24"}
-            />
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            {hasUpdate && (
+              <TouchableOpacity
+                onPress={() => router.push("/settings/check-updates/content")}
+                activeOpacity={0.7}
+              >
+                <Animated.View
+                  className="bg-primary/15 rounded-full p-2"
+                  style={{ transform: [{ scale: pulseAnim }] }}
+                >
+                  <Ionicons
+                    name="cloud-download-outline"
+                    size={22}
+                    color="#3b82f6"
+                  />
+                </Animated.View>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+              className="bg-surface dark:bg-surface-dark rounded-full p-2"
+            >
+              <Ionicons
+                name={isDark ? "moon-outline" : "sunny-outline"}
+                size={22}
+                color={isDark ? "#E8E4DC" : "#2D2A24"}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* DATE CARD */}
-        <View className="bg-surface dark:bg-surface-dark mb-7 flex-row items-center rounded-2xl px-4 py-3.5">
-          <View className="bg-primary-dimmed rounded-lg p-2">
-            <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
+        <View className="bg-surface dark:bg-surface-dark mb-7 flex-row items-center justify-between rounded-2xl px-4 py-3.5">
+          <View className="flex-1 flex-row items-center">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
+            </View>
+            <Text
+              className="ml-3 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              numberOfLines={1}
+            >
+              {formatDate(readingDate)}
+            </Text>
           </View>
-          <Text
-            className="ml-3 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-          >
-            {formatDate(readingDate)}
-          </Text>
+          <View className="bg-primary/10 ml-2 rounded-full px-3.5 py-1.5">
+            <Text
+              className="text-primary text-sm font-semibold"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {formatEvangelistYear(ethDate.year, lang)}
+            </Text>
+          </View>
         </View>
 
         {/* READING CARD AREA (loading / error / no-data / loaded) */}
-        {loading ? (
+        {isLoading ? (
           /* LOADING STATE */
           <View className="bg-surface dark:bg-surface-dark mb-7 flex-1 items-center justify-center rounded-2xl px-6 py-8">
             <ActivityIndicator size="large" color="#3b82f6" />
           </View>
-        ) : error ? (
+        ) : queryError ? (
           /* ERROR STATE */
           <View className="bg-surface dark:bg-surface-dark mb-7 flex-1 items-center justify-center rounded-2xl px-6 py-8">
             <Ionicons name="alert-circle-outline" size={44} color="#ef4444" />
@@ -150,10 +224,10 @@ export default function HomeScreen() {
               className="mt-4 text-center text-base text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
-              {error}
+              {queryError?.message ?? "Failed to load readings."}
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/settings")}
+              onPress={() => router.push("/settings/check-updates/content")}
               activeOpacity={0.7}
               className="bg-primary mt-6 rounded-xl px-6 py-3"
             >
@@ -182,7 +256,7 @@ export default function HomeScreen() {
               Readings may not have been downloaded yet.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/settings")}
+              onPress={() => router.push("/settings/check-updates/content")}
               activeOpacity={0.7}
               className="bg-primary mt-6 rounded-xl px-6 py-3"
             >
@@ -270,12 +344,11 @@ export default function HomeScreen() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
                 >
-                  <Text
+                  <FormattedText
+                    text={dayData.readings[0]?.text}
                     className="text-center text-2xl leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                  >
-                    {dayData.readings[0]?.text}
-                  </Text>
+                    style={{ fontFamily: "ReadingFont", fontWeight: "400", textAlign: "center" }}
+                  />
                   <Text
                     className="text-muted dark:text-muted-dark mt-6 text-center text-xl leading-tight"
                     style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
@@ -294,7 +367,7 @@ export default function HomeScreen() {
                 className="text-primary text-xs tracking-wide"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
-                Read passage
+                {t("readPassage")}
               </Text>
               <Ionicons
                 name="chevron-forward"
@@ -307,67 +380,88 @@ export default function HomeScreen() {
         )}
 
         {/* READING STREAK CARD */}
-        <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl px-5 py-5">
+        <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl px-5 py-5 border border-stone-200/40 dark:border-stone-800/40">
           {/* Streak header */}
-          <View className="flex-row items-start justify-between">
-            <View className="flex-1">
-              <Text
-                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-              >
-                Reading Streak
-              </Text>
-              <Text
-                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-              >
-                Best record: {safeStreak.best} days
-              </Text>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3">
+              <View className="rounded-xl bg-amber-500/10 p-2.5">
+                <Ionicons name="flame" size={20} color="#f59e0b" />
+              </View>
+              <View>
+                <Text
+                  className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                >
+                  {t("readingStreak")}
+                </Text>
+                <Text
+                  className="text-muted dark:text-muted-dark mt-0.5 text-xs"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                >
+                  {t("bestRecord")}: {safeStreak.best}
+                </Text>
+              </View>
             </View>
+
             <View className="items-end">
               <Text
-                className="text-primary text-3xl font-bold leading-tight"
-                style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
+                className="text-primary text-3xl font-semibold leading-tight"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
                 {safeStreak.current}
               </Text>
               <Text
-                className="text-muted dark:text-muted-dark text-xs"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                className="text-muted dark:text-muted-dark text-[11px] uppercase tracking-wider"
+                style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
-                days
+                {t("days")}
               </Text>
             </View>
           </View>
 
           {/* Progress bar */}
-          <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+          <View className="mt-4 h-2.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
             <View
               className="bg-primary h-full rounded-full"
               style={{ width: progressPercent as DimensionValue }}
             />
           </View>
 
-          {/* Weekly indicators */}
+          {/* Weekly day bars */}
           <View className="mt-4 flex-row justify-between">
-            {safeStreak.completedDays.map((completed, index) => (
-              <View key={index} className="items-center" style={{ width: 36 }}>
-                <View
-                  className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
-                >
+            {safeStreak.completedDays.map((completed, index) => {
+              const todayDayOfWeek = readingDate.getDay();
+              const isToday = index === todayDayOfWeek;
+
+              return (
+                <View key={index} className="items-center" style={{ width: 36 }}>
                   <View
-                    className={`h-full rounded-full ${completed ? "bg-primary" : ""}`}
-                    style={{ width: completed ? "100%" : "0%" }}
-                  />
+                    className={`h-2.5 w-full overflow-hidden rounded-full ${
+                      isToday
+                        ? "bg-primary/20"
+                        : "bg-stone-200 dark:bg-stone-800"
+                    }`}
+                  >
+                    <View
+                      className={`h-full rounded-full ${
+                        completed ? "bg-primary" : isToday ? "bg-primary/50" : ""
+                      }`}
+                      style={{ width: completed ? "100%" : isToday ? "50%" : "0%" }}
+                    />
+                  </View>
+                  <Text
+                    className={`mt-1.5 text-xs ${
+                      isToday
+                        ? "text-primary font-semibold"
+                        : "text-muted dark:text-muted-dark font-normal"
+                    }`}
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {getDayLabels(lang)[index]}
+                  </Text>
                 </View>
-                <Text
-                  className="text-muted dark:text-muted-dark mt-1.5 text-xs"
-                  style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                >
-                  {DAY_LABELS[index]}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
       </View>

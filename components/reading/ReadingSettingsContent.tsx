@@ -9,9 +9,9 @@ type ReadingSettingsContentProps = {
 export default function ReadingSettingsContent({ viewType }: ReadingSettingsContentProps) {
   return (
     <View>
-      <LanguagePickerContent />
-      <View className="my-5" />
       <FontAlignmentContent viewType={viewType} />
+      <View className="my-5" />
+      <LanguagePickerContent />
     </View>
   );
 }

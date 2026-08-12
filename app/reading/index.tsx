@@ -1,31 +1,70 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation, router } from "expo-router";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useSQLiteContext } from "expo-sqlite";
-import {
-  ReadingRepository,
-  generateWindow,
-  HALF_WINDOW,
-  WINDOW_SIZE,
-  REBUILD_THRESHOLD,
-} from "@/lib/ReadingRepository";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
+import { READING_KEYS, usePrefetchReadings } from "@/lib/hooks/useReading";
 import ReadingHeader from "@/components/reading/ReadingHeader";
 import LanguageSwitcherSheet from "@/components/reading/LanguageSwitcherSheet";
 import { ReadingSwiper } from "@/components/reading/ReadingSwiper";
 import { useSettings } from "@/lib/SettingsContext";
 import { markDayCompleted } from "@/lib/StreakService";
+import { ReadingsDB, toDateString, type DayData } from "@/lib/database";
+import { useSQLiteContext } from "expo-sqlite";
+import { formatDisplayDate } from "@/lib/ethiopianCalendar";
+
+import { useTranslation } from "@/lib/i18n";
+
+const addDays = (date: Date, days: number) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
+const CENTER_INDEX = 2;
+const PREFETCH_RANGE = 5;
 
 export default function ReadingScreen() {
   const params = useLocalSearchParams<{
     year?: string;
     month?: string;
     day?: string;
+    order?: string;
   }>();
 
-  // ── Single source of truth: the currently viewed date ──
+  /**
+   * One-time target scroll order (e.g. order=3 when navigating from Favourites to a specific reading).
+   *
+   * WHY THIS EFFECT IS NEEDED:
+   * ReadingSwiper uses a 5-day sliding window array (`pages`) that re-computes whenever the user
+   * swipes left or right between dates. When swiping away and returning to the original date,
+   * React unmounts and remounts the target `DayPage` / `ExpandedView` component.
+   *
+   * If `params.order` remained in route memory or state, the newly mounted component would read
+   * `order=3` and re-trigger the auto-scroll animation every time the user swiped back to this day.
+   *
+   * By immediately consuming `targetOrder` (clearing state to `undefined` and clearing URL params via
+   * `router.setParams({ order: undefined })`), we ensure auto-scrolling executes ONLY ONCE during initial
+   * navigation, allowing subsequent page swipes to retain natural top positioning.
+   */
+  const [targetOrder, setTargetOrder] = useState<number | undefined>(() => {
+    return params.order != null ? parseInt(params.order, 10) : undefined;
+  });
+
+  useEffect(() => {
+    if (targetOrder != null) {
+      const timer = setTimeout(() => {
+        setTargetOrder(undefined);
+        if (params.order != null) {
+          router.setParams({ order: undefined });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [targetOrder, params.order]);
+
   const initialDate = useMemo(() => {
-    return params.year && params.month && params.day
+    return params.year != null && params.month != null && params.day != null
       ? new Date(
           parseInt(params.year, 10),
           parseInt(params.month, 10) - 1,
@@ -34,102 +73,85 @@ export default function ReadingScreen() {
       : new Date();
   }, [params.year, params.month, params.day]);
 
-  const [currentDate, setCurrentDate] = useState(initialDate);
-  const [windowCenter, setWindowCenter] = useState(initialDate);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [cacheVersion, setCacheVersion] = useState(0);
-
-  const db = useSQLiteContext();
-  const { settings } = useSettings();
-  const repoRef = useRef<ReadingRepository | null>(null);
-  const settingsRef = useRef(settings);
+  const [centerDate, setCenterDate] = useState(initialDate);
   const [rebuildKey, setRebuildKey] = useState(0);
   const sheetRef = useRef<BottomSheetModal>(null);
   const [sheetIndex, setSheetIndex] = useState(-1);
 
-  // Re-create repo when language/version changes
-  if (settingsRef.current.language !== settings.language || settingsRef.current.version !== settings.version) {
-    settingsRef.current = settings;
-    repoRef.current = new ReadingRepository(db, settings.language, settings.version);
-  }
+  const { settings } = useSettings();
+  const { t } = useTranslation();
+  const db = useSQLiteContext();
+  const queryClient = useQueryClient();
+  const prefetchReadings = usePrefetchReadings();
 
-  // Initialise repo with current language/version
-  if (!repoRef.current) {
-    repoRef.current = new ReadingRepository(db, settings.language, settings.version);
-  }
-
-  // ── Derive the 21-page window from windowCenter ──
-  const windowDates = useMemo(() => generateWindow(windowCenter), [windowCenter]);
-
-  // ── Initial / retry / language-change fetch (shows loading spinner) ──
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    repoRef
-      .current!.prefetch(windowDates)
-      .then(() => {
-        setCacheVersion((v) => v + 1);
-      })
-      .catch((err: Error) => {
-        setError(err?.message ?? "Failed to load readings.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [retryCount, settings.language, settings.version]);
+    setCenterDate(initialDate);
+    setRebuildKey((k) => k + 1);
+  }, [initialDate]);
 
-  // ── Silent background prefetch on window rebuild (no spinner) ──
-  const isFirstRender = useRef(true);
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    repoRef
-      .current!.prefetch(windowDates)
-      .then(() => {
-        setCacheVersion((v) => v + 1);
-      })
-      .catch(() => {
-        // Silently ignore background errors — user already sees content
-      });
-  }, [windowDates]);
+  const pages = useMemo(
+    () => [
+      addDays(centerDate, -2),
+      addDays(centerDate, -1),
+      centerDate,
+      addDays(centerDate, 1),
+      addDays(centerDate, 2),
+    ],
+    [centerDate],
+  );
 
-  // ── Prune distant cache entries when window moves ──
-  useEffect(() => {
-    repoRef.current?.prune(windowCenter);
-  }, [windowCenter]);
-
-  // ── Swipe handler: update current date, rebuild window at edges ──
-  const handlePageChange = useCallback((date: Date, position: number) => {
-    setCurrentDate(date);
-
-    if (position <= REBUILD_THRESHOLD || position >= WINDOW_SIZE - 1 - REBUILD_THRESHOLD) {
-      setWindowCenter(date);
-      setRebuildKey((k) => k + 1);
-    }
-  }, []);
-
-  // ── Build swiper data from cache ──
-  const swiperData = useMemo(() => {
-    return windowDates.map((date) => ({
-      date,
-      dayData: repoRef.current?.getCached(date) ?? null,
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [windowDates, cacheVersion]);
-
-  // ── Header info from current date ──
-  const currentDayData = repoRef.current?.getCached(currentDate) ?? null;
-  const viewType = (currentDayData?.readings.length ?? 0) === 1 ? "simple" : "expanded";
-  const weekday = currentDate.toLocaleDateString("en-US", { weekday: "long" });
-  const formattedDate = currentDate.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
+  const readingQueries = useQueries({
+    queries: pages.map((date) => ({
+      queryKey: READING_KEYS.byDate(toDateString(date), settings.language, settings.version),
+      queryFn: async (): Promise<DayData | null> => {
+        const readingsDB = new ReadingsDB(db);
+        return readingsDB.getReadingsForDate(date, settings.language, settings.version);
+      },
+      staleTime: Infinity,
+      gcTime: 1000 * 60 * 30,
+    })),
+    combine: (results) => ({
+      data: results.map((r) => r.data ?? null),
+      isLoading: results.some((r) => r.isLoading),
+      error: results.find((r) => r.error)?.error ?? null,
+    }),
   });
-  const liturgicalDay = currentDayData?.dayInfo?.title ?? null;
+
+  const swiperData = useMemo(
+    () =>
+      pages.map((date, i) => ({
+        date,
+        dayData: readingQueries.data[i],
+      })),
+    [pages, readingQueries.data],
+  );
+
+  useEffect(() => {
+    const dates: Date[] = [];
+    for (let i = -PREFETCH_RANGE; i <= PREFETCH_RANGE; i++) {
+      dates.push(addDays(centerDate, i));
+    }
+    prefetchReadings(dates, settings.language, settings.version);
+  }, [centerDate, settings.language, settings.version, prefetchReadings]);
+
+  const handlePageChange = useCallback(
+    (date: Date, position: number) => {
+      const offset = position - CENTER_INDEX;
+      setCenterDate((d) => addDays(d, offset));
+      setRebuildKey((k) => k + 1);
+    },
+    [],
+  );
+
+  const currentDayData = readingQueries.data[CENTER_INDEX];
+  const viewType = (currentDayData?.readings.length ?? 0) === 1 ? "simple" : "expanded";
+  const displayDate = formatDisplayDate(
+    centerDate,
+    settings.calendarStyle,
+    settings.appLanguage || settings.language,
+  );
+  const weekday = displayDate.weekday;
+  const formattedDate = displayDate.dateString;
 
   const handleSheetChange = useCallback((index: number) => {
     setSheetIndex(index);
@@ -137,22 +159,18 @@ export default function ReadingScreen() {
 
   const navigation = useNavigation();
 
-  // ── Mark streak when viewing today's reading ──
   useEffect(() => {
     const today = new Date();
     const isToday =
-      currentDate.getFullYear() === today.getFullYear() &&
-      currentDate.getMonth() === today.getMonth() &&
-      currentDate.getDate() === today.getDate();
+      centerDate.getFullYear() === today.getFullYear() &&
+      centerDate.getMonth() === today.getMonth() &&
+      centerDate.getDate() === today.getDate();
 
     if (isToday && currentDayData) {
-      markDayCompleted(currentDate).catch(() => {
-        // Silently ignore — streak is non-critical
-      });
+      markDayCompleted(centerDate).catch(() => {});
     }
-  }, [currentDate, currentDayData]);
+  }, [centerDate, currentDayData]);
 
-  // ── Intercept system back to dismiss sheet first ──
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (e) => {
       if (sheetIndex >= 0) {
@@ -163,8 +181,7 @@ export default function ReadingScreen() {
     return unsubscribe;
   }, [navigation, sheetIndex]);
 
-  // ── Loading state (only on initial load) ──
-  if (loading) {
+  if (readingQueries.isLoading) {
     return (
       <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#3b82f6" />
@@ -172,18 +189,17 @@ export default function ReadingScreen() {
     );
   }
 
-  // ── Error state ──
-  if (error) {
+  if (readingQueries.error) {
     return (
       <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1 items-center justify-center px-6">
         <Text
           className="text-muted dark:text-muted-dark mb-4 text-center"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
-          {error}
+          {(readingQueries.error as Error).message}
         </Text>
         <TouchableOpacity
-          onPress={() => setRetryCount((prev) => prev + 1)}
+          onPress={() => queryClient.invalidateQueries({ queryKey: READING_KEYS.all })}
           activeOpacity={0.7}
           className="bg-primary rounded-xl px-6 py-3"
         >
@@ -191,27 +207,25 @@ export default function ReadingScreen() {
             className="text-center text-white"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Try Again
+            {t("tryAgain")}
           </Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // ── Content ──
   return (
     <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ReadingHeader
         ref={sheetRef}
         weekday={weekday}
         formattedDate={formattedDate}
-        title={liturgicalDay}
       />
       <ReadingSwiper
         data={swiperData}
-        initialIndex={HALF_WINDOW}
         onPageChange={handlePageChange}
         rebuildKey={rebuildKey}
+        targetOrder={targetOrder}
       />
       <LanguageSwitcherSheet ref={sheetRef} onChange={handleSheetChange} viewType={viewType} />
     </View>

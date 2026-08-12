@@ -3,15 +3,29 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import type { HolidayRow } from "@/lib/types";
 import { HOLIDAY_COLORS } from "@/constants";
+import type { CalendarStyle } from "@/lib/settings";
+import { useTranslation, getDayLabels } from "@/lib/i18n";
+import {
+  getEthiopianWeeks,
+  ethiopianToGregorian,
+  gregorianToEthiopian,
+  getEcWeekNumber,
+  ETHIOPIAN_MONTH_NAMES_SHORT_AM,
+  ETHIOPIAN_MONTH_NAMES_SHORT_OM,
+  ETHIOPIAN_MONTH_NAMES_SHORT_EN,
+  GREGORIAN_MONTH_NAMES_SHORT_EN,
+  GREGORIAN_MONTH_NAMES_SHORT_AM,
+  GREGORIAN_MONTH_NAMES_SHORT_OM,
+} from "@/lib/ethiopianCalendar";
 
-const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"] as const;
-
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 type MonthGridProps = {
   year: number;
   month: number;
-  holidays: Map<string, HolidayRow[]>;
+  holidays: Map<number, HolidayRow[]>;
   width: number;
+  calendarStyle?: CalendarStyle;
 };
 
 function getWeeks(year: number, month: number): (number | null)[][] {
@@ -41,102 +55,191 @@ function toDateKey(year: number, month: number, day: number): string {
   return `${year}-${m}-${d}`;
 }
 
-function isToday(year: number, month: number, day: number): boolean {
-  const today = new Date();
+export default memo(function MonthGrid({
+  year,
+  month,
+  holidays,
+  width,
+  calendarStyle = "ethiopian",
+}: MonthGridProps) {
+  const isEth = calendarStyle === "ethiopian";
+  const { lang } = useTranslation();
+
+  const resolvedEthYear = useMemo(() => {
+    if (!isEth) return year;
+    if (year > 2020) {
+      const sampleGcDate =
+        month === 12
+          ? new Date(Date.UTC(year, 8, 7, 12))
+          : new Date(Date.UTC(year, month, 15, 12));
+      return gregorianToEthiopian(sampleGcDate).year;
+    }
+    return year;
+  }, [isEth, year, month]);
+
+  const weeks = useMemo(() => {
+    return isEth ? getEthiopianWeeks(resolvedEthYear, month) : getWeeks(year, month);
+  }, [resolvedEthYear, year, month, isEth]);
+
+  const ethToday = useMemo(() => gregorianToEthiopian(new Date()), []);
+  const gcToday = useMemo(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
+  }, []);
+
+  const gcShorts = lang === "om" ? GREGORIAN_MONTH_NAMES_SHORT_OM : lang === "am" ? GREGORIAN_MONTH_NAMES_SHORT_AM : GREGORIAN_MONTH_NAMES_SHORT_EN;
+  const ethShorts = lang === "om" ? ETHIOPIAN_MONTH_NAMES_SHORT_OM : lang === "en" ? ETHIOPIAN_MONTH_NAMES_SHORT_EN : ETHIOPIAN_MONTH_NAMES_SHORT_AM;
+
+  const paddingX = 32;
+  const cellWidth = Math.floor((width - paddingX) / 7);
+
   return (
-    today.getFullYear() === year &&
-    today.getMonth() === month &&
-    today.getDate() === day
-  );
-}
-
-export default memo(function MonthGrid({ year, month, holidays, width }: MonthGridProps) {
-  const weeks = useMemo(() => getWeeks(year, month), [year, month]);
-  const cellWidth = Math.floor(width / 7);
-
-  return (
-    <View style={{ width }} className="px-4">
-      {/* Day labels row */}
-      <View className="mb-2 flex-row">
-        {DAY_LABELS.map((label, index) => (
-          <View key={index} style={{ width: cellWidth }} className="items-center">
-            <Text style={{
-              fontFamily: "ReadingFont"
-            }} className="text-muted dark:text-muted-dark text-sm font-bold">
-              {label}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Week rows */}
-      {weeks.map((week, wi) => (
-        <View key={wi} className="flex-row">
-          {week.map((day, di) => {
-            if (day === null) {
-              return <View key={`empty-${wi}-${di}`} style={{ width: cellWidth }} />;
-            }
-
-            const dateKey = toDateKey(year, month, day);
-            const dayHolidays = holidays.get(dateKey) ?? [];
-            const types = [...new Set(dayHolidays.map((h) => h.type))];
-            const today = isToday(year, month, day);
-
+    <View style={{ width }} className="px-3">
+      {/* Sleek Modern Card Surface */}
+      <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-3">
+        {/* Day labels header */}
+        <View className="mb-3 flex-row items-center border-b border-stone-200/40 dark:border-stone-800/40 pb-2.5">
+          {getDayLabels(lang).map((label, index) => {
+            const isWeekend = index === 0 || index === 6;
             return (
-              <TouchableOpacity
-                key={dateKey}
+              <View
+                key={`header-day-${index}`}
                 style={{ width: cellWidth }}
-                className="items-center py-1.5"
-                activeOpacity={0.6}
-                onPress={() =>
-                  router.push({
-                    pathname: "/reading",
-                    params: {
-                      year,
-                      month: month + 1,
-                      day,
-                    },
-                  })
-                }
+                className="items-center justify-center"
               >
-                {/* Day number */}
-                {today ? (
-                  <View className="bg-primary h-8 w-8 items-center justify-center rounded-l-full rounded-r-full">
-                    <Text
-                      className="text-xl font-semibold text-white"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {day}
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="h-8 w-8 items-center justify-center">
-                    <Text
-                      className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {day}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Holiday dots */}
-                {types.length > 0 && (
-                  <View className="mt-0.5 flex-row gap-1">
-                    {types.map((type) => (
-                      <View
-                        key={type}
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: HOLIDAY_COLORS[type] ?? "#9CA3AF" }}
-                      />
-                    ))}
-                  </View>
-                )}
-              </TouchableOpacity>
+                <Text
+                  style={{ fontFamily: "ReadingFont" }}
+                  className={`text-xs uppercase tracking-wider font-semibold ${
+                    isWeekend
+                      ? "text-primary/70"
+                      : "text-muted dark:text-muted-dark opacity-80"
+                  }`}
+                >
+                  {label}
+                </Text>
+              </View>
             );
           })}
         </View>
-      ))}
+
+        {/* Week rows */}
+        <View className="space-y-1">
+          {weeks.map((week, wi) => (
+            <View key={wi} className="flex-row items-center py-1">
+              {week.map((day, di) => {
+                    if (day === null) {
+                      return (
+                        <View key={`empty-${wi}-${di}`} style={{ width: cellWidth }} />
+                      );
+                    }
+
+                    let targetGc = { year, month, day };
+                    let subDay = 0;
+                    let subMonthIndex = 0;
+                    let today = false;
+
+                    if (isEth) {
+                      targetGc = ethiopianToGregorian(resolvedEthYear, month, day);
+                      subDay = targetGc.day;
+                      subMonthIndex = targetGc.month;
+                      today =
+                        ethToday.year === resolvedEthYear &&
+                        ethToday.month === month &&
+                        ethToday.day === day;
+                    } else {
+                      const eth = gregorianToEthiopian(
+                        new Date(Date.UTC(year, month, day, 12)),
+                      );
+                      subDay = eth.day;
+                      subMonthIndex = eth.month;
+                      today =
+                        gcToday.year === year &&
+                        gcToday.month === month &&
+                        gcToday.day === day;
+                    }
+
+                    // Show month abbreviation on Day 1 of sub-month or on the first day of the grid card (day === 1)
+                    const showSubMonthLabel = subDay === 1 || day === 1;
+                    const subAbbr = isEth ? gcShorts[subMonthIndex] : ethShorts[subMonthIndex];
+                    const subLabel = showSubMonthLabel
+                      ? `${subAbbr} ${subDay}`
+                      : `${subDay}`;
+
+                    const dayHolidays = holidays.get(day) ?? [];
+                    const types = [...new Set(dayHolidays.map((h) => h.type))];
+
+                    return (
+                      <TouchableOpacity
+                        key={`day-${year}-${month}-${day}`}
+                        style={{ width: cellWidth }}
+                        className="items-center justify-center py-1"
+                        activeOpacity={0.7}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/reading",
+                            params: {
+                              year: targetGc.year,
+                              month: targetGc.month + 1,
+                              day: targetGc.day,
+                            },
+                          })
+                        }
+                      >
+                        {/* Day number container */}
+                        <View
+                          className={`h-11 w-11 items-center justify-center rounded-2xl ${
+                            today ? "bg-primary" : ""
+                          }`}
+                        >
+                          <View className="flex-row items-start">
+                            <Text
+                              className={`text-2xl ${
+                                today
+                                  ? "text-white font-semibold"
+                                  : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                              }`}
+                              style={{ fontFamily: "ReadingFont" }}
+                            >
+                              {day}
+                            </Text>
+                            <Text
+                              className={`ml-0.5 text-xs ${
+                                today
+                                  ? "text-white/90 font-semibold"
+                                  : showSubMonthLabel
+                                    ? "text-primary dark:text-blue-400 font-semibold"
+                                    : "text-muted dark:text-muted-dark opacity-75 font-medium"
+                              }`}
+                              style={{ fontFamily: "ReadingFont" }}
+                              numberOfLines={1}
+                            >
+                              {subLabel}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Holiday dots indicator */}
+                        {types.length > 0 && (
+                          <View className="mt-1 flex-row gap-1">
+                            {types.map((type) => (
+                              <View
+                                key={`holiday-${type}`}
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    HOLIDAY_COLORS[type] ?? "#3b82f6",
+                                }}
+                              />
+                            ))}
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+            </View>
+          ))}
+        </View>
+      </View>
     </View>
   );
 });

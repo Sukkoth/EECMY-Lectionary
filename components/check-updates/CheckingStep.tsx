@@ -1,21 +1,29 @@
 import { ActivityIndicator, Text, View } from "react-native";
+import { useTranslation } from "@/lib/i18n";
 
-type Props = {
-  isDark: boolean;
+type CheckingStepProps = {
+  isDark?: boolean;
 };
 
-function CheckingStep({ isDark }: Props) {
+function CheckingStep({ isDark }: CheckingStepProps) {
+  const { t } = useTranslation();
+
   return (
-    <View className="items-center py-12">
-      <ActivityIndicator
-        size="large"
-        color={isDark ? "#E8E4DC" : "#2D2A24"}
-      />
+    <View className="bg-surface dark:bg-surface-dark items-center rounded-2xl px-6 py-12">
+      <View className="mb-4 rounded-full bg-primary/10 p-4">
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
       <Text
-        className="text-muted dark:text-muted-dark mt-4 text-base"
-        style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+        className="text-lg text-[#2D2A24] dark:text-[#E8E4DC]"
+        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
       >
-        Checking for available updates…
+        {t("checking")}
+      </Text>
+      <Text
+        className="text-muted dark:text-muted-dark mt-1 text-center text-sm"
+        style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+      >
+        {t("fetchingManifests")}
       </Text>
     </View>
   );

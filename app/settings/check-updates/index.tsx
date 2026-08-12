@@ -1,15 +1,17 @@
 import { Text, TouchableOpacity, View, useColorScheme, SafeAreaView } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "@/lib/i18n";
 
 export default function CheckUpdatesScreen() {
   const isDark = useColorScheme() === "dark";
+  const { t } = useTranslation();
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6">
+      <View className="flex-1 px-6 pt-12">
         {/* Header */}
-        <View className="mb-8 mt-8 flex-row items-center gap-4">
+        <View className="mb-6 flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => router.back()}
             activeOpacity={0.7}
@@ -21,7 +23,7 @@ export default function CheckUpdatesScreen() {
             className="text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Check for Updates
+            {t("checkForUpdates")}
           </Text>
         </View>
 
@@ -40,13 +42,13 @@ export default function CheckUpdatesScreen() {
                 className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                App Update
+                {t("appUpdate")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-sm"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Check for new version of the app
+                {t("appUpdateDesc")}
               </Text>
             </View>
           </View>
@@ -68,13 +70,13 @@ export default function CheckUpdatesScreen() {
                 className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                Content Update
+                {t("contentUpdate")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-sm"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                Download latest Bible readings data
+                {t("contentUpdateDesc")}
               </Text>
             </View>
           </View>

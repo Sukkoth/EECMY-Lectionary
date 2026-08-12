@@ -2,14 +2,16 @@ import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme 
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import LanguagePickerContent from "@/components/reading/LanguagePickerContent";
+import { useTranslation } from "@/lib/i18n";
 
 export default function LanguageSettingsScreen() {
   const isDark = useColorScheme() === "dark";
+  const { t } = useTranslation();
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       {/* Header with back button */}
-      <View className="border-b border-stone-200 px-6 pb-4 pt-10 dark:border-stone-800">
+      <View className="border-b border-stone-200 px-6 pb-4 pt-12 dark:border-stone-800">
         <View className="flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => router.back()}
@@ -22,7 +24,7 @@ export default function LanguageSettingsScreen() {
             className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Language & Version
+            {t("scriptureLanguageAndVersion")}
           </Text>
         </View>
       </View>
