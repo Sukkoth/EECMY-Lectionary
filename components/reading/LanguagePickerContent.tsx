@@ -102,7 +102,7 @@ export default function LanguagePickerContent({
 
       {/* Empty state with Download + Skip buttons */}
       {!languagesError && availableLanguages.length === 0 && (
-        <View className="bg-surface dark:bg-surface-dark rounded-3xl p-6 items-center justify-center border border-stone-200/60 dark:border-stone-800/60 shadow-sm">
+        <View className="bg-surface dark:bg-surface-dark rounded-3xl p-6 items-center justify-center border border-stone-200/60 dark:border-stone-800/60">
           <View className="bg-primary/10 rounded-2xl p-4 mb-3">
             <Ionicons name="cloud-download-outline" size={28} color="#3b82f6" />
           </View>
@@ -169,32 +169,22 @@ export default function LanguagePickerContent({
                 activeOpacity={0.75}
                 className={`flex-row items-center justify-between rounded-2xl p-4 my-1 border transition-all ${
                   isActive
-                    ? "bg-surface dark:bg-surface-dark border-l-4 border-l-primary border-stone-200/80 dark:border-stone-800/80 shadow-sm"
-                    : "bg-surface dark:bg-surface-dark border border-stone-200/60 dark:border-stone-800/60 opacity-80"
+                    ? "bg-surface dark:bg-surface-dark border-primary/60"
+                    : "bg-surface dark:bg-surface-dark border-stone-200/60 dark:border-stone-800/60 opacity-80"
                 }`}
               >
                 <View className="flex-1 flex-row items-center gap-3.5 pr-2">
-                  <View
-                    className={`h-9 w-9 rounded-full items-center justify-center ${
-                      isActive
-                        ? "bg-primary/10"
-                        : "bg-stone-200/50 dark:bg-stone-800/50"
-                    }`}
-                  >
+                  <View className="h-9 w-9 rounded-full items-center justify-center bg-stone-200/50 dark:bg-stone-800/50">
                     <Ionicons
-                      name={isActive ? "checkmark-circle" : "book-outline"}
-                      size={20}
+                      name="book-outline"
+                      size={18}
                       color={isActive ? "#3b82f6" : isDark ? "#A8A29E" : "#78716C"}
                     />
                   </View>
 
                   <View className="flex-1">
                     <Text
-                      className={`text-base ${
-                        isActive
-                          ? "text-primary font-semibold"
-                          : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
-                      }`}
+                      className="text-[#2D2A24] dark:text-[#E8E4DC] text-base font-semibold"
                       style={{ fontFamily: "ReadingFont" }}
                     >
                       {item.versionLabel}
@@ -209,23 +199,26 @@ export default function LanguagePickerContent({
                   </View>
                 </View>
 
-                <View
-                  className={`px-2.5 py-1 rounded-lg border ${
-                    isActive
-                      ? "bg-primary/10 border-primary/25"
-                      : "bg-bg-warm/80 dark:bg-bg-warm-dark/80 border-stone-200/50 dark:border-stone-800/50"
-                  }`}
-                >
-                  <Text
-                    className={`text-[11px] uppercase font-semibold ${
+                {/* Right side: Version Code Badge + Native Checkmark Icon */}
+                <View className="flex-row items-center gap-2.5">
+                  <View
+                    className={`px-2.5 py-1 rounded-lg border ${
                       isActive
-                        ? "text-primary"
-                        : "text-muted dark:text-muted-dark opacity-70"
+                        ? "bg-primary/10 border-primary/25"
+                        : "bg-bg-warm/80 dark:bg-bg-warm-dark/80 border-stone-200/50 dark:border-stone-800/50"
                     }`}
-                    style={{ fontFamily: "ReadingFont" }}
                   >
-                    {item.versionCode}
-                  </Text>
+                    <Text
+                      className={`text-[11px] uppercase font-semibold ${
+                        isActive
+                          ? "text-primary"
+                          : "text-muted dark:text-muted-dark opacity-70"
+                      }`}
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      {item.versionCode}
+                    </Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             );

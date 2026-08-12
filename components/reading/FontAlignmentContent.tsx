@@ -273,7 +273,7 @@ export default function FontAlignmentContent({
       </View>
 
       {/* Apple Reader Style Unified Capsule Toolbar */}
-      <View className="bg-surface dark:bg-surface-dark rounded-2xl border border-stone-200/70 dark:border-stone-800/70 p-3.5 flex-row items-center justify-between shadow-sm">
+      <View className="bg-surface dark:bg-surface-dark rounded-2xl border border-stone-200/70 dark:border-stone-800/70 p-3.5 flex-row items-center justify-between">
         {/* Left: Font Stepper Controls (Substantial Square Buttons) */}
         <View className="flex-row items-center gap-2.5">
           <TouchableOpacity
