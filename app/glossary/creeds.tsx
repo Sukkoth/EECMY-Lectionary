@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme, LayoutAnimation, Platform, UIManager } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "@/lib/SettingsContext";
 import { GLOSSARY_CONTENT, type GlossaryLanguage } from "@/lib/glossary-content";
 

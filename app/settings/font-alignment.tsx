@@ -1,6 +1,6 @@
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import FontAlignmentContent from "@/components/reading/FontAlignmentContent";
 import { useTranslation } from "@/lib/i18n";
 

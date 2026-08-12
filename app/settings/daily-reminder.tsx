@@ -11,7 +11,7 @@ import {
   Pressable,
 } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState, useEffect } from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";

@@ -1,5 +1,5 @@
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { Manifest, YearOption } from "../../app/settings/check-updates/types";
 import { useTranslation } from "@/lib/i18n";
 

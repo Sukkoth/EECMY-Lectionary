@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { View, Text, TouchableOpacity, useColorScheme, SafeAreaView } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import PagerView from "react-native-pager-view";
 
 

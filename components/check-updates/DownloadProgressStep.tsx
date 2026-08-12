@@ -1,5 +1,5 @@
 import { ActivityIndicator, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { YearOption } from "../../app/settings/check-updates/types";
 import InfoRow from "./InfoRow";
 import { useTranslation } from "@/lib/i18n";

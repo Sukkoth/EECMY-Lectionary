@@ -11,7 +11,7 @@ import {
   type DimensionValue,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useEffect, useRef } from "react";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";

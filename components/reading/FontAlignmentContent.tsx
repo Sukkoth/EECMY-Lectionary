@@ -1,5 +1,6 @@
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import Feather from "@expo/vector-icons/Feather";
 import { useSettings } from "@/lib/SettingsContext";
 import type { TextAlignment } from "@/lib/settings";
 import { useTranslation } from "@/lib/i18n";

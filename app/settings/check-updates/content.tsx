@@ -9,7 +9,7 @@ import {
 import { useSQLiteContext } from "expo-sqlite";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "../../../lib/SettingsContext";
 import { useTranslation } from "../../../lib/i18n";
 import type { Manifest, YearOption, WizardStep } from "../../../types/check-update";

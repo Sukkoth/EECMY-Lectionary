@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { router, useFocusEffect } from "expo-router";
 import { useSettings } from "@/lib/SettingsContext";

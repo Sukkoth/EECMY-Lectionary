@@ -1,5 +1,5 @@
 import { Share, Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { useFavourites, useAddFavourite, useRemoveFavourite } from "@/lib/hooks/useFavourites";
 

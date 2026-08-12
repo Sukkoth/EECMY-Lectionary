@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { WizardStep } from "../../app/settings/check-updates/types";
 import { STEP_ICONS } from "../../app/settings/check-updates/types";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";

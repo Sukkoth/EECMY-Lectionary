@@ -1,5 +1,5 @@
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useSettings } from "@/lib/SettingsContext";

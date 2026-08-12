@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, useColorScheme, Animated, SafeAreaView } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "@/lib/SettingsContext";
 import { useOnboarding } from "@/lib/OnboardingContext";
 
