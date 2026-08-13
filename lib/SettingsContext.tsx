@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontSizeExpanded: 18,
   alignSimple: "center",
   alignExpanded: "justify",
+  readingFontFamily: "reading",
   theme: "light",
   calendarStyle: "ethiopian",
   reminderEnabled: false,

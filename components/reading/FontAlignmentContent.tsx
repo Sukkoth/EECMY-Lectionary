@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Feather from "@expo/vector-icons/Feather";
 import { useSettings } from "@/lib/SettingsContext";
-import type { TextAlignment } from "@/lib/settings";
+import { getReadingFontFamily, type TextAlignment, type ReadingFontFamily } from "@/lib/settings";
 import { useTranslation } from "@/lib/i18n";
 
 const FONT_MIN = 14;
@@ -14,6 +15,19 @@ const ALIGNMENTS: { value: TextAlignment }[] = [
   { value: "left" },
   { value: "center" },
   { value: "justify" },
+];
+
+const FONT_FAMILIES: { id: ReadingFontFamily; label: string; key: string }[] = [
+  { id: "benaiah", label: "Benaiah (በናያ)", key: "benaiah" },
+  { id: "abyssinica", label: "Abyssinica SIL (አቢሲኒካ)", key: "abyssinica" },
+  { id: "reading", label: "Playfair Display (Default)", key: "reading" },
+  { id: "lora", label: "Lora (Scripture Serif)", key: "lora" },
+  { id: "merriweather", label: "Merriweather (Editorial)", key: "merriweather" },
+  { id: "noto-ethiopic", label: "Noto Serif Ethiopic", key: "noto-ethiopic" },
+  { id: "bitter", label: "Bitter (Slab Serif)", key: "bitter" },
+  { id: "inter", label: "Inter (Modern Sans)", key: "inter" },
+  { id: "serif", label: "System Serif", key: "serif" },
+  { id: "sans", label: "System Sans", key: "sans" },
 ];
 
 function AlignmentIndicator({
@@ -156,7 +170,7 @@ type FontAlignmentContentProps = {
 export default function FontAlignmentContent({
   viewType,
 }: FontAlignmentContentProps) {
-  const { settings, setAllSettings } = useSettings();
+  const { settings, setAllSettings, updateSetting } = useSettings();
   const { t } = useTranslation();
   const isDark = useColorScheme() === "dark";
 
@@ -226,6 +240,47 @@ export default function FontAlignmentContent({
             value={settings.alignExpanded}
             onChange={(v) => update({ alignExpanded: v })}
           />
+        </View>
+
+        {/* Reading Font Family Card */}
+        <View className="will-change-variable bg-surface dark:bg-surface-dark mb-4 rounded-2xl border border-stone-200/60 p-5 dark:border-stone-800/60">
+          <Text
+            className="text-primary mb-3 text-xs font-semibold uppercase tracking-wider"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            Reading Font
+          </Text>
+          <View className="flex-row items-center gap-2">
+            {FONT_FAMILIES.map((item) => {
+              const active = (settings.readingFontFamily ?? "reading") === item.id;
+              const targetFont = getReadingFontFamily(item.key);
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => updateSetting("readingFontFamily", item.id)}
+                  activeOpacity={0.75}
+                  className={`flex-1 py-3 items-center justify-center rounded-2xl border ${
+                    active
+                      ? "border-primary bg-primary/10 dark:bg-primary/20"
+                      : isDark
+                        ? "border-stone-800/70 bg-surface-dark"
+                        : "border-stone-200/70 bg-bg-warm"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm ${
+                      active
+                        ? "text-primary font-semibold"
+                        : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                    }`}
+                    style={{ fontFamily: targetFont }}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </View>
     );
@@ -358,6 +413,91 @@ export default function FontAlignmentContent({
           })}
         </View>
       </View>
+
+      {/* Font Family Selection Dropdown */}
+      <FontDropdownPicker />
+    </View>
+  );
+}
+
+function FontDropdownPicker() {
+  const { settings, updateSetting } = useSettings();
+  const [open, setOpen] = useState(false);
+  const isDark = useColorScheme() === "dark";
+
+  const selectedOption = FONT_FAMILIES.find(
+    (f) => f.id === (settings.readingFontFamily ?? "reading")
+  ) ?? FONT_FAMILIES[0];
+
+  const selectedFontFamily = getReadingFontFamily(selectedOption.key);
+
+  return (
+    <View className="mt-4">
+      <Text
+        className="text-muted dark:text-muted-dark mb-2 text-xs font-semibold uppercase tracking-wider px-1"
+        style={{ fontFamily: "ReadingFont" }}
+      >
+        Reading Font
+      </Text>
+
+      {/* Dropdown Toggle Button */}
+      <TouchableOpacity
+        onPress={() => setOpen(!open)}
+        activeOpacity={0.75}
+        className="bg-surface dark:bg-surface-dark flex-row items-center justify-between rounded-2xl border border-stone-200/70 dark:border-stone-800/70 px-4 py-4.5"
+      >
+        <View className="flex-row items-center gap-3">
+          <Ionicons name="text-outline" size={20} color="#3b82f6" />
+          <Text
+            className="text-lg font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+            style={{ fontFamily: selectedFontFamily }}
+          >
+            {selectedOption.label}
+          </Text>
+        </View>
+        <Ionicons
+          name={open ? "chevron-up" : "chevron-down"}
+          size={20}
+          color={isDark ? "#A3A3A3" : "#6B6560"}
+        />
+      </TouchableOpacity>
+
+      {/* Dropdown List Items */}
+      {open && (
+        <View className="bg-surface dark:bg-surface-dark mt-2 overflow-hidden rounded-2xl border border-stone-200/70 dark:border-stone-800/70 p-1.5">
+          {FONT_FAMILIES.map((item) => {
+            const active = (settings.readingFontFamily ?? "reading") === item.id;
+            const targetFont = getReadingFontFamily(item.key);
+            return (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => {
+                  updateSetting("readingFontFamily", item.id);
+                  setOpen(false);
+                }}
+                activeOpacity={0.7}
+                className={`flex-row items-center justify-between rounded-xl px-4 py-3.5 ${
+                  active ? "bg-primary/10 dark:bg-primary/20" : ""
+                }`}
+              >
+                <Text
+                  className={`text-lg ${
+                    active
+                      ? "text-primary font-semibold"
+                      : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                  }`}
+                  style={{ fontFamily: targetFont }}
+                >
+                  {item.label}
+                </Text>
+                {active && (
+                  <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }

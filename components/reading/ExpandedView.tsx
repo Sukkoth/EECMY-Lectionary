@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { Animated, Easing, ScrollView, Text, View } from "react-native";
 import ReadingCard from "./ReadingCard";
 import type { ReadingRow } from "@/lib/database";
+import { useSettings } from "@/lib/SettingsContext";
+import { getReadingFontFamily } from "@/lib/settings";
 
 const SECTION_LABELS: Record<string, string> = {
   OLD_TESTAMENT: "Old Testament",
@@ -26,6 +28,8 @@ export default function ExpandedView({
   align,
   targetOrder,
 }: ExpandedViewProps) {
+  const { settings } = useSettings();
+  const fontFamily = getReadingFontFamily(settings.readingFontFamily);
   const scrollViewRef = useRef<ScrollView>(null);
   const layoutsRef = useRef<{ [order: number]: number }>({});
   const animatedY = useRef(new Animated.Value(0)).current;
@@ -68,7 +72,7 @@ export default function ExpandedView({
           {dayInfo?.title && (
             <Text
               className="my-2 text-center text-xl leading-relaxed text-muted dark:text-muted-dark"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              style={{ fontFamily, fontWeight: "600" }}
             >
               {dayInfo.title}
             </Text>
@@ -76,7 +80,7 @@ export default function ExpandedView({
           {dayInfo?.description && (
             <Text
               className="text-center text-[24px] text-[#2D2A24] dark:text-[#E8E4DC]"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              style={{ fontFamily, fontWeight: "600" }}
             >
               {dayInfo.description}
             </Text>

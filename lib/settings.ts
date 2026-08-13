@@ -1,9 +1,23 @@
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 export type TextAlignment = "left" | "center" | "justify";
 export type CalendarStyle = "gregorian" | "ethiopian";
 export type AppLanguage = "am" | "en" | "om";
 export type TimeFormat = "12h" | "24h";
+export type ReadingFontFamily =
+  | "reading"
+  | "benaiah"
+  | "abyssinica"
+  | "lora"
+  | "merriweather"
+  | "noto-ethiopic"
+  | "bitter"
+  | "cormorant"
+  | "inter"
+  | "serif"
+  | "sans"
+  | "mono";
 
 export type AppSettings = {
   language: string;
@@ -13,6 +27,7 @@ export type AppSettings = {
   fontSizeExpanded: number;
   alignSimple: TextAlignment;
   alignExpanded: TextAlignment;
+  readingFontFamily: ReadingFontFamily;
   theme: "light" | "dark";
   calendarStyle: CalendarStyle;
   reminderEnabled: boolean;
@@ -28,6 +43,7 @@ const KEYS = {
   fontSizeExpanded: "yeilet_font_size_expanded",
   alignSimple: "yeilet_align_simple",
   alignExpanded: "yeilet_align_expanded",
+  readingFontFamily: "yeilet_reading_font_family",
   theme: "yeilet_theme",
   calendarStyle: "yeilet_calendar_style",
   reminderEnabled: "yeilet_reminder_enabled",
@@ -44,6 +60,7 @@ const DEFAULTS: AppSettings = {
   fontSizeExpanded: 18,
   alignSimple: "center",
   alignExpanded: "justify",
+  readingFontFamily: "reading",
   theme: "light",
   calendarStyle: "ethiopian",
   reminderEnabled: false,
@@ -61,6 +78,7 @@ export async function loadSettings(): Promise<AppSettings> {
       fontSizeExpanded,
       alignSimple,
       alignExpanded,
+      readingFontFamily,
       theme,
       calendarStyle,
       reminderEnabled,
@@ -74,13 +92,13 @@ export async function loadSettings(): Promise<AppSettings> {
       SecureStore.getItemAsync(KEYS.fontSizeExpanded),
       SecureStore.getItemAsync(KEYS.alignSimple),
       SecureStore.getItemAsync(KEYS.alignExpanded),
+      SecureStore.getItemAsync(KEYS.readingFontFamily),
       SecureStore.getItemAsync(KEYS.theme),
       SecureStore.getItemAsync(KEYS.calendarStyle),
       SecureStore.getItemAsync(KEYS.reminderEnabled),
       SecureStore.getItemAsync(KEYS.reminderTime),
       SecureStore.getItemAsync(KEYS.timeFormat),
     ]);
-
 
     return {
       language: language ?? DEFAULTS.language,
@@ -90,6 +108,7 @@ export async function loadSettings(): Promise<AppSettings> {
       fontSizeExpanded: fontSizeExpanded ? safeParseInt(fontSizeExpanded, DEFAULTS.fontSizeExpanded) : DEFAULTS.fontSizeExpanded,
       alignSimple: parseAlignment(alignSimple, DEFAULTS.alignSimple),
       alignExpanded: parseAlignment(alignExpanded, DEFAULTS.alignExpanded),
+      readingFontFamily: parseReadingFontFamily(readingFontFamily, DEFAULTS.readingFontFamily),
       theme: theme === "light" || theme === "dark" ? theme : DEFAULTS.theme,
       calendarStyle: calendarStyle === "ethiopian" || calendarStyle === "gregorian" ? calendarStyle : DEFAULTS.calendarStyle,
       reminderEnabled: reminderEnabled === "true",
@@ -110,6 +129,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     SecureStore.setItemAsync(KEYS.fontSizeExpanded, String(settings.fontSizeExpanded)),
     SecureStore.setItemAsync(KEYS.alignSimple, settings.alignSimple),
     SecureStore.setItemAsync(KEYS.alignExpanded, settings.alignExpanded),
+    SecureStore.setItemAsync(KEYS.readingFontFamily, settings.readingFontFamily),
     SecureStore.setItemAsync(KEYS.theme, settings.theme),
     SecureStore.setItemAsync(KEYS.calendarStyle, settings.calendarStyle),
     SecureStore.setItemAsync(KEYS.reminderEnabled, String(settings.reminderEnabled)),
@@ -139,4 +159,53 @@ function safeParseInt(value: string, fallback: number): number {
 function parseAlignment(value: string | null, fallback: TextAlignment): TextAlignment {
   if (value === "left" || value === "center" || value === "justify") return value;
   return fallback;
+}
+
+function parseReadingFontFamily(value: string | null, fallback: ReadingFontFamily): ReadingFontFamily {
+  const valid: ReadingFontFamily[] = [
+    "reading",
+    "benaiah",
+    "abyssinica",
+    "lora",
+    "merriweather",
+    "noto-ethiopic",
+    "bitter",
+    "cormorant",
+    "inter",
+    "serif",
+    "sans",
+    "mono",
+  ];
+  if (value && valid.includes(value as ReadingFontFamily)) return value as ReadingFontFamily;
+  return fallback;
+}
+
+export function getReadingFontFamily(key?: string): string {
+  switch (key) {
+    case "benaiah":
+      return "Benaiah";
+    case "abyssinica":
+      return "AbyssinicaSIL";
+    case "lora":
+      return "Lora";
+    case "merriweather":
+      return "Merriweather";
+    case "noto-ethiopic":
+      return "NotoSerifEthiopic";
+    case "bitter":
+      return "Bitter";
+    case "cormorant":
+      return "CormorantGaramond";
+    case "inter":
+      return "Inter";
+    case "serif":
+      return Platform.OS === "ios" ? "Georgia" : "serif";
+    case "sans":
+      return Platform.OS === "ios" ? "System" : "sans-serif";
+    case "mono":
+      return Platform.OS === "ios" ? "Courier" : "monospace";
+    case "reading":
+    default:
+      return "ReadingFont";
+  }
 }

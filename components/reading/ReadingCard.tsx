@@ -8,6 +8,8 @@ import {
   useRemoveFavourite,
 } from "@/lib/hooks/useFavourites";
 import { FormattedText, stripFormattedTags } from "@/lib/formatText";
+import { useSettings } from "@/lib/SettingsContext";
+import { getReadingFontFamily } from "@/lib/settings";
 
 type ReadingCardProps = {
   date: string;
@@ -24,6 +26,9 @@ export default function ReadingCard({
   fontSize,
   align,
 }: ReadingCardProps) {
+  const { settings } = useSettings();
+  const fontFamily = getReadingFontFamily(settings.readingFontFamily);
+
   const { data: favourites = [] } = useFavourites();
   const addMut = useAddFavourite();
   const removeMut = useRemoveFavourite();
@@ -51,13 +56,13 @@ export default function ReadingCard({
       <View className="mb-3">
         <Text
           className="text-muted dark:text-muted-dark text-xs uppercase tracking-widest"
-          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          style={{ fontFamily, fontWeight: "400" }}
         >
           {sectionLabel}
         </Text>
         <Text
           className="text-primary text-[25px]"
-          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+          style={{ fontFamily, fontWeight: "600" }}
         >
           {reading.reference}
         </Text>
@@ -69,7 +74,7 @@ export default function ReadingCard({
         fontSize={fontSize}
         className="text-[#2D2A24] dark:text-[#E8E4DC]"
         style={{
-          fontFamily: "ReadingFont",
+          fontFamily,
           fontWeight: "400",
           fontSize,
           textAlign: align,

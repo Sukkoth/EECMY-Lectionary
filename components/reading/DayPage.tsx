@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { type DayData, toDateString } from "@/lib/database";
 import { useSettings } from "@/lib/SettingsContext";
+import { getReadingFontFamily } from "@/lib/settings";
 import ReadingPassage from "./ReadingPassage";
 import ReadingFooter from "./ReadingFooter";
 import ExpandedView from "./ExpandedView";
@@ -16,6 +17,7 @@ type DayPageProps = {
 export function DayPage({ date, dayData, targetOrder }: DayPageProps) {
   const { settings } = useSettings();
   const { t } = useTranslation();
+  const fontFamily = getReadingFontFamily(settings.readingFontFamily);
   const dateStr = toDateString(date);
 
   // No readings available
@@ -24,7 +26,7 @@ export function DayPage({ date, dayData, targetOrder }: DayPageProps) {
       <View className="flex-1 items-center justify-center px-8">
         <Text
           className="text-muted dark:text-muted-dark text-center leading-relaxed"
-          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          style={{ fontFamily, fontWeight: "400" }}
         >
           {t("noReadings")}
         </Text>
@@ -46,7 +48,7 @@ export function DayPage({ date, dayData, targetOrder }: DayPageProps) {
             {dayData.dayInfo?.title && (
               <Text
                 className="mb-2 text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                style={{ fontFamily, fontWeight: "600" }}
               >
                 {dayData.dayInfo.title}
               </Text>
@@ -54,7 +56,7 @@ export function DayPage({ date, dayData, targetOrder }: DayPageProps) {
             {dayData.dayInfo?.description && (
               <Text
                 className="text-center text-base leading-relaxed text-muted dark:text-muted-dark"
-                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                style={{ fontFamily, fontWeight: "400" }}
               >
                 {dayData.dayInfo.description}
               </Text>
