@@ -15,6 +15,7 @@ import {
   useHolidays,
   getHolidaysForActiveMonth,
 } from "@/lib/hooks/useHolidays";
+import { useDayInfo, getDayInfoForActiveMonth } from "@/lib/hooks/useDayInfo";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 import { HOLIDAY_COLORS } from "@/constants";
@@ -83,10 +84,16 @@ export default function CalendarScreen() {
   }, [getInitialCurrent]);
 
   const { data: allHolidays } = useHolidays(lang);
+  const { data: allDayInfo } = useDayInfo(lang);
 
   const { map: holidayMap, list: holidays } = useMemo(
     () => getHolidaysForActiveMonth(allHolidays, current.year, current.month, isEth, lang),
     [allHolidays, current.year, current.month, isEth, lang],
+  );
+
+  const dayInfoMap = useMemo(
+    () => getDayInfoForActiveMonth(allDayInfo, current.year, current.month, isEth),
+    [allDayInfo, current.year, current.month, isEth],
   );
 
   const panResponder = useRef(
@@ -224,6 +231,7 @@ export default function CalendarScreen() {
           year={current.year}
           month={current.month}
           holidays={holidayMap}
+          dayInfoMap={dayInfoMap}
           width={screenWidth}
           calendarStyle={settings.calendarStyle}
         />

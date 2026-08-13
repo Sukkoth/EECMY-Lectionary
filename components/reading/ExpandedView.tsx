@@ -67,7 +67,7 @@ export default function ExpandedView({
         <View className="mb-8 items-center px-4 pt-2">
           {dayInfo?.title && (
             <Text
-              className="mb-2 text-center text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
+              className="my-2 text-center text-xl leading-relaxed text-muted dark:text-muted-dark"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
               {dayInfo.title}
@@ -75,8 +75,8 @@ export default function ExpandedView({
           )}
           {dayInfo?.description && (
             <Text
-              className="text-center text-base leading-relaxed text-muted dark:text-muted-dark"
-              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              className="text-center text-[24px] text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
               {dayInfo.description}
             </Text>

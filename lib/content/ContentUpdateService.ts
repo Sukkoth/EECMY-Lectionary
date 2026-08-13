@@ -90,14 +90,15 @@ export function prepareDayInfo(
 
   for (const row of pkg.dayInfo) {
     statements.push({
-      sql: `INSERT OR REPLACE INTO DayInfo (id, language, date, title, description)
-            VALUES (?, ?, ?, ?, ?)`,
+      sql: `INSERT OR REPLACE INTO DayInfo (id, language, date, title, description, seasonColor)
+            VALUES (?, ?, ?, ?, ?, ?)`,
       params: [
         generateDayInfoId(lang, row.date),
         lang,
         row.date,
-        row.title,
-        row.description,
+        row.title ?? null,
+        row.description ?? null,
+        row.seasonColor ?? null,
       ],
     });
   }

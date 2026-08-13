@@ -31,6 +31,7 @@ export type DayInfoPackage = {
     date: string;
     title: string;
     description: string;
+    seasonColor?: string;
   }[];
 };
 

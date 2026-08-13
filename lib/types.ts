@@ -13,3 +13,12 @@ export type HolidayRow = {
   type: "eecmy" | "christian" | "others";
   name: string;
 };
+
+export type DayInfoRow = {
+  id: string;
+  language: string;
+  date: string;
+  title: string | null;
+  description: string | null;
+  seasonColor: string | null;
+};

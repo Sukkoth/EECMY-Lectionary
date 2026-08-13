@@ -56,7 +56,7 @@ export default function ReadingCard({
           {sectionLabel}
         </Text>
         <Text
-          className="text-primary text-2xl"
+          className="text-primary text-[25px]"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
           {reading.reference}

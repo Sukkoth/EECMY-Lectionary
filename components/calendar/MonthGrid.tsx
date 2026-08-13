@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
-import type { HolidayRow } from "@/lib/types";
+import type { HolidayRow, DayInfoRow } from "@/lib/types";
 import { HOLIDAY_COLORS } from "@/constants";
 import type { CalendarStyle } from "@/lib/settings";
 import { useTranslation, getDayLabels } from "@/lib/i18n";
@@ -24,6 +24,7 @@ type MonthGridProps = {
   year: number;
   month: number;
   holidays: Map<number, HolidayRow[]>;
+  dayInfoMap?: Map<number, DayInfoRow>;
   width: number;
   calendarStyle?: CalendarStyle;
 };
@@ -59,6 +60,7 @@ export default memo(function MonthGrid({
   year,
   month,
   holidays,
+  dayInfoMap,
   width,
   calendarStyle = "ethiopian",
 }: MonthGridProps) {
@@ -168,11 +170,32 @@ export default memo(function MonthGrid({
                     const dayHolidays = holidays.get(day) ?? [];
                     const types = [...new Set(dayHolidays.map((h) => h.type))];
 
+                    const dayInfo = dayInfoMap?.get(day);
+                    const seasonColor = dayInfo?.seasonColor?.trim();
+                    const isSunday = di === 0;
+
+                    const getSeasonContainerStyle = () => {
+                      if (today) return undefined;
+                      if (seasonColor) {
+                        if (seasonColor.startsWith("#") && seasonColor.length === 7) {
+                          return {
+                            backgroundColor: `${seasonColor}20`,
+                            borderColor: `${seasonColor}50`,
+                            borderWidth: 1.5,
+                          };
+                        }
+                        return {
+                          backgroundColor: seasonColor,
+                        };
+                      }
+                      return undefined;
+                    };
+
                     return (
                       <TouchableOpacity
                         key={`day-${year}-${month}-${day}`}
                         style={{ width: cellWidth }}
-                        className="items-center justify-center py-1"
+                        className="items-center justify-center py-0.5"
                         activeOpacity={0.7}
                         onPress={() =>
                           router.push({
@@ -187,30 +210,39 @@ export default memo(function MonthGrid({
                       >
                         {/* Day number container */}
                         <View
-                          className={`h-11 w-11 items-center justify-center rounded-2xl ${
-                            today ? "bg-primary" : ""
+                          style={[{ width: cellWidth - 4, height: 46 }, getSeasonContainerStyle()]}
+                          className={`items-center justify-center rounded-2xl ${
+                            today
+                              ? "bg-primary"
+                              : !seasonColor && isSunday
+                                ? "bg-primary/10 border border-primary/25 dark:bg-primary/20 dark:border-primary/35"
+                                : ""
                           }`}
                         >
-                          <View className="flex-row items-start">
+                          <View className="flex-row items-baseline justify-center">
                             <Text
-                              className={`text-2xl ${
+                              style={{ fontFamily: "ReadingFont" }}
+                              className={`text-xl ${
                                 today
                                   ? "text-white font-semibold"
-                                  : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                                  : seasonColor || isSunday
+                                    ? "text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
+                                    : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
                               }`}
-                              style={{ fontFamily: "ReadingFont" }}
                             >
                               {day}
                             </Text>
                             <Text
-                              className={`ml-0.5 text-xs ${
+                              style={{ fontFamily: "ReadingFont" }}
+                              className={`ml-0.5 text-[10px] ${
                                 today
                                   ? "text-white/90 font-semibold"
-                                  : showSubMonthLabel
-                                    ? "text-primary dark:text-blue-400 font-semibold"
-                                    : "text-muted dark:text-muted-dark opacity-75 font-medium"
+                                  : seasonColor || isSunday
+                                    ? "text-muted dark:text-muted-dark font-semibold"
+                                    : showSubMonthLabel
+                                      ? "text-primary dark:text-blue-400 font-semibold"
+                                      : "text-muted dark:text-muted-dark opacity-75 font-medium"
                               }`}
-                              style={{ fontFamily: "ReadingFont" }}
                               numberOfLines={1}
                             >
                               {subLabel}
