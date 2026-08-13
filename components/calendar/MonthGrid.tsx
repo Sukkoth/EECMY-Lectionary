@@ -212,11 +212,7 @@ export default memo(function MonthGrid({
                         <View
                           style={[{ width: cellWidth - 4, height: 46 }, getSeasonContainerStyle()]}
                           className={`items-center justify-center rounded-2xl ${
-                            today
-                              ? "bg-primary"
-                              : !seasonColor && isSunday
-                                ? "bg-primary/10 border border-primary/25 dark:bg-primary/20 dark:border-primary/35"
-                                : ""
+                            today ? "bg-primary" : ""
                           }`}
                         >
                           <View className="flex-row items-baseline justify-center">
@@ -225,9 +221,11 @@ export default memo(function MonthGrid({
                               className={`text-xl ${
                                 today
                                   ? "text-white font-semibold"
-                                  : seasonColor || isSunday
+                                  : seasonColor
                                     ? "text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
-                                    : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                                    : isSunday
+                                      ? "text-primary dark:text-blue-400 font-semibold"
+                                      : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
                               }`}
                             >
                               {day}
@@ -237,11 +235,13 @@ export default memo(function MonthGrid({
                               className={`ml-0.5 text-[10px] ${
                                 today
                                   ? "text-white/90 font-semibold"
-                                  : seasonColor || isSunday
+                                  : seasonColor
                                     ? "text-muted dark:text-muted-dark font-semibold"
-                                    : showSubMonthLabel
-                                      ? "text-primary dark:text-blue-400 font-semibold"
-                                      : "text-muted dark:text-muted-dark opacity-75 font-medium"
+                                    : isSunday
+                                      ? "text-primary/80 dark:text-blue-300 font-semibold"
+                                      : showSubMonthLabel
+                                        ? "text-primary dark:text-blue-400 font-semibold"
+                                        : "text-muted dark:text-muted-dark opacity-75 font-medium"
                               }`}
                               numberOfLines={1}
                             >
