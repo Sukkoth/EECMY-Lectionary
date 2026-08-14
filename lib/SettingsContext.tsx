@@ -88,6 +88,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const saved = await loadSettings().catch(() => DEFAULT_SETTINGS);
       if (cancelled) return;
 
+      setSettings(saved);
       const languages = await refreshAvailableLanguages();
       if (cancelled) return;
 
