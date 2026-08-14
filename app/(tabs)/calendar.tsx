@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthGrid from "@/components/calendar/MonthGrid";
+import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import {
   useHolidays,
   getHolidaysForActiveMonth,
@@ -102,6 +104,8 @@ export default function CalendarScreen() {
     }),
   ).current;
 
+  const pickerSheetRef = useRef<BottomSheetModal>(null);
+
   const ethToday = gregorianToEthiopian(today);
   const isCurrentTodayMonth = isEth
     ? current.year === ethToday.year && current.month === ethToday.month
@@ -111,26 +115,39 @@ export default function CalendarScreen() {
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       {/* Top Header Bar */}
       <View className="flex-row items-center justify-between px-6 pt-12 pb-4">
-        <View>
-          <Text
-            className="text-3xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            {formatMonth(current.month, isEth, lang)}
-          </Text>
-          <Text
-            className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            {formatYear(current.year, current.month, isEth, lang)}
-          </Text>
-          <Text
-            className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            {getSubMonthSpanString(current.year, current.month, isEth, lang)}
-          </Text>
-        </View>
+        <TouchableOpacity
+          onPress={() => pickerSheetRef.current?.present()}
+          activeOpacity={0.7}
+          className="flex-row items-center gap-2"
+        >
+          <View>
+            <View className="flex-row items-center gap-1.5">
+              <Text
+                className="text-3xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {formatMonth(current.month, isEth, lang)}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={22}
+                color={isDark ? "#E8E4DC" : "#2D2A24"}
+              />
+            </View>
+            <Text
+              className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {formatYear(current.year, current.month, isEth, lang)}
+            </Text>
+            <Text
+              className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {getSubMonthSpanString(current.year, current.month, isEth, lang)}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         <View className="flex-row items-center gap-2">
           {!isCurrentTodayMonth && (
@@ -318,6 +335,14 @@ export default function CalendarScreen() {
           </ScrollView>
         )}
       </View>
+
+      <MonthYearPickerModal
+        ref={pickerSheetRef}
+        selectedYear={current.year}
+        selectedMonth={current.month}
+        isEth={isEth}
+        onSelect={(y, m) => setCurrent({ year: y, month: m })}
+      />
     </SafeAreaView>
   );
 }

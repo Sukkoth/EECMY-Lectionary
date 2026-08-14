@@ -32,7 +32,7 @@ export const ETHIOPIAN_MONTH_NAMES_AM = [
   "ሰኔ",
   "ሐምሌ",
   "ነሐሴ",
-  "ጳጉሜን",
+  "ጳጉሜ",
 ] as const;
 
 export const ETHIOPIAN_MONTH_NAMES_OM = [
@@ -319,7 +319,7 @@ export function getSubMonthSpanString(year: number, month: number, isEth: boolea
   const ethShorts = lang === "om" ? ETHIOPIAN_MONTH_NAMES_OM : lang === "en" ? ETHIOPIAN_MONTH_NAMES_EN : ETHIOPIAN_MONTH_NAMES_AM;
   const e1 = ethShorts[firstEth.month];
   const e2 = ethShorts[lastEth.month];
-  const pagumeLabel = lang === "om" ? "Qaammee" : lang === "en" ? "Pagume" : "ጳጉሜን";
+  const pagumeLabel = lang === "om" ? "Qaammee" : lang === "en" ? "Pagume" : "ጳጉሜ";
 
   if (hasPagume) {
     return `${e1} ${firstEth.day} – ${pagumeLabel} – ${e2} ${lastEth.day}`;
