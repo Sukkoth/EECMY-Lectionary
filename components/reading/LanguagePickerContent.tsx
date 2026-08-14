@@ -51,6 +51,7 @@ export default function LanguagePickerContent({
   const [isLoadingManifest, setIsLoadingManifest] = useState(false);
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [errorMessageModal, setErrorMessageModal] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -165,7 +166,14 @@ export default function LanguagePickerContent({
       await refreshAvailableLanguages();
       queryClient.invalidateQueries();
     } catch (err) {
-      console.error("Inline download failed:", err);
+      console.warn("Inline download validation caught:", err);
+      const detail =
+        err instanceof Error ? err.message : "Downloaded data package is invalid.";
+      const displayMessage = __DEV__
+        ? `Could not download translation "${versionCode.toUpperCase()}": ${detail}`
+        : `Could not download translation "${versionCode.toUpperCase()}". The content package is invalid or corrupted. Please try again later.`;
+
+      setErrorMessageModal(displayMessage);
     } finally {
       setDownloadingKey(null);
       setDownloadProgress(0);
@@ -516,6 +524,44 @@ export default function LanguagePickerContent({
           >
             Checking available translations...
           </Text>
+        </View>
+      )}
+      {/* Custom In-App Error Overlay (Works inside Bottom Sheet Modal and full screen) */}
+      {Boolean(errorMessageModal) && (
+        <View className="absolute inset-0 z-50 items-center justify-center bg-black/60 px-6 py-8">
+          <View className="w-full max-w-sm rounded-2xl bg-white p-6 dark:bg-[#1C1C1C] border border-stone-200/60 dark:border-stone-800/60 shadow-xl">
+            <View className="flex-row items-center gap-2.5 mb-3">
+              <Ionicons name="alert-circle-outline" size={24} color="#ef4444" />
+              <Text
+                className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                Download Error
+              </Text>
+            </View>
+
+            <Text
+              className="mb-6 text-sm text-muted dark:text-muted-dark leading-relaxed"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              {errorMessageModal}
+            </Text>
+
+            <View className="flex-row justify-end">
+              <TouchableOpacity
+                activeOpacity={0.7}
+                className="rounded-xl bg-primary px-6 py-2.5"
+                onPress={() => setErrorMessageModal(null)}
+              >
+                <Text
+                  className="text-center text-sm font-semibold text-white"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                >
+                  OK
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       )}
     </View>

@@ -139,21 +139,36 @@ export function prepareReadings(
   lang: string,
   version: string,
 ): PreparedReadings {
+  if (!pkg || !Array.isArray(pkg.readings) || pkg.readings.length === 0) {
+    throw new Error(`The content package for ${version.toUpperCase()} is empty or invalid.`);
+  }
+
   const statements: PreparedStatement[] = [];
 
-  for (const row of pkg.readings) {
+  for (let i = 0; i < pkg.readings.length; i++) {
+    const row = pkg.readings[i];
+    if (!row.date || typeof row.date !== "string") {
+      throw new Error(`Invalid data item #${i + 1} for ${version.toUpperCase()}: missing date.`);
+    }
+    if (!row.reference || typeof row.reference !== "string" || !row.reference.trim()) {
+      throw new Error(`Invalid data for ${row.date} (${version.toUpperCase()}): missing scripture reference.`);
+    }
+    if (!row.text || typeof row.text !== "string" || !row.text.trim()) {
+      throw new Error(`Invalid data for ${row.date} (${row.reference}): missing scripture text.`);
+    }
+
     statements.push({
       sql: `INSERT OR REPLACE INTO Reading (id, language, version, date, "order", section, reference, text)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       params: [
-        generateReadingId(lang, version, row.date, row.order),
+        generateReadingId(lang, version, row.date, row.order ?? 0),
         lang,
         version,
         row.date,
-        row.order,
-        row.section,
-        row.reference,
-        row.text,
+        row.order ?? 0,
+        row.section ?? "READING",
+        row.reference.trim(),
+        row.text.trim(),
       ],
     });
   }
