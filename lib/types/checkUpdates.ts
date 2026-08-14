@@ -3,7 +3,7 @@ import type {
   ManifestYear,
   ManifestLanguage,
   ManifestVersion,
-} from "../../../lib/content";
+} from "../content";
 
 export type WizardStep =
   | "idle"
@@ -25,4 +25,3 @@ export const STEP_ICONS = [
   "cloud-download-outline",
   "checkmark-circle-outline",
 ] as const;
-

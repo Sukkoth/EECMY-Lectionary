@@ -170,7 +170,7 @@ type FontAlignmentContentProps = {
 export default function FontAlignmentContent({
   viewType,
 }: FontAlignmentContentProps) {
-  const { settings, setAllSettings, updateSetting } = useSettings();
+  const { settings, setAllSettings } = useSettings();
   const { t } = useTranslation();
   const isDark = useColorScheme() === "dark";
 
@@ -242,46 +242,8 @@ export default function FontAlignmentContent({
           />
         </View>
 
-        {/* Reading Font Family Card */}
-        <View className="will-change-variable bg-surface dark:bg-surface-dark mb-4 rounded-2xl border border-stone-200/60 p-5 dark:border-stone-800/60">
-          <Text
-            className="text-primary mb-3 text-xs font-semibold uppercase tracking-wider"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            Reading Font
-          </Text>
-          <View className="flex-row items-center gap-2">
-            {FONT_FAMILIES.map((item) => {
-              const active = (settings.readingFontFamily ?? "reading") === item.id;
-              const targetFont = getReadingFontFamily(item.key);
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  onPress={() => updateSetting("readingFontFamily", item.id)}
-                  activeOpacity={0.75}
-                  className={`flex-1 py-3 items-center justify-center rounded-2xl border ${
-                    active
-                      ? "border-primary bg-primary/10 dark:bg-primary/20"
-                      : isDark
-                        ? "border-stone-800/70 bg-surface-dark"
-                        : "border-stone-200/70 bg-bg-warm"
-                  }`}
-                >
-                  <Text
-                    className={`text-sm ${
-                      active
-                        ? "text-primary font-semibold"
-                        : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
-                    }`}
-                    style={{ fontFamily: targetFont }}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+        {/* Reading Font Family Dropdown */}
+        <FontDropdownPicker />
       </View>
     );
   }

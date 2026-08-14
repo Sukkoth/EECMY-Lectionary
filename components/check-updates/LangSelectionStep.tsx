@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import type { YearOption } from "../../app/settings/check-updates/types";
+import type { YearOption } from "@/lib/types/checkUpdates";
 import { useTranslation } from "@/lib/i18n";
 
 type DownloadedVersion = {
