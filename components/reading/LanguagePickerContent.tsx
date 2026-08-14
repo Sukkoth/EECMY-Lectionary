@@ -164,9 +164,6 @@ export default function LanguagePickerContent({
       // Invalidate query cache & refresh context
       await refreshAvailableLanguages();
       queryClient.invalidateQueries();
-
-      // Set newly downloaded translation as active and dismiss sheet
-      await handleVersionSelect(langCode, versionCode);
     } catch (err) {
       console.error("Inline download failed:", err);
     } finally {
