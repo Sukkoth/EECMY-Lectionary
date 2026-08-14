@@ -68,7 +68,7 @@ export default function ExpandedView({
       showsVerticalScrollIndicator={false}
     >
       {hasDayInfo && (
-        <View className="mb-6 items-center px-4 pt-2">
+        <View className="items-center px-4 pt-2">
           {dayInfo?.title && (
             <Text
               className="my-2 text-center text-xl leading-relaxed text-muted dark:text-muted-dark"
@@ -89,7 +89,7 @@ export default function ExpandedView({
       )}
 
       {/* Shared Translation Version Badge */}
-      <View className="mb-6 items-center px-6">
+      <View className="mb-6 mt-6 items-center px-6">
         <View className="rounded-xl border border-stone-200/80 dark:border-stone-800/80 bg-stone-100/80 dark:bg-stone-800/80 px-3 py-1">
           <Text
             className="text-xs font-semibold text-primary uppercase tracking-wider"
