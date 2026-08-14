@@ -468,7 +468,18 @@ export default function LanguagePickerContent({
                   </View>
                 </View>
 
-                <View className="flex-row items-center gap-2">
+                <View className="flex-row items-center gap-2.5">
+                  {/* Version Abbreviation Badge */}
+                  <View className="px-2.5 py-1 rounded-lg border bg-bg-warm/80 dark:bg-bg-warm-dark/80 border-stone-200/50 dark:border-stone-800/50">
+                    <Text
+                      className="text-[11px] uppercase font-semibold text-muted dark:text-muted-dark opacity-80"
+                      style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                    >
+                      {item.versionCode}
+                    </Text>
+                  </View>
+
+                  {/* Get / Download Button */}
                   <View className="px-3 py-1.5 rounded-xl bg-primary/15 flex-row items-center gap-1">
                     {isDownloading ? (
                       <Text
