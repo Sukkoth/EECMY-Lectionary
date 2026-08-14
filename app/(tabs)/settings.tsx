@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Appearance,
   ScrollView,
+  Switch,
 } from "react-native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -201,6 +202,35 @@ export default function SettingsScreen() {
             {settings.calendarStyle === "ethiopian" ? t("ethiopian") : t("gregorian")}
           </Text>
         </TouchableOpacity>
+
+        {/* Liturgical Season Colors Toggle */}
+        <View className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4">
+          <View className="flex-row items-center gap-4 flex-1 pr-4">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="color-palette-outline" size={20} color="#3b82f6" />
+            </View>
+            <View className="flex-1">
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {t("showSeasonColors")}
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {t("showSeasonColorsDesc")}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={settings.showSeasonColors ?? true}
+            onValueChange={(val) => updateSetting("showSeasonColors", val)}
+            trackColor={{ false: "#737373", true: "#3b82f6" }}
+            thumbColor="#ffffff"
+          />
+        </View>
 
         {/* Daily Reading Reminder Row -> Sub-page */}
         <TouchableOpacity

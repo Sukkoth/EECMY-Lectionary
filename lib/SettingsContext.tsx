@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   readingFontFamily: "reading",
   theme: "light",
   calendarStyle: "ethiopian",
+  showSeasonColors: true,
   reminderEnabled: false,
   reminderTime: "07:00",
   timeFormat: "12h",

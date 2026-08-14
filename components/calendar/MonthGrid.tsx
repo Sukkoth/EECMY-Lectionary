@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import type { HolidayRow, DayInfoRow } from "@/lib/types";
 import { HOLIDAY_COLORS } from "@/constants";
 import type { CalendarStyle } from "@/lib/settings";
+import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation, getDayLabels } from "@/lib/i18n";
 import {
   getEthiopianWeeks,
@@ -65,7 +66,9 @@ export default memo(function MonthGrid({
   calendarStyle = "ethiopian",
 }: MonthGridProps) {
   const isEth = calendarStyle === "ethiopian";
+  const { settings } = useSettings();
   const { lang } = useTranslation();
+  const showSeasonColors = settings.showSeasonColors ?? true;
 
   const resolvedEthYear = useMemo(() => {
     if (!isEth) return year;
@@ -175,7 +178,7 @@ export default memo(function MonthGrid({
                     const isSunday = di === 0;
 
                     const getSeasonContainerStyle = () => {
-                      if (today) return undefined;
+                      if (today || !showSeasonColors) return undefined;
                       if (seasonColor) {
                         const sc = seasonColor.trim();
                         if (sc.startsWith("#") && sc.length === 7) {

@@ -22,6 +22,8 @@ export const translations = {
     ethiopian: "Ethiopian",
     gregorian: "Gregorian",
     yearOf: "Year of",
+    showSeasonColors: "Show Liturgical Season Colors",
+    showSeasonColorsDesc: "Highlight season colors on calendar day cells",
 
     holidaysAndEvents: "Holidays & Events",
     event: "event",
@@ -159,6 +161,8 @@ export const translations = {
     ethiopian: "የኢትዮጵያ",
     gregorian: "ጎርጎሮሳውያን",
     yearOf: "ዘመነ",
+    showSeasonColors: "የሥርዓተ አምልኮ ዘመናት ቀለማትን አሳይ",
+    showSeasonColorsDesc: "በካሌንደር ቀናት ላይ የሥርዓተ አምልኮ ዘመናት ቀለማትን አመልክት",
 
     holidaysAndEvents: "በዓላትና ሁነቶች",
     event: "ሁነት",
@@ -296,6 +300,8 @@ export const translations = {
     ethiopian: "Itoophiyaa",
     gregorian: "Gergoriyan",
     yearOf: "Bara",
+    showSeasonColors: "Halluu Bara Sirna Lektiyonaarii Agarsiisi",
+    showSeasonColorsDesc: "Kalendarii irratti halluu bara sirna lektiyonaarii agarsiisi",
 
     holidaysAndEvents: "Ayyaanotaafi Qophiilee",
     event: "qophii",

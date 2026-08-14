@@ -30,6 +30,7 @@ export type AppSettings = {
   readingFontFamily: ReadingFontFamily;
   theme: "light" | "dark";
   calendarStyle: CalendarStyle;
+  showSeasonColors: boolean;
   reminderEnabled: boolean;
   reminderTime: string; // "HH:mm" format, e.g. "07:00"
   timeFormat: TimeFormat;
@@ -46,6 +47,7 @@ const KEYS = {
   readingFontFamily: "yeilet_reading_font_family",
   theme: "yeilet_theme",
   calendarStyle: "yeilet_calendar_style",
+  showSeasonColors: "yeilet_show_season_colors",
   reminderEnabled: "yeilet_reminder_enabled",
   reminderTime: "yeilet_reminder_time",
   timeFormat: "yeilet_time_format",
@@ -63,6 +65,7 @@ const DEFAULTS: AppSettings = {
   readingFontFamily: "reading",
   theme: "light",
   calendarStyle: "ethiopian",
+  showSeasonColors: true,
   reminderEnabled: false,
   reminderTime: "08:30",
   timeFormat: "24h",
@@ -81,6 +84,7 @@ export async function loadSettings(): Promise<AppSettings> {
       readingFontFamily,
       theme,
       calendarStyle,
+      showSeasonColors,
       reminderEnabled,
       reminderTime,
       timeFormat,
@@ -95,6 +99,7 @@ export async function loadSettings(): Promise<AppSettings> {
       SecureStore.getItemAsync(KEYS.readingFontFamily),
       SecureStore.getItemAsync(KEYS.theme),
       SecureStore.getItemAsync(KEYS.calendarStyle),
+      SecureStore.getItemAsync(KEYS.showSeasonColors),
       SecureStore.getItemAsync(KEYS.reminderEnabled),
       SecureStore.getItemAsync(KEYS.reminderTime),
       SecureStore.getItemAsync(KEYS.timeFormat),
@@ -111,6 +116,7 @@ export async function loadSettings(): Promise<AppSettings> {
       readingFontFamily: parseReadingFontFamily(readingFontFamily, DEFAULTS.readingFontFamily),
       theme: theme === "light" || theme === "dark" ? theme : DEFAULTS.theme,
       calendarStyle: calendarStyle === "ethiopian" || calendarStyle === "gregorian" ? calendarStyle : DEFAULTS.calendarStyle,
+      showSeasonColors: showSeasonColors === null ? true : showSeasonColors === "true",
       reminderEnabled: reminderEnabled === "true",
       reminderTime: reminderTime ?? DEFAULTS.reminderTime,
       timeFormat: timeFormat === "24h" ? "24h" : "12h",
@@ -132,6 +138,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     SecureStore.setItemAsync(KEYS.readingFontFamily, settings.readingFontFamily),
     SecureStore.setItemAsync(KEYS.theme, settings.theme),
     SecureStore.setItemAsync(KEYS.calendarStyle, settings.calendarStyle),
+    SecureStore.setItemAsync(KEYS.showSeasonColors, String(settings.showSeasonColors)),
     SecureStore.setItemAsync(KEYS.reminderEnabled, String(settings.reminderEnabled)),
     SecureStore.setItemAsync(KEYS.reminderTime, settings.reminderTime),
     SecureStore.setItemAsync(KEYS.timeFormat, settings.timeFormat),
