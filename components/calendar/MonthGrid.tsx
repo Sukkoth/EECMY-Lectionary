@@ -177,15 +177,18 @@ export default memo(function MonthGrid({
                     const getSeasonContainerStyle = () => {
                       if (today) return undefined;
                       if (seasonColor) {
-                        if (seasonColor.startsWith("#") && seasonColor.length === 7) {
+                        const sc = seasonColor.trim();
+                        if (sc.startsWith("#") && sc.length === 7) {
                           return {
-                            backgroundColor: `${seasonColor}20`,
-                            borderColor: `${seasonColor}50`,
-                            borderWidth: 1.5,
+                            borderColor: `${sc}60`,
+                            borderWidth: 1,
+                            backgroundColor: "transparent",
                           };
                         }
                         return {
-                          backgroundColor: seasonColor,
+                          borderColor: sc,
+                          borderWidth: 1,
+                          backgroundColor: "transparent",
                         };
                       }
                       return undefined;
