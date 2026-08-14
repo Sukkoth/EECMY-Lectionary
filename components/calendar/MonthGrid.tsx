@@ -10,7 +10,6 @@ import {
   getEthiopianWeeks,
   ethiopianToGregorian,
   gregorianToEthiopian,
-  getEcWeekNumber,
   ETHIOPIAN_MONTH_NAMES_SHORT_AM,
   ETHIOPIAN_MONTH_NAMES_SHORT_OM,
   ETHIOPIAN_MONTH_NAMES_SHORT_EN,
@@ -18,8 +17,6 @@ import {
   GREGORIAN_MONTH_NAMES_SHORT_AM,
   GREGORIAN_MONTH_NAMES_SHORT_OM,
 } from "@/lib/ethiopianCalendar";
-
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 type MonthGridProps = {
   year: number;
@@ -49,12 +46,6 @@ function getWeeks(year: number, month: number): (number | null)[][] {
     weeks.push(week);
   }
   return weeks;
-}
-
-function toDateKey(year: number, month: number, day: number): string {
-  const m = String(month + 1).padStart(2, "0");
-  const d = String(day).padStart(2, "0");
-  return `${year}-${m}-${d}`;
 }
 
 export default memo(function MonthGrid({

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useCallback, useEffect } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import {
   PanResponder,
   ScrollView,
@@ -21,9 +21,6 @@ import { useTranslation } from "@/lib/i18n";
 import { HOLIDAY_COLORS } from "@/constants";
 import {
   gregorianToEthiopian,
-  ethiopianToGregorian,
-  getDaysInEthiopianMonth,
-  getEvangelistYear,
   formatEvangelistYear,
   getSubMonthSpanString,
   formatMonth,

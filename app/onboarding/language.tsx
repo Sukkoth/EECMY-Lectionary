@@ -1,10 +1,8 @@
-import { View, Text, useColorScheme } from "react-native";
+import { View, Text, SafeAreaView } from "react-native";
 import { router } from "expo-router";
-import { SafeAreaView } from "react-native";
 import LanguagePickerContent from "@/components/reading/LanguagePickerContent";
 
 export default function LanguageSelectionScreen() {
-  const isDark = useColorScheme() === "dark";
 
   const handleVersionSelect = () => {
     router.push("/onboarding/complete");

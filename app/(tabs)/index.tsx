@@ -23,7 +23,6 @@ import { FormattedText } from "@/lib/formatText";
 import {
   formatDisplayDate,
   gregorianToEthiopian,
-  getEvangelistYear,
   formatEvangelistYear,
 } from "@/lib/ethiopianCalendar";
 import * as Notifications from 'expo-notifications';
@@ -48,7 +47,7 @@ function getWeekStart(date: Date): string {
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
-  const { settings, updateSetting, availableLanguages } = useSettings();
+  const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
   const { hasUpdate, checkUpdate } = useCheckContentUpdate();
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -76,7 +75,6 @@ export default function HomeScreen() {
 
   const readingDate = new Date();
   const ethDate = gregorianToEthiopian(readingDate);
-  const evangelist = getEvangelistYear(ethDate.year);
 
   const { data: dayData, isLoading, error: queryError } = useTodayReading(
     readingDate,
