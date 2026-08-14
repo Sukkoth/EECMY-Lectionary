@@ -180,6 +180,12 @@ export function gregorianToEthiopian(date: Date): { year: number; month: number;
   };
 }
 
+/**
+ * Converts numeric Gregorian date components (year, month 0-indexed, day)
+ * directly to Ethiopian date components (year, month 0-indexed, day).
+ *
+ * Avoids intermediate Date object instantiations during calendar grid rendering.
+ */
 export function gregorianYmdToEthiopian(
   year: number,
   month: number,

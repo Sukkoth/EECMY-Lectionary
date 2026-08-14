@@ -8,16 +8,14 @@ import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation, getDayLabels } from "@/lib/i18n";
 import {
   getEthiopianWeeks,
-  ethiopianToGregorian,
   gregorianToEthiopian,
-  gregorianYmdToEthiopian,
-  ETHIOPIAN_MONTH_NAMES_SHORT_AM,
-  ETHIOPIAN_MONTH_NAMES_SHORT_OM,
-  ETHIOPIAN_MONTH_NAMES_SHORT_EN,
-  GREGORIAN_MONTH_NAMES_SHORT_EN,
-  GREGORIAN_MONTH_NAMES_SHORT_AM,
-  GREGORIAN_MONTH_NAMES_SHORT_OM,
 } from "@/lib/ethiopianCalendar";
+import {
+  buildMonthGridMatrix,
+  getGregorianWeeks,
+  getMonthShortNames,
+  type GridCell,
+} from "@/lib/calendarGridHelpers";
 
 type MonthGridProps = {
   year: number;
@@ -28,43 +26,10 @@ type MonthGridProps = {
   calendarStyle?: CalendarStyle;
 };
 
-type GridCell =
-  | { isNull: true; key: string }
-  | {
-      isNull: false;
-      key: string;
-      day: number;
-      targetGc: { year: number; month: number; day: number };
-      subLabel: string;
-      showSubMonthLabel: boolean;
-      today: boolean;
-      types: string[];
-      seasonColor?: string;
-      seasonStyle?: any;
-      isSunday: boolean;
-    };
-
-function getWeeks(year: number, month: number): (number | null)[][] {
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const weeks: (number | null)[][] = [];
-  let week: (number | null)[] = Array(firstDay).fill(null);
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    week.push(day);
-    if (week.length === 7) {
-      weeks.push(week);
-      week = [];
-    }
-  }
-  if (week.length > 0) {
-    while (week.length < 7) week.push(null);
-    weeks.push(week);
-  }
-  return weeks;
-}
-
+/**
+ * Renders a monthly calendar grid with dual-calendar sub-labels,
+ * holiday event indicators, and liturgical season highlights.
+ */
 export default memo(function MonthGrid({
   year,
   month,
@@ -78,21 +43,9 @@ export default memo(function MonthGrid({
   const { lang } = useTranslation();
   const showSeasonColors = settings.showSeasonColors ?? true;
 
-  const resolvedEthYear = useMemo(() => {
-    if (!isEth) return year;
-    if (year > 2020) {
-      const sampleGcDate =
-        month === 12
-          ? new Date(Date.UTC(year, 8, 7, 12))
-          : new Date(Date.UTC(year, month, 15, 12));
-      return gregorianToEthiopian(sampleGcDate).year;
-    }
-    return year;
-  }, [isEth, year, month]);
-
   const weeks = useMemo(() => {
-    return isEth ? getEthiopianWeeks(resolvedEthYear, month) : getWeeks(year, month);
-  }, [resolvedEthYear, year, month, isEth]);
+    return isEth ? getEthiopianWeeks(year, month) : getGregorianWeeks(year, month);
+  }, [year, month, isEth]);
 
   const ethToday = useMemo(() => gregorianToEthiopian(new Date()), []);
   const gcToday = useMemo(() => {
@@ -100,92 +53,30 @@ export default memo(function MonthGrid({
     return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
   }, []);
 
-  const gcShorts = lang === "om" ? GREGORIAN_MONTH_NAMES_SHORT_OM : lang === "am" ? GREGORIAN_MONTH_NAMES_SHORT_AM : GREGORIAN_MONTH_NAMES_SHORT_EN;
-  const ethShorts = lang === "om" ? ETHIOPIAN_MONTH_NAMES_SHORT_OM : lang === "en" ? ETHIOPIAN_MONTH_NAMES_SHORT_EN : ETHIOPIAN_MONTH_NAMES_SHORT_AM;
+  const { gcShorts, ethShorts } = useMemo(() => getMonthShortNames(lang), [lang]);
 
   const paddingX = 32;
   const cellWidth = Math.floor((width - paddingX) / 7);
 
   const gridRows = useMemo<GridCell[][]>(() => {
-    return weeks.map((week, wi) => {
-      return week.map((day, di) => {
-        if (day === null) {
-          return { isNull: true, key: `empty-${wi}-${di}` };
-        }
-
-        let targetGc = { year, month, day };
-        let subDay = 0;
-        let subMonthIndex = 0;
-        let today = false;
-
-        if (isEth) {
-          targetGc = ethiopianToGregorian(resolvedEthYear, month, day);
-          subDay = targetGc.day;
-          subMonthIndex = targetGc.month;
-          today =
-            ethToday.year === resolvedEthYear &&
-            ethToday.month === month &&
-            ethToday.day === day;
-        } else {
-          const eth = gregorianYmdToEthiopian(year, month, day);
-          subDay = eth.day;
-          subMonthIndex = eth.month;
-          today =
-            gcToday.year === year &&
-            gcToday.month === month &&
-            gcToday.day === day;
-        }
-
-        const showSubMonthLabel = subDay === 1 || day === 1;
-        const subAbbr = isEth ? gcShorts[subMonthIndex] : ethShorts[subMonthIndex];
-        const subLabel = showSubMonthLabel ? `${subAbbr} ${subDay}` : `${subDay}`;
-
-        const dayHolidays = holidays.get(day) ?? [];
-        const types = [...new Set(dayHolidays.map((h) => h.type))];
-
-        const dayInfo = dayInfoMap?.get(day);
-        const seasonColor = dayInfo?.seasonColor?.trim();
-        const isSunday = di === 0;
-
-        let seasonStyle: any = undefined;
-        if (!today && showSeasonColors && seasonColor) {
-          const sc = seasonColor.trim();
-          if (sc.startsWith("#") && sc.length === 7) {
-            seasonStyle = {
-              borderColor: `${sc}60`,
-              borderWidth: 1,
-              backgroundColor: "transparent",
-            };
-          } else {
-            seasonStyle = {
-              borderColor: sc,
-              borderWidth: 1,
-              backgroundColor: "transparent",
-            };
-          }
-        }
-
-        return {
-          isNull: false,
-          key: `day-${year}-${month}-${day}`,
-          day,
-          targetGc,
-          subLabel,
-          showSubMonthLabel,
-          today,
-          types,
-          seasonColor,
-          seasonStyle,
-          isSunday,
-        };
-      });
+    return buildMonthGridMatrix({
+      weeks,
+      year,
+      month,
+      isEth,
+      ethToday,
+      gcToday,
+      gcShorts,
+      ethShorts,
+      holidays,
+      dayInfoMap,
+      showSeasonColors,
     });
   }, [
     weeks,
-    isEth,
     year,
     month,
-    resolvedEthYear,
+    isEth,
     ethToday,
     gcToday,
     gcShorts,
