@@ -205,14 +205,24 @@ export function prepareSyncRecord(
   };
 }
 
+let dbTransactionMutex: Promise<void> = Promise.resolve();
+
 export async function commitStatements(
   db: SQLiteDatabase,
   stmts: PreparedStatement[],
 ): Promise<void> {
-  // TODO: uncomment when DB writes are enabled
-  await db.withTransactionAsync(async () => {
-    for (const stmt of stmts) {
-      await db.runAsync(stmt.sql, ...stmt.params);
-    }
+  // Chain transaction onto the mutex queue so only 1 SQLite transaction executes at a time
+  const nextLock = dbTransactionMutex.then(async () => {
+    await db.withTransactionAsync(async () => {
+      for (const stmt of stmts) {
+        await db.runAsync(stmt.sql, ...stmt.params);
+      }
+    });
   });
+
+  // Keep mutex chain intact even if a transaction fails
+  dbTransactionMutex = nextLock.catch(() => {});
+
+  // Await the current transaction completion
+  return nextLock;
 }

@@ -56,6 +56,70 @@ export async function getSyncedReadingVersions(
   );
 }
 
+export async function getInstalledVersionsWithContentVersion(
+  db: SQLiteDatabase,
+): Promise<{ language: string; version: string; contentVersion: number }[]> {
+  const rows = await db.getAllAsync<{
+    language: string;
+    version: string;
+    contentVersion: number | null;
+  }>(
+    `SELECT DISTINCT 
+       r.language, 
+       r.version,
+       MAX(s.contentVersion) AS contentVersion
+     FROM Reading r
+     LEFT JOIN SyncRecord s 
+       ON LOWER(s.language) = LOWER(r.language) 
+      AND LOWER(s.version) = LOWER(r.version)
+      AND s.type = 'readings'
+     GROUP BY r.language, r.version`,
+  );
+
+  return rows.map((row) => ({
+    language: row.language,
+    version: row.version,
+    contentVersion: row.contentVersion ?? 1,
+  }));
+}
+
+export async function getInstalledLangPacksWithContentVersion(
+  db: SQLiteDatabase,
+): Promise<{ language: string; type: "holidays" | "day-info"; contentVersion: number }[]> {
+  const holidayRows = await db.getAllAsync<{ language: string; contentVersion: number | null }>(
+    `SELECT DISTINCT 
+       h.language, 
+       MAX(s.contentVersion) AS contentVersion
+     FROM Holiday h
+     LEFT JOIN SyncRecord s 
+       ON LOWER(s.language) = LOWER(h.language) 
+      AND s.type = 'holidays'
+     GROUP BY h.language`,
+  );
+
+  const dayInfoRows = await db.getAllAsync<{ language: string; contentVersion: number | null }>(
+    `SELECT DISTINCT 
+       d.language, 
+       MAX(s.contentVersion) AS contentVersion
+     FROM DayInfo d
+     LEFT JOIN SyncRecord s 
+       ON LOWER(s.language) = LOWER(d.language) 
+      AND s.type = 'day-info'
+     GROUP BY d.language`,
+  );
+
+  const results: { language: string; type: "holidays" | "day-info"; contentVersion: number }[] = [];
+
+  for (const r of holidayRows) {
+    results.push({ language: r.language, type: "holidays", contentVersion: r.contentVersion ?? 1 });
+  }
+  for (const r of dayInfoRows) {
+    results.push({ language: r.language, type: "day-info", contentVersion: r.contentVersion ?? 1 });
+  }
+
+  return results;
+}
+
 export async function getDownloadedLangsForYear(
   db: SQLiteDatabase,
   year: number,

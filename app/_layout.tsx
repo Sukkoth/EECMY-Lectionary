@@ -1,5 +1,5 @@
 import { Stack, useSegments, useRouter } from "expo-router";
-import { StatusBar, setStatusBarBackgroundColor } from "expo-status-bar";
+import { StatusBar, setStatusBarStyle, setStatusBarBackgroundColor } from "expo-status-bar";
 import { useColorScheme, ActivityIndicator, View, Platform } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -9,7 +9,7 @@ import { SQLiteProvider } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Notifications from "expo-notifications";
-import { SettingsProvider } from "@/lib/SettingsContext";
+import { SettingsProvider, useSettings } from "@/lib/SettingsContext";
 import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -44,11 +44,22 @@ async function setupNotifications() {
 setupNotifications()
 
 function AppContent() {
+  const { settings } = useSettings();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = settings?.theme ? settings.theme === "dark" : colorScheme === "dark";
   const { isOnboardingComplete, loading } = useOnboarding();
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    const style = isDark ? "light" : "dark";
+    const bgColor = isDark ? "#11100E" : "#F8F6F3";
+    setStatusBarStyle(style, true);
+    if (Platform.OS === "android") {
+      setStatusBarBackgroundColor(bgColor, true);
+    }
+    setBackgroundColorAsync(bgColor).catch(() => {});
+  }, [isDark]);
 
   useEffect(() => {
     if (loading) return;
@@ -84,7 +95,7 @@ function AppContent() {
 
   return (
     <>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar style={isDark ? "light" : "dark"} animated={true} />
       <Stack
         initialRouteName={isOnboardingComplete ? "(tabs)" : "onboarding"}
         screenOptions={{
@@ -113,11 +124,6 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  useEffect(() => {
-    setBackgroundColorAsync(isDark ? "#11100E" : "#F8F6F3");
-    setStatusBarBackgroundColor(isDark ? "#11100E" : "#F8F6F3");
-  }, [isDark]);
-
   const [loaded, error] = useFonts({
     // Playfair Display (variable font — all weights via fontWeight)
     ReadingFont: require("../assets/fonts/PlayfairDisplay/PlayfairDisplay-Variable.ttf"),
@@ -134,8 +140,19 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded || error) {
       SplashScreen.hideAsync();
+      const targetColor = isDark ? "#11100E" : "#F8F6F3";
+      requestAnimationFrame(async () => {
+        try {
+          await setBackgroundColorAsync(targetColor);
+          if (Platform.OS === "android") {
+            setStatusBarBackgroundColor(targetColor);
+          }
+        } catch (err) {
+          console.warn("Postponed System UI background color update:", err);
+        }
+      });
     }
-  }, [loaded, error]);
+  }, [loaded, error, isDark]);
 
   if (!loaded && !error) {
     return null;

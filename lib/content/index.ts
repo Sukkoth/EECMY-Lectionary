@@ -21,6 +21,8 @@ export {
   getSyncedYears,
   getSyncedReadingCounts,
   getSyncedReadingVersions,
+  getInstalledVersionsWithContentVersion,
+  getInstalledLangPacksWithContentVersion,
   getSyncedLangPackVersions,
   getDownloadedLangsForYear,
   getDownloadedVersionsForYearLang,

@@ -2,10 +2,10 @@ import { useState, useCallback, useEffect } from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import {
   fetchManifest,
-  getSyncedReadingVersions,
-  getSyncedLangPackVersions,
+  getInstalledVersionsWithContentVersion,
+  getInstalledLangPacksWithContentVersion,
 } from "../content";
-import { gregorianToEthiopian } from "../ethiopianCalendar";
+
 
 export function useCheckContentUpdate() {
   const db = useSQLiteContext();
@@ -21,60 +21,56 @@ export function useCheckContentUpdate() {
         return;
       }
 
-      const currentEthYear = gregorianToEthiopian(new Date()).year;
-
-      const [readingVersions, langPackVersions] = await Promise.all([
-        getSyncedReadingVersions(db),
-        getSyncedLangPackVersions(db),
+      const [installedVersions, installedLangPacks] = await Promise.all([
+        getInstalledVersionsWithContentVersion(db),
+        getInstalledLangPacksWithContentVersion(db),
       ]);
 
       let updateFound = false;
 
       for (const yearOpt of manifest.years) {
-        // Only check for updates for current year and subsequent years (ignore past years)
-        if (yearOpt.year < currentEthYear) {
-          continue;
-        }
-
         for (const langOpt of yearOpt.languages) {
-          // Check Bible Versions
+          // Check Bible Versions (only if ALREADY installed)
           for (const verOpt of langOpt.versions) {
-            const match = readingVersions.find(
+            const match = installedVersions.find(
               (r) =>
-                r.year === yearOpt.year &&
-                r.language === langOpt.code &&
-                r.version === verOpt.code,
+                r.language.toLowerCase() === langOpt.code.toLowerCase() &&
+                r.version.toLowerCase() === verOpt.code.toLowerCase(),
             );
-            if (!match || match.contentVersion < verOpt.contentVersion) {
+            if (match && Number(match.contentVersion) < Number(verOpt.contentVersion)) {
               updateFound = true;
               break;
             }
           }
           if (updateFound) break;
 
-          // Check Holidays
+          // Check Holidays (only if ALREADY installed for this language)
           if (langOpt.holidays && langOpt.holidays.version > 0) {
-            const matchHolidays = langPackVersions.find(
+            const matchHolidays = installedLangPacks.find(
               (r) =>
-                r.year === yearOpt.year &&
-                r.language === langOpt.code &&
+                r.language.toLowerCase() === langOpt.code.toLowerCase() &&
                 r.type === "holidays",
             );
-            if (!matchHolidays || matchHolidays.contentVersion < langOpt.holidays.version) {
+            if (
+              matchHolidays &&
+              Number(matchHolidays.contentVersion) < Number(langOpt.holidays.version)
+            ) {
               updateFound = true;
               break;
             }
           }
 
-          // Check DayInfo
+          // Check DayInfo (only if ALREADY installed for this language)
           if (langOpt.dayInfo && langOpt.dayInfo.version > 0) {
-            const matchDayInfo = langPackVersions.find(
+            const matchDayInfo = installedLangPacks.find(
               (r) =>
-                r.year === yearOpt.year &&
-                r.language === langOpt.code &&
+                r.language.toLowerCase() === langOpt.code.toLowerCase() &&
                 r.type === "day-info",
             );
-            if (!matchDayInfo || matchDayInfo.contentVersion < langOpt.dayInfo.version) {
+            if (
+              matchDayInfo &&
+              Number(matchDayInfo.contentVersion) < Number(langOpt.dayInfo.version)
+            ) {
               updateFound = true;
               break;
             }
@@ -84,8 +80,8 @@ export function useCheckContentUpdate() {
       }
 
       setHasUpdate(updateFound);
-    } catch {
-      // Silent error fallback when offline
+    } catch (err) {
+      console.warn("Check update failed:", err);
       setHasUpdate(false);
     } finally {
       setChecking(false);

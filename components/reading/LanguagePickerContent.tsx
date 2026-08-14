@@ -49,8 +49,7 @@ export default function LanguagePickerContent({
 
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [isLoadingManifest, setIsLoadingManifest] = useState(false);
-  const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
-  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
   const [errorMessageModal, setErrorMessageModal] = useState<string | null>(null);
 
   useEffect(() => {
@@ -83,14 +82,17 @@ export default function LanguagePickerContent({
     year: number,
   ) => {
     const key = `${langCode}-${versionCode}`;
-    if (downloadingKey) return;
+    if (downloadProgressMap[key] != null) return;
 
     if (!isOnboardingComplete) {
       await completeOnboarding();
     }
 
-    setDownloadingKey(key);
-    setDownloadProgress(15);
+    const updateProgress = (pct: number) => {
+      setDownloadProgressMap((prev) => ({ ...prev, [key]: pct }));
+    };
+
+    updateProgress(15);
 
     try {
       if (!manifest) return;
@@ -101,11 +103,11 @@ export default function LanguagePickerContent({
       const verOpt = langOpt.versions.find((v) => v.code === versionCode);
       if (!verOpt) return;
 
-      setDownloadProgress(30);
+      updateProgress(30);
 
       // Download readings
       const readingsPkg = await downloadReadings(verOpt.path);
-      setDownloadProgress(55);
+      updateProgress(55);
 
       const preparedReadings = prepareReadings(readingsPkg, langCode, versionCode);
       const syncRecordReading = prepareSyncRecord(
@@ -156,11 +158,11 @@ export default function LanguagePickerContent({
         allStatements.push(...prep.statements, syncRecord);
       }
 
-      setDownloadProgress(85);
+      updateProgress(85);
 
       // Commit to SQLite
       await commitStatements(db, allStatements);
-      setDownloadProgress(100);
+      updateProgress(100);
 
       // Invalidate query cache & refresh context
       await refreshAvailableLanguages();
@@ -175,8 +177,11 @@ export default function LanguagePickerContent({
 
       setErrorMessageModal(displayMessage);
     } finally {
-      setDownloadingKey(null);
-      setDownloadProgress(0);
+      setDownloadProgressMap((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
     }
   };
 
@@ -428,7 +433,8 @@ export default function LanguagePickerContent({
           </Text>
           {downloadableVersions.map((item) => {
             const key = `${item.langCode}-${item.versionCode}`;
-            const isDownloading = downloadingKey === key;
+            const isDownloading = downloadProgressMap[key] != null;
+            const progress = downloadProgressMap[key] ?? 0;
 
             return (
               <TouchableOpacity
@@ -440,7 +446,7 @@ export default function LanguagePickerContent({
                     item.year,
                   )
                 }
-                disabled={Boolean(downloadingKey)}
+                disabled={isDownloading}
                 activeOpacity={0.75}
                 className="flex-row items-center justify-between rounded-2xl p-4 my-1 border bg-surface/60 dark:bg-surface-dark/60 border-dashed border-stone-300/80 dark:border-stone-700/80"
               >
@@ -470,7 +476,7 @@ export default function LanguagePickerContent({
                       style={{ fontFamily: "ReadingFont" }}
                     >
                       {isDownloading
-                        ? `Downloading... ${downloadProgress}%`
+                        ? `Downloading... ${progress}%`
                         : `${item.langName} • ${item.year}`}
                     </Text>
                   </View>
@@ -494,7 +500,7 @@ export default function LanguagePickerContent({
                         className="text-primary text-xs font-semibold"
                         style={{ fontFamily: "ReadingFont" }}
                       >
-                        {downloadProgress}%
+                        {progress}%
                       </Text>
                     ) : (
                       <>
