@@ -180,6 +180,20 @@ export function gregorianToEthiopian(date: Date): { year: number; month: number;
   };
 }
 
+export function gregorianYmdToEthiopian(
+  year: number,
+  month: number,
+  day: number,
+): { year: number; month: number; day: number } {
+  const utcDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+  const eth = EthDateTime.fromEuropeanDate(utcDate);
+  return {
+    year: eth.year,
+    month: eth.month - 1,
+    day: eth.date,
+  };
+}
+
 /** Compute Evangelist of the Year (ባሕረ ሐሳብ) */
 export function getEvangelistYear(ethYear: number): { name: string; nameAmharic: string; nameOromoo: string } {
   const ameteAlem = ethYear + 5500;
