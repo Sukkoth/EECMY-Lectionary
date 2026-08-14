@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { type DayData, toDateString } from "@/lib/database";
 import { useSettings } from "@/lib/SettingsContext";
 import { getReadingFontFamily } from "@/lib/settings";
@@ -11,19 +11,29 @@ import { useTranslation } from "@/lib/i18n";
 type DayPageProps = {
   date: Date;
   dayData: DayData | null;
+  isLoading?: boolean;
   targetOrder?: number;
 };
 
-export function DayPage({ date, dayData, targetOrder }: DayPageProps) {
+export function DayPage({ date, dayData, isLoading, targetOrder }: DayPageProps) {
   const { settings } = useSettings();
   const { t } = useTranslation();
   const fontFamily = getReadingFontFamily(settings.readingFontFamily);
   const dateStr = toDateString(date);
 
-  // No readings available
+  // If query is fetching or dayData is not loaded yet, show smooth inline spinner inside reader area
+  if (isLoading || dayData === undefined) {
+    return (
+      <View className="flex-1 items-center justify-center px-8 py-12">
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
+  // No readings available (only shown after query completes if DB is empty for this date)
   if (!dayData || dayData.readings.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center px-8">
+      <View className="flex-1 items-center justify-center px-8 py-12">
         <Text
           className="text-muted dark:text-muted-dark text-center leading-relaxed"
           style={{ fontFamily, fontWeight: "400" }}

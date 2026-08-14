@@ -9,16 +9,18 @@ const CENTER_INDEX = 2;
 type SwiperItem = {
   date: Date;
   dayData: DayData | null;
+  isLoading?: boolean;
 };
 
 type ReadingSwiperProps = {
   data: SwiperItem[];
+  isLoading?: boolean;
   onPageChange: (date: Date, position: number) => void;
   rebuildKey: number;
   targetOrder?: number;
 };
 
-export function ReadingSwiper({ data, onPageChange, rebuildKey, targetOrder }: ReadingSwiperProps) {
+export function ReadingSwiper({ data, isLoading, onPageChange, rebuildKey, targetOrder }: ReadingSwiperProps) {
   const pagerRef = useRef<PagerView>(null);
 
   const handlePageSelected = useCallback(
@@ -51,6 +53,7 @@ export function ReadingSwiper({ data, onPageChange, rebuildKey, targetOrder }: R
           <DayPage
             date={item.date}
             dayData={item.dayData}
+            isLoading={isLoading || item.isLoading}
             targetOrder={index === CENTER_INDEX ? targetOrder : undefined}
           />
         </View>

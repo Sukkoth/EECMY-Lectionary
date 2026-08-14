@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
+import { Text, View, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useNavigation, router } from "expo-router";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
@@ -112,7 +112,8 @@ export default function ReadingScreen() {
     })),
     combine: (results) => ({
       data: results.map((r) => r.data ?? null),
-      isLoading: results.some((r) => r.isLoading),
+      isLoading: results.some((r) => r.isLoading && !r.data),
+      isInitialLoading: results.some((r) => r.isLoading) && !results.some((r) => r.data != null),
       error: results.find((r) => r.error)?.error ?? null,
     }),
   });
@@ -138,29 +139,34 @@ export default function ReadingScreen() {
     (date: Date, position: number) => {
       const offset = position - CENTER_INDEX;
       setCenterDate((d) => addDays(d, offset));
-      setRebuildKey((k) => k + 1);
     },
     [],
   );
-
-  const currentDayData = readingQueries.data[CENTER_INDEX];
-  const viewType = (currentDayData?.readings.length ?? 0) === 1 ? "simple" : "expanded";
-  const displayDate = formatDisplayDate(
-    centerDate,
-    settings.calendarStyle,
-    settings.appLanguage || settings.language,
-  );
-  const weekday = displayDate.weekday;
-  const formattedDate = displayDate.dateString;
 
   const handleSheetChange = useCallback((index: number) => {
     setSheetIndex(index);
   }, []);
 
+  const currentDayData = readingQueries.data[CENTER_INDEX];
+  const viewType = (currentDayData?.readings.length ?? 0) === 1 ? "simple" : "expanded";
+
+  const { weekday, formattedDate } = useMemo(() => {
+    const displayDate = formatDisplayDate(
+      centerDate,
+      settings.calendarStyle,
+      settings.appLanguage || settings.language,
+    );
+    return {
+      weekday: displayDate.weekday,
+      formattedDate: displayDate.dateString,
+    };
+  }, [centerDate, settings.calendarStyle, settings.appLanguage, settings.language]);
+
   const navigation = useNavigation();
 
   useEffect(() => {
     const today = new Date();
+    const currentDayData = readingQueries.data[CENTER_INDEX];
     const isToday =
       centerDate.getFullYear() === today.getFullYear() &&
       centerDate.getMonth() === today.getMonth() &&
@@ -169,7 +175,7 @@ export default function ReadingScreen() {
     if (isToday && currentDayData) {
       markDayCompleted(centerDate).catch(() => {});
     }
-  }, [centerDate, currentDayData]);
+  }, [centerDate, readingQueries.data]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (e) => {
@@ -180,14 +186,6 @@ export default function ReadingScreen() {
     });
     return unsubscribe;
   }, [navigation, sheetIndex]);
-
-  if (readingQueries.isLoading) {
-    return (
-      <View className="bg-bg-warm dark:bg-bg-warm-dark flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
-  }
 
   if (readingQueries.error) {
     return (
@@ -223,6 +221,7 @@ export default function ReadingScreen() {
       />
       <ReadingSwiper
         data={swiperData}
+        isLoading={readingQueries.isLoading}
         onPageChange={handlePageChange}
         rebuildKey={rebuildKey}
         targetOrder={targetOrder}
