@@ -287,52 +287,52 @@ export default function CalendarScreen() {
             contentContainerStyle={{ paddingBottom: 28 }}
           >
             {holidays.map((item, i) => {
-              const dateRangeLabel =
-                item.displayEndDay && item.displayEndDay !== item.displayDay
-                  ? item.displayMonthName === item.displayEndMonthName
-                    ? `${item.displayMonthName} ${item.displayDay} – ${item.displayEndDay}`
-                    : `${item.displayMonthName} ${item.displayDay} – ${item.displayEndMonthName} ${item.displayEndDay}`
-                  : `${item.displayMonthName} ${item.displayDay}`;
+              const isSpan =
+                item.displayEndDay && item.displayEndDay !== item.displayDay;
+              const dayText = isSpan
+                ? `${item.displayDay}–${item.displayEndDay}`
+                : `${item.displayDay}`;
+
+              const themeColor = HOLIDAY_COLORS[item.type] ?? "#3b82f6";
               const key = item.id ?? `${item.date}-${item.name}-${i}`;
+
               return (
                 <View
                   key={key}
                   className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
                 >
-                  {/* Left Color Accent Bar */}
-                  <View
-                    className="mr-3.5 h-10 w-1.5 rounded-full"
-                    style={{
-                      backgroundColor: HOLIDAY_COLORS[item.type] ?? "#3b82f6",
-                    }}
-                  />
-
-                  {/* Feast Info */}
-                  <View className="flex-1">
-                    <Text
-                      className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {item.name}
-                    </Text>
-                    <View className="mt-1 flex-row items-center gap-2">
+                  {/* Left: Accent Line + Feast Info */}
+                  <View className="flex-1 flex-row items-center gap-3 pr-3">
+                    <View
+                      className="h-10 w-1.5 rounded-full"
+                      style={{ backgroundColor: themeColor }}
+                    />
+                    <View className="flex-1">
                       <Text
-                        className="text-primary text-xs font-semibold uppercase tracking-wider"
-                        style={{ fontFamily: "ReadingFont" }}
+                        className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
                       >
-                        {dateRangeLabel}
-                      </Text>
-                      <Text className="text-muted dark:text-muted-dark text-xs">
-                        •
+                        {item.name}
                       </Text>
                       <Text
-                        className="text-muted dark:text-muted-dark text-xs font-medium capitalize"
+                        className="text-muted dark:text-muted-dark text-xs font-medium capitalize mt-0.5"
                         style={{ fontFamily: "ReadingFont" }}
                       >
                         {item.type}
                       </Text>
                     </View>
                   </View>
+
+                  {/* Right: Large Unboxed Date Number */}
+                  <Text
+                    className="text-2xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                    style={{
+                      fontFamily: "ReadingFont",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {dayText}
+                  </Text>
                 </View>
               );
             })}

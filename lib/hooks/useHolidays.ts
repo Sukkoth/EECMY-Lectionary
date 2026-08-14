@@ -91,13 +91,13 @@ export function useHolidays(language: string) {
     queryKey: HOLIDAY_KEYS.language(language),
     queryFn: async (): Promise<HolidayRow[]> => {
       let rows = await db.getAllAsync<HolidayRow>(
-        "SELECT id, language, date, end_date as endDate, type, name FROM Holiday WHERE language = ? ORDER BY date",
+        "SELECT * FROM Holiday WHERE language = ? ORDER BY date",
         [language],
       );
       if (rows.length === 0 && language !== "am") {
         // Fall back to Amharic if requested language holidays are not available in SQLite DB
         rows = await db.getAllAsync<HolidayRow>(
-          "SELECT id, language, date, end_date as endDate, type, name FROM Holiday WHERE language = 'am' ORDER BY date",
+          "SELECT * FROM Holiday WHERE language = 'am' ORDER BY date",
         );
       }
       return rows.map((row) => ({

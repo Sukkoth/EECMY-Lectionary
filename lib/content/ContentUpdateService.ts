@@ -118,7 +118,7 @@ export function prepareHolidays(
     dateCounts[row.date] = index + 1;
 
     statements.push({
-      sql: `INSERT OR REPLACE INTO Holiday (id, language, date, end_date, type, name)
+      sql: `INSERT OR REPLACE INTO Holiday (id, language, date, endDate, type, name)
             VALUES (?, ?, ?, ?, ?, ?)`,
       params: [
         generateHolidayId(lang, row.date, index),

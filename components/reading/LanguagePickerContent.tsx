@@ -3,11 +3,24 @@ import { Text, TouchableOpacity, View, useColorScheme, ActivityIndicator } from 
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "@/lib/SettingsContext";
 import { useOnboarding } from "@/lib/OnboardingContext";
 import { useTranslation } from "@/lib/i18n";
 import { scheduleDailyReminder } from "@/lib/NotificationService";
-import { fetchManifest, type Manifest } from "@/lib/content";
+import {
+  fetchManifest,
+  downloadReadings,
+  downloadDayInfo,
+  downloadHolidays,
+  prepareReadings,
+  prepareDayInfo,
+  prepareHolidays,
+  prepareSyncRecord,
+  commitStatements,
+  isContentDownloaded,
+  type Manifest,
+} from "@/lib/content";
 
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
@@ -28,13 +41,16 @@ export default function LanguagePickerContent({
 }: LanguagePickerContentProps) {
   const isDark = useColorScheme() === "dark";
   const { t } = useTranslation();
-  const { settings, setAllSettings, availableLanguages, languagesError } =
+  const queryClient = useQueryClient();
+  const { settings, setAllSettings, availableLanguages, languagesError, refreshAvailableLanguages } =
     useSettings();
   const { isOnboardingComplete, completeOnboarding } = useOnboarding();
   const db = useSQLiteContext();
 
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [isLoadingManifest, setIsLoadingManifest] = useState(false);
+  const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,23 +76,103 @@ export default function LanguagePickerContent({
     router.push("/settings/check-updates/content");
   };
 
-  const handleDownloadSpecificVersion = async (
+  const handleInlineDownload = async (
     langCode: string,
     versionCode: string,
     year: number,
   ) => {
+    const key = `${langCode}-${versionCode}`;
+    if (downloadingKey) return;
+
     if (!isOnboardingComplete) {
       await completeOnboarding();
     }
-    onVersionSelect?.();
-    router.push({
-      pathname: "/settings/check-updates/content",
-      params: {
-        preselectYear: String(year),
-        preselectLang: langCode,
-        preselectVersion: versionCode,
-      },
-    });
+
+    setDownloadingKey(key);
+    setDownloadProgress(15);
+
+    try {
+      if (!manifest) return;
+      const yearOpt = manifest.years.find((y) => y.year === year);
+      if (!yearOpt) return;
+      const langOpt = yearOpt.languages.find((l) => l.code === langCode);
+      if (!langOpt) return;
+      const verOpt = langOpt.versions.find((v) => v.code === versionCode);
+      if (!verOpt) return;
+
+      setDownloadProgress(30);
+
+      // Download readings
+      const readingsPkg = await downloadReadings(verOpt.path);
+      setDownloadProgress(55);
+
+      const preparedReadings = prepareReadings(readingsPkg, langCode, versionCode);
+      const syncRecordReading = prepareSyncRecord(
+        year,
+        langCode,
+        langOpt.name,
+        versionCode,
+        verOpt.name,
+        "readings",
+        "",
+        readingsPkg.version,
+      );
+
+      const allStatements = [...preparedReadings.statements, syncRecordReading];
+
+      // Download liturgical packs if missing
+      const hasHolidays = await isContentDownloaded(db, year, langCode, "holidays");
+      if (!hasHolidays && langOpt.holidays) {
+        const holidaysPkg = await downloadHolidays(langOpt.holidays.path);
+        const prep = prepareHolidays(holidaysPkg, langCode);
+        const syncRecord = prepareSyncRecord(
+          year,
+          langCode,
+          langOpt.name,
+          null,
+          null,
+          "holidays",
+          "",
+          holidaysPkg.version,
+        );
+        allStatements.push(...prep.statements, syncRecord);
+      }
+
+      const hasDayInfo = await isContentDownloaded(db, year, langCode, "day-info");
+      if (!hasDayInfo && langOpt.dayInfo) {
+        const dayInfoPkg = await downloadDayInfo(langOpt.dayInfo.path);
+        const prep = prepareDayInfo(dayInfoPkg, langCode);
+        const syncRecord = prepareSyncRecord(
+          year,
+          langCode,
+          langOpt.name,
+          null,
+          null,
+          "day-info",
+          "",
+          dayInfoPkg.version,
+        );
+        allStatements.push(...prep.statements, syncRecord);
+      }
+
+      setDownloadProgress(85);
+
+      // Commit to SQLite
+      await commitStatements(db, allStatements);
+      setDownloadProgress(100);
+
+      // Invalidate query cache & refresh context
+      await refreshAvailableLanguages();
+      queryClient.invalidateQueries();
+
+      // Set newly downloaded translation as active and dismiss sheet
+      await handleVersionSelect(langCode, versionCode);
+    } catch (err) {
+      console.error("Inline download failed:", err);
+    } finally {
+      setDownloadingKey(null);
+      setDownloadProgress(0);
+    }
   };
 
   const handleVersionSelect = async (
@@ -325,58 +421,81 @@ export default function LanguagePickerContent({
           >
             Available to Download ({currentYear})
           </Text>
-          {downloadableVersions.map((item) => (
-            <TouchableOpacity
-              key={`download-${item.langCode}-${item.versionCode}`}
-              onPress={() =>
-                handleDownloadSpecificVersion(
-                  item.langCode,
-                  item.versionCode,
-                  item.year,
-                )
-              }
-              activeOpacity={0.75}
-              className="flex-row items-center justify-between rounded-2xl p-4 my-1 border bg-surface/60 dark:bg-surface-dark/60 border-dashed border-stone-300/80 dark:border-stone-700/80"
-            >
-              <View className="flex-1 flex-row items-center gap-3.5 pr-2">
-                <View className="h-9 w-9 rounded-full items-center justify-center bg-primary/10">
-                  <Ionicons
-                    name="cloud-download-outline"
-                    size={18}
-                    color="#3b82f6"
-                  />
+          {downloadableVersions.map((item) => {
+            const key = `${item.langCode}-${item.versionCode}`;
+            const isDownloading = downloadingKey === key;
+
+            return (
+              <TouchableOpacity
+                key={`download-${key}`}
+                onPress={() =>
+                  handleInlineDownload(
+                    item.langCode,
+                    item.versionCode,
+                    item.year,
+                  )
+                }
+                disabled={Boolean(downloadingKey)}
+                activeOpacity={0.75}
+                className="flex-row items-center justify-between rounded-2xl p-4 my-1 border bg-surface/60 dark:bg-surface-dark/60 border-dashed border-stone-300/80 dark:border-stone-700/80"
+              >
+                <View className="flex-1 flex-row items-center gap-3.5 pr-2">
+                  <View className="h-9 w-9 rounded-full items-center justify-center bg-primary/10">
+                    {isDownloading ? (
+                      <ActivityIndicator size="small" color="#3b82f6" />
+                    ) : (
+                      <Ionicons
+                        name="cloud-download-outline"
+                        size={18}
+                        color="#3b82f6"
+                      />
+                    )}
+                  </View>
+
+                  <View className="flex-1">
+                    <Text
+                      className="text-[#2D2A24] dark:text-[#E8E4DC] text-base font-semibold"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      {item.versionLabel}
+                    </Text>
+
+                    <Text
+                      className="text-muted dark:text-muted-dark text-xs mt-0.5"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      {isDownloading
+                        ? `Downloading... ${downloadProgress}%`
+                        : `${item.langName} • ${item.year}`}
+                    </Text>
+                  </View>
                 </View>
 
-                <View className="flex-1">
-                  <Text
-                    className="text-[#2D2A24] dark:text-[#E8E4DC] text-base font-semibold"
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    {item.versionLabel}
-                  </Text>
-
-                  <Text
-                    className="text-muted dark:text-muted-dark text-xs mt-0.5"
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    {item.langName} • {item.year}
-                  </Text>
+                <View className="flex-row items-center gap-2">
+                  <View className="px-3 py-1.5 rounded-xl bg-primary/15 flex-row items-center gap-1">
+                    {isDownloading ? (
+                      <Text
+                        className="text-primary text-xs font-semibold"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {downloadProgress}%
+                      </Text>
+                    ) : (
+                      <>
+                        <Ionicons name="download-outline" size={14} color="#3b82f6" />
+                        <Text
+                          className="text-primary text-xs font-semibold"
+                          style={{ fontFamily: "ReadingFont" }}
+                        >
+                          Get
+                        </Text>
+                      </>
+                    )}
+                  </View>
                 </View>
-              </View>
-
-              <View className="flex-row items-center gap-2">
-                <View className="px-3 py-1.5 rounded-xl bg-primary/15 flex-row items-center gap-1">
-                  <Ionicons name="download-outline" size={14} color="#3b82f6" />
-                  <Text
-                    className="text-primary text-xs font-semibold"
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    Get
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
 
