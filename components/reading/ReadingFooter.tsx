@@ -33,13 +33,24 @@ export default function ReadingFooter({ date, order, reference, text, version }:
 
   return (
     <View className="items-center">
-      {/* Reference */}
-      <Text
-        className="text-muted dark:text-muted-dark text-center text-xl"
-        style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-      >
-        {reference}
-      </Text>
+      {/* Reference + Version */}
+      <View className="flex-row items-center justify-center gap-2">
+        <Text
+          className="text-muted dark:text-muted-dark text-center text-xl"
+          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        >
+          {reference}
+        </Text>
+        <Text className="text-muted dark:text-muted-dark text-base font-semibold">
+          •
+        </Text>
+        <Text
+          className="text-primary text-sm font-semibold uppercase tracking-wider"
+          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+        >
+          {version}
+        </Text>
+      </View>
 
       {/* Favourite + Share */}
       <View className="mt-6 flex-row items-center gap-8">
