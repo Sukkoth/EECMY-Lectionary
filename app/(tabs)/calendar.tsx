@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   PanResponder,
   ScrollView,
@@ -32,66 +32,63 @@ function formatYear(year: number, month: number, isEth: boolean, lang: string = 
   return `${year} • ${evText}`;
 }
 
+function getInitialCurrent(isEth: boolean) {
+  const now = new Date();
+  if (isEth) {
+    const eth = gregorianToEthiopian(now);
+    return { year: eth.year, month: eth.month };
+  }
+  return { year: now.getFullYear(), month: now.getMonth() };
+}
+
 export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
-  const today = useMemo(() => new Date(), []);
+  const today = new Date();
   const isDark = useColorScheme() === "dark";
   const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
   const isEth = settings.calendarStyle === "ethiopian";
 
-  const getInitialCurrent = useCallback(() => {
-    if (isEth) {
-      const eth = gregorianToEthiopian(today);
-      return { year: eth.year, month: eth.month };
-    }
-    return { year: today.getFullYear(), month: today.getMonth() };
-  }, [isEth, today]);
+  const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
 
-  const [current, setCurrent] = useState(getInitialCurrent);
-  const [prevIsEth, setPrevIsEth] = useState(isEth);
+  // Reset calendar view to today's date when calendar system toggles — runs
+  // before paint so there's no visible flash, and avoids the double-render
+  // caused by setState-during-render.
+  useLayoutEffect(() => {
+    setCurrent(getInitialCurrent(isEth));
+  }, [isEth]);
 
-  // Synchronously reset calendar view to today's date when calendar system toggles (avoids render flashing)
-  if (prevIsEth !== isEth) {
-    setPrevIsEth(isEth);
-    const now = new Date();
-    if (isEth) {
-      const eth = gregorianToEthiopian(now);
-      setCurrent({ year: eth.year, month: eth.month });
-    } else {
-      setCurrent({ year: now.getFullYear(), month: now.getMonth() });
-    }
+  function addMonthDelta(delta: number) {
+    setCurrent((prev) => {
+      const totalMonths = isEth ? 13 : 12;
+      const total = prev.month + delta;
+      const newYear = prev.year + Math.floor(total / totalMonths);
+      const newMonth = ((total % totalMonths) + totalMonths) % totalMonths;
+      return { year: newYear, month: newMonth };
+    });
   }
 
-  const addMonthDelta = useCallback(
-    (delta: number) => {
-      setCurrent((prev) => {
-        const totalMonths = isEth ? 13 : 12;
-        const total = prev.month + delta;
-        const newYear = prev.year + Math.floor(total / totalMonths);
-        const newMonth = ((total % totalMonths) + totalMonths) % totalMonths;
-        return { year: newYear, month: newMonth };
-      });
-    },
-    [isEth],
+  function handleJumpToToday() {
+    setCurrent(getInitialCurrent(isEth));
+  }
+
+  const { data: holidayIndex } = useHolidays(lang);
+  const { data: dayInfoIndex } = useDayInfo(lang);
+
+  // O(1) lookup — index was built once when query data settled
+  const { map: holidayMap, list: holidays } = getHolidaysForActiveMonth(
+    holidayIndex,
+    current.year,
+    current.month,
+    isEth,
+    lang,
   );
+  const dayInfoMap = getDayInfoForActiveMonth(dayInfoIndex, current.year, current.month, isEth);
 
-  const handleJumpToToday = useCallback(() => {
-    setCurrent(getInitialCurrent());
-  }, [getInitialCurrent]);
-
-  const { data: allHolidays } = useHolidays(lang);
-  const { data: allDayInfo } = useDayInfo(lang);
-
-  const { map: holidayMap, list: holidays } = useMemo(
-    () => getHolidaysForActiveMonth(allHolidays, current.year, current.month, isEth, lang),
-    [allHolidays, current.year, current.month, isEth, lang],
-  );
-
-  const dayInfoMap = useMemo(
-    () => getDayInfoForActiveMonth(allDayInfo, current.year, current.month, isEth),
-    [allDayInfo, current.year, current.month, isEth],
-  );
+  // Keep addMonthDelta stable across renders so the one-time PanResponder
+  // always calls the latest version without being recreated.
+  const addMonthDeltaRef = useRef(addMonthDelta);
+  addMonthDeltaRef.current = addMonthDelta;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -99,13 +96,13 @@ export default function CalendarScreen() {
         Math.abs(gs.dx) > 10 && Math.abs(gs.dx) > Math.abs(gs.dy),
       onPanResponderRelease: (_, gs) => {
         if (Math.abs(gs.dx) > 50) {
-          addMonthDelta(gs.dx > 0 ? -1 : 1);
+          addMonthDeltaRef.current(gs.dx > 0 ? -1 : 1);
         }
       },
     }),
   ).current;
 
-  const ethToday = useMemo(() => gregorianToEthiopian(today), [today]);
+  const ethToday = gregorianToEthiopian(today);
   const isCurrentTodayMonth = isEth
     ? current.year === ethToday.year && current.month === ethToday.month
     : current.year === today.getFullYear() && current.month === today.getMonth();
@@ -224,13 +221,13 @@ export default function CalendarScreen() {
       {/* Swipeable Month Grid */}
       <View {...panResponder.panHandlers}>
         <MonthGrid
-          key={`grid-${isEth ? "eth" : "gc"}-${current.year}-${current.month}`}
           year={current.year}
           month={current.month}
           holidays={holidayMap}
           dayInfoMap={dayInfoMap}
           width={screenWidth}
           calendarStyle={settings.calendarStyle}
+          showSeasonColors={settings.showSeasonColors ?? true}
         />
       </View>
 

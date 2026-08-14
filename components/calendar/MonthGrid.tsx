@@ -1,10 +1,8 @@
-import { memo, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import type { HolidayRow, DayInfoRow } from "@/lib/types";
 import { HOLIDAY_COLORS } from "@/constants";
 import type { CalendarStyle } from "@/lib/settings";
-import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation, getDayLabels } from "@/lib/i18n";
 import {
   getEthiopianWeeks,
@@ -14,7 +12,6 @@ import {
   buildMonthGridMatrix,
   getGregorianWeeks,
   getMonthShortNames,
-  type GridCell,
 } from "@/lib/calendarGridHelpers";
 
 type MonthGridProps = {
@@ -24,55 +21,37 @@ type MonthGridProps = {
   dayInfoMap?: Map<number, DayInfoRow>;
   width: number;
   calendarStyle?: CalendarStyle;
+  showSeasonColors?: boolean;
 };
 
 /**
  * Renders a monthly calendar grid with dual-calendar sub-labels,
  * holiday event indicators, and liturgical season highlights.
  */
-export default memo(function MonthGrid({
+export default function MonthGrid({
   year,
   month,
   holidays,
   dayInfoMap,
   width,
   calendarStyle = "ethiopian",
+  showSeasonColors = true,
 }: MonthGridProps) {
   const isEth = calendarStyle === "ethiopian";
-  const { settings } = useSettings();
   const { lang } = useTranslation();
-  const showSeasonColors = settings.showSeasonColors ?? true;
 
-  const weeks = useMemo(() => {
-    return isEth ? getEthiopianWeeks(year, month) : getGregorianWeeks(year, month);
-  }, [year, month, isEth]);
+  const weeks = isEth ? getEthiopianWeeks(year, month) : getGregorianWeeks(year, month);
 
-  const ethToday = useMemo(() => gregorianToEthiopian(new Date()), []);
-  const gcToday = useMemo(() => {
-    const d = new Date();
-    return { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
-  }, []);
+  const ethToday = gregorianToEthiopian(new Date());
+  const d = new Date();
+  const gcToday = { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
 
-  const { gcShorts, ethShorts } = useMemo(() => getMonthShortNames(lang), [lang]);
+  const { gcShorts, ethShorts } = getMonthShortNames(lang);
 
   const paddingX = 32;
   const cellWidth = Math.floor((width - paddingX) / 7);
 
-  const gridRows = useMemo<GridCell[][]>(() => {
-    return buildMonthGridMatrix({
-      weeks,
-      year,
-      month,
-      isEth,
-      ethToday,
-      gcToday,
-      gcShorts,
-      ethShorts,
-      holidays,
-      dayInfoMap,
-      showSeasonColors,
-    });
-  }, [
+  const gridRows = buildMonthGridMatrix({
     weeks,
     year,
     month,
@@ -84,7 +63,7 @@ export default memo(function MonthGrid({
     holidays,
     dayInfoMap,
     showSeasonColors,
-  ]);
+  });
 
   return (
     <View style={{ width }} className="px-3">
@@ -210,4 +189,4 @@ export default memo(function MonthGrid({
       </View>
     </View>
   );
-});
+}
