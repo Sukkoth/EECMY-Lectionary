@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useSQLiteContext } from "expo-sqlite";
 import { useQueryClient } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "../../../lib/SettingsContext";
 import { useTranslation } from "../../../lib/i18n";
@@ -46,6 +46,11 @@ export default function ContentUpdateScreen() {
   const queryClient = useQueryClient();
   const { settings, refreshAvailableLanguages } = useSettings();
   const { t } = useTranslation();
+  const params = useLocalSearchParams<{
+    preselectYear?: string;
+    preselectLang?: string;
+    preselectVersion?: string;
+  }>();
 
   const [step, setStep] = useState<WizardStep>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -186,6 +191,34 @@ export default function ContentUpdateScreen() {
       if (abortRef.current) return;
       setManifest(data);
       await loadSyncedData();
+
+      if (params.preselectYear) {
+        const targetYearNum = parseInt(params.preselectYear, 10);
+        const targetYearOpt = data.years.find((y) => y.year === targetYearNum);
+        if (targetYearOpt) {
+          setSelectedYear(targetYearOpt);
+          setIsYearLoading(true);
+          await Promise.all([
+            loadDownloadedVersions(targetYearOpt.year, targetYearOpt.languages),
+            loadLangPackStatus(targetYearOpt.year, targetYearOpt.languages),
+          ]);
+          setIsYearLoading(false);
+
+          if (params.preselectLang && params.preselectVersion) {
+            setSelectedLangs({
+              [params.preselectLang]: [
+                params.preselectVersion,
+                "__holidays__",
+                "__dayinfo__",
+              ],
+            });
+            setExpandedLangs({ [params.preselectLang]: true });
+          }
+          setStep("selectLang");
+          return;
+        }
+      }
+
       setStep("selectYear");
     } catch (err) {
       if (abortRef.current) return;
@@ -194,7 +227,20 @@ export default function ContentUpdateScreen() {
       setError(msg);
       setStep("idle");
     }
-  }, [loadSyncedData]);
+  }, [
+    loadSyncedData,
+    params.preselectYear,
+    params.preselectLang,
+    params.preselectVersion,
+    loadDownloadedVersions,
+    loadLangPackStatus,
+  ]);
+
+  useEffect(() => {
+    if (params.preselectYear) {
+      handleCheck();
+    }
+  }, [params.preselectYear, handleCheck]);
 
   const handleYearSelect = useCallback(
     async (year: YearOption) => {

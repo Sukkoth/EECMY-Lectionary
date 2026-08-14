@@ -1,4 +1,5 @@
-import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { useEffect, useState } from "react";
+import { Text, TouchableOpacity, View, useColorScheme, ActivityIndicator } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
@@ -6,10 +7,19 @@ import { useSettings } from "@/lib/SettingsContext";
 import { useOnboarding } from "@/lib/OnboardingContext";
 import { useTranslation } from "@/lib/i18n";
 import { scheduleDailyReminder } from "@/lib/NotificationService";
+import { fetchManifest, type Manifest } from "@/lib/content";
 
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
   hideHeader?: boolean;
+};
+
+type DownloadableVersion = {
+  langCode: string;
+  langName: string;
+  versionCode: string;
+  versionLabel: string;
+  year: number;
 };
 
 export default function LanguagePickerContent({
@@ -23,11 +33,50 @@ export default function LanguagePickerContent({
   const { isOnboardingComplete, completeOnboarding } = useOnboarding();
   const db = useSQLiteContext();
 
+  const [manifest, setManifest] = useState<Manifest | null>(null);
+  const [isLoadingManifest, setIsLoadingManifest] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoadingManifest(true);
+    fetchManifest()
+      .then((data) => {
+        if (isMounted) setManifest(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setIsLoadingManifest(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleDownloadContent = async () => {
     if (!isOnboardingComplete) {
       await completeOnboarding();
     }
+    onVersionSelect?.();
     router.push("/settings/check-updates/content");
+  };
+
+  const handleDownloadSpecificVersion = async (
+    langCode: string,
+    versionCode: string,
+    year: number,
+  ) => {
+    if (!isOnboardingComplete) {
+      await completeOnboarding();
+    }
+    onVersionSelect?.();
+    router.push({
+      pathname: "/settings/check-updates/content",
+      params: {
+        preselectYear: String(year),
+        preselectLang: langCode,
+        preselectVersion: versionCode,
+      },
+    });
   };
 
   const handleVersionSelect = async (
@@ -58,8 +107,8 @@ export default function LanguagePickerContent({
     onVersionSelect?.();
   };
 
-  // Flatten all available versions across all languages into a unified list
-  const allVersions = availableLanguages.flatMap((lang) =>
+  // Installed versions from SQLite
+  const installedVersions = availableLanguages.flatMap((lang) =>
     lang.versions.map((ver) => ({
       langCode: lang.code,
       langName: lang.language,
@@ -67,6 +116,38 @@ export default function LanguagePickerContent({
       versionLabel: ver.label,
     })),
   );
+
+  const installedKeys = new Set(
+    installedVersions.map((v) => `${v.langCode}-${v.versionCode}`),
+  );
+
+  // Compute available versions to download from manifest
+  const currentYear = new Date().getFullYear();
+  const downloadableVersions: DownloadableVersion[] = [];
+
+  if (manifest) {
+    // Look for current year or fallback to latest available year
+    const yearOpt =
+      manifest.years.find((y) => y.year === currentYear) ??
+      manifest.years[0];
+
+    if (yearOpt) {
+      for (const lang of yearOpt.languages) {
+        for (const ver of lang.versions) {
+          const key = `${lang.code}-${ver.code}`;
+          if (!installedKeys.has(key)) {
+            downloadableVersions.push({
+              langCode: lang.code,
+              langName: lang.name,
+              versionCode: ver.code,
+              versionLabel: ver.name,
+              year: yearOpt.year,
+            });
+          }
+        }
+      }
+    }
+  }
 
   return (
     <View className="px-6 pb-2">
@@ -152,10 +233,16 @@ export default function LanguagePickerContent({
         </View>
       )}
 
-      {/* Unified Vertical Translation List across All Languages */}
-      {allVersions.length > 0 && (
-        <View className="space-y-2">
-          {allVersions.map((item) => {
+      {/* Installed Translations */}
+      {installedVersions.length > 0 && (
+        <View className="space-y-2 mb-4">
+          <Text
+            className="text-muted dark:text-muted-dark mb-1 text-xs font-semibold uppercase tracking-wider px-1"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            Installed Translations
+          </Text>
+          {installedVersions.map((item) => {
             const isActive =
               settings.language === item.langCode &&
               settings.version === item.versionCode;
@@ -219,10 +306,89 @@ export default function LanguagePickerContent({
                       {item.versionCode}
                     </Text>
                   </View>
+                  {isActive && (
+                    <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
+                  )}
                 </View>
               </TouchableOpacity>
             );
           })}
+        </View>
+      )}
+
+      {/* Available to Download Section */}
+      {downloadableVersions.length > 0 && (
+        <View className="space-y-2 mt-2">
+          <Text
+            className="text-muted dark:text-muted-dark mb-1 text-xs font-semibold uppercase tracking-wider px-1"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            Available to Download ({currentYear})
+          </Text>
+          {downloadableVersions.map((item) => (
+            <TouchableOpacity
+              key={`download-${item.langCode}-${item.versionCode}`}
+              onPress={() =>
+                handleDownloadSpecificVersion(
+                  item.langCode,
+                  item.versionCode,
+                  item.year,
+                )
+              }
+              activeOpacity={0.75}
+              className="flex-row items-center justify-between rounded-2xl p-4 my-1 border bg-surface/60 dark:bg-surface-dark/60 border-dashed border-stone-300/80 dark:border-stone-700/80"
+            >
+              <View className="flex-1 flex-row items-center gap-3.5 pr-2">
+                <View className="h-9 w-9 rounded-full items-center justify-center bg-primary/10">
+                  <Ionicons
+                    name="cloud-download-outline"
+                    size={18}
+                    color="#3b82f6"
+                  />
+                </View>
+
+                <View className="flex-1">
+                  <Text
+                    className="text-[#2D2A24] dark:text-[#E8E4DC] text-base font-semibold"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {item.versionLabel}
+                  </Text>
+
+                  <Text
+                    className="text-muted dark:text-muted-dark text-xs mt-0.5"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {item.langName} • {item.year}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center gap-2">
+                <View className="px-3 py-1.5 rounded-xl bg-primary/15 flex-row items-center gap-1">
+                  <Ionicons name="download-outline" size={14} color="#3b82f6" />
+                  <Text
+                    className="text-primary text-xs font-semibold"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    Get
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {isLoadingManifest && downloadableVersions.length === 0 && (
+        <View className="py-4 items-center justify-center flex-row gap-2">
+          <ActivityIndicator size="small" color="#3b82f6" />
+          <Text
+            className="text-xs text-muted dark:text-muted-dark"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            Checking available translations...
+          </Text>
         </View>
       )}
     </View>

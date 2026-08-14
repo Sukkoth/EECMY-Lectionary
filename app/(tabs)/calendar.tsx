@@ -287,8 +287,12 @@ export default function CalendarScreen() {
             contentContainerStyle={{ paddingBottom: 28 }}
           >
             {holidays.map((item, i) => {
-              const monthShort = item.displayMonthName;
-              const dayNum = item.displayDay;
+              const dateRangeLabel =
+                item.displayEndDay && item.displayEndDay !== item.displayDay
+                  ? item.displayMonthName === item.displayEndMonthName
+                    ? `${item.displayMonthName} ${item.displayDay} – ${item.displayEndDay}`
+                    : `${item.displayMonthName} ${item.displayDay} – ${item.displayEndMonthName} ${item.displayEndDay}`
+                  : `${item.displayMonthName} ${item.displayDay}`;
               const key = item.id ?? `${item.date}-${item.name}-${i}`;
               return (
                 <View
@@ -316,7 +320,7 @@ export default function CalendarScreen() {
                         className="text-primary text-xs font-semibold uppercase tracking-wider"
                         style={{ fontFamily: "ReadingFont" }}
                       >
-                        {monthShort} {dayNum}
+                        {dateRangeLabel}
                       </Text>
                       <Text className="text-muted dark:text-muted-dark text-xs">
                         •

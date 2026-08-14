@@ -10,6 +10,7 @@ export type HolidayRow = {
   id: string;
   language: string;
   date: string;
+  endDate?: string | null;
   type: "eecmy" | "christian" | "others";
   name: string;
 };

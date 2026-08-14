@@ -33,7 +33,12 @@ const LanguageSwitcherSheet = forwardRef<BottomSheetModal, LanguageSwitcherSheet
         showsVerticalScrollIndicator={false}
       >
         <SettingsContext.Provider value={ctx}>
-          <ReadingSettingsContent viewType={viewType} />
+          <ReadingSettingsContent
+            viewType={viewType}
+            onVersionSelect={() => {
+              (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
+            }}
+          />
         </SettingsContext.Provider>
       </BottomSheetScrollView>
     </BottomSheetModal>
