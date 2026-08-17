@@ -61,9 +61,12 @@ export class ReadingsDB {
       seasonColor: string | null;
     }>(
       `SELECT r.date, r."order", r.section, r.reference, r.text, r."version",
-              d.title, d.description, d.seasonColor
+              COALESCE(d.title, dam.title) AS title,
+              COALESCE(d.description, dam.description) AS description,
+              COALESCE(d.seasonColor, dam.seasonColor) AS seasonColor
        FROM Reading r
        LEFT JOIN DayInfo d ON d.language = r.language AND d.date = r.date
+       LEFT JOIN DayInfo dam ON dam.language = 'am' AND dam.date = r.date
        WHERE r.language = ? AND r.version = ? AND r.date >= ? AND r.date <= ?
        ORDER BY r.date, r."order" ASC`,
       [language, version, startStr, endStr],
