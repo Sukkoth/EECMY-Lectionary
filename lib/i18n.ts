@@ -14,6 +14,9 @@ const translations = {
     readPassage: "Read Passage",
     noReadingsToday: "No readings available for today",
     tryAgain: "Try Again",
+    oldTestament: "Old Testament",
+    epistle: "Epistle",
+    gospel: "Gospel",
 
     calendar: "Calendar",
     calendarSystem: "Calendar System",
@@ -159,6 +162,9 @@ const translations = {
     readPassage: "ጥቅሱን አንብብ",
     noReadingsToday: "ለዛሬ ምንም የሚገኝ ንባብ የለም",
     tryAgain: "እንደገና ሞክር",
+    oldTestament: "ብሉይ ኪዳን",
+    epistle: "መልእክት",
+    gospel: "ወንጌል",
 
     calendar: "ካሌንደር",
     calendarSystem: "የካሌንደር ሥርዓት",
@@ -304,6 +310,9 @@ const translations = {
     readPassage: "Caqasa Dubbisi",
     noReadingsToday: "Har'aaf dubbisni hin jiru",
     tryAgain: "Irra Deebii Yaali",
+    oldTestament: "Kakuu Moofaa",
+    epistle: "Ergaa",
+    gospel: "Wangeela",
 
     calendar: "Kalendarii",
     calendarSystem: "Sirna Kalendarii",

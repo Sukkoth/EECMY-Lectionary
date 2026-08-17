@@ -25,25 +25,9 @@ import {
   gregorianToEthiopian,
   formatEvangelistYear,
 } from "@/lib/ethiopianCalendar";
-import * as Notifications from 'expo-notifications';
-
+import { getWeekStart } from "@/lib/StreakService";
+import * as Notifications from "expo-notifications";
 import { useTranslation, getDayLabels } from "@/lib/i18n";
-
-const SECTION_LABELS: Record<string, string> = {
-  OLD_TESTAMENT: "Old Testament",
-  EPISTLE: "Epistle",
-  GOSPEL: "Gospel",
-};
-
-function getWeekStart(date: Date): string {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() - day);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
-}
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
@@ -341,7 +325,7 @@ export default function HomeScreen() {
                       className="text-primary text-center text-xs uppercase tracking-widest"
                       style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                     >
-                      {SECTION_LABELS[reading.section] ?? reading.section}
+                      {reading.section === "OLD_TESTAMENT" ? t("oldTestament") : reading.section === "EPISTLE" ? t("epistle") : reading.section === "GOSPEL" ? t("gospel") : reading.section}
                     </Text>
                     <Text
                       className="text-center text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"

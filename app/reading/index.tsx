@@ -12,7 +12,6 @@ import { markDayCompleted } from "@/lib/StreakService";
 import { ReadingsDB, toDateString, type DayData } from "@/lib/database";
 import { useSQLiteContext } from "expo-sqlite";
 import { formatDisplayDate } from "@/lib/ethiopianCalendar";
-
 import { useTranslation } from "@/lib/i18n";
 
 const addDays = (date: Date, days: number) => {

@@ -221,12 +221,6 @@ export function formatEvangelistYear(ethYear: number, lang: string = "am"): stri
   return `ዘመነ ${ev.nameAmharic}`;
 }
 
-/** Calculate Ethiopian Calendar Week Number (1..53) for a given Ethiopian date (0-indexed month: 0..12) */
-function getEcWeekNumber(monthIndex: number, ethDay: number): number {
-  const totalDays = monthIndex * 30 + (ethDay - 1);
-  return Math.floor(totalDays / 7) + 1;
-}
-
 /** Generates week grid rows for Ethiopian month (0-indexed month: 0..12) */
 export function getEthiopianWeeks(ethYear: number, monthIndex: number): (number | null)[][] {
   const validMonthIndex = Math.max(0, Math.min(12, monthIndex));

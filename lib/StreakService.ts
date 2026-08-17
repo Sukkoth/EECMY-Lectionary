@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import type { ReadingStreak } from "./types";
+import { toDateString } from "./database";
 
 const STREAK_KEY = "yeilet_streak";
 
@@ -11,18 +12,11 @@ const DEFAULT_STREAK: ReadingStreak = {
   weekStartDate: toDateString(new Date()), // today (local)
 };
 
-function getWeekStart(date: Date): string {
+export function getWeekStart(date: Date): string {
   const d = new Date(date);
   const day = d.getDay(); // 0 = Sunday
   d.setDate(d.getDate() - day);
   return toDateString(d);
-}
-
-function toDateString(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
 }
 
 export async function loadStreak(): Promise<ReadingStreak> {
