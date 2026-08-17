@@ -2,7 +2,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  useColorScheme,
   Pressable,
   SafeAreaView,
   Appearance,
@@ -13,6 +12,7 @@ import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
+import { useIsDark } from "@/lib/useIsDark";
 
 function formatTimeString(timeStr: string, format: "12h" | "24h" = "12h"): string {
   const [hStr, mStr] = timeStr.split(":");
@@ -30,8 +30,7 @@ function formatTimeString(timeStr: string, format: "12h" | "24h" = "12h"): strin
 }
 
 export default function SettingsScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useIsDark();
   const { settings, updateSetting } = useSettings();
   const { t } = useTranslation();
 
@@ -291,7 +290,7 @@ export default function SettingsScreen() {
               className="text-muted dark:text-muted-dark text-sm capitalize"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
-              {colorScheme === "dark" ? t("darkMode") : t("lightMode")}
+              {isDark ? t("darkMode") : t("lightMode")}
             </Text>
           </Pressable>
         </View>

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { Appearance } from "react-native";
 import { useSQLiteContext } from "expo-sqlite";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import { getAvailableLanguages, getLanguage, type LanguageEntry } from "./languages";
@@ -12,6 +13,9 @@ type SettingsContextValue = {
   refreshAvailableLanguages: () => Promise<LanguageEntry[]>;
 };
 
+const getInitialTheme = (): "light" | "dark" =>
+  Appearance.getColorScheme() === "dark" ? "dark" : "light";
+
 const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
   appLanguage: "en",
@@ -21,7 +25,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   alignSimple: "center",
   alignExpanded: "justify",
   readingFontFamily: "reading",
-  theme: "light",
+  theme: getInitialTheme(),
   calendarStyle: "ethiopian",
   showSeasonColors: true,
   reminderEnabled: false,

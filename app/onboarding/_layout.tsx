@@ -1,8 +1,8 @@
 import { Stack } from "expo-router";
-import { useColorScheme } from "react-native";
+import { useIsDark } from "@/lib/useIsDark";
 
 export default function OnboardingLayout() {
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
 
   return (
     <Stack

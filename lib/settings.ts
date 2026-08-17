@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { Platform, Appearance } from "react-native";
 
 export type TextAlignment = "left" | "center" | "justify";
 export type CalendarStyle = "gregorian" | "ethiopian";
@@ -105,6 +105,8 @@ export async function loadSettings(): Promise<AppSettings> {
       SecureStore.getItemAsync(KEYS.timeFormat),
     ]);
 
+    const systemTheme = Appearance.getColorScheme() === "dark" ? "dark" : "light";
+
     return {
       language: language ?? DEFAULTS.language,
       appLanguage: appLanguage as AppLanguage || 'en',
@@ -114,7 +116,7 @@ export async function loadSettings(): Promise<AppSettings> {
       alignSimple: parseAlignment(alignSimple, DEFAULTS.alignSimple),
       alignExpanded: parseAlignment(alignExpanded, DEFAULTS.alignExpanded),
       readingFontFamily: parseReadingFontFamily(readingFontFamily, DEFAULTS.readingFontFamily),
-      theme: theme === "light" || theme === "dark" ? theme : DEFAULTS.theme,
+      theme: theme === "light" || theme === "dark" ? theme : systemTheme,
       calendarStyle: calendarStyle === "ethiopian" || calendarStyle === "gregorian" ? calendarStyle : DEFAULTS.calendarStyle,
       showSeasonColors: showSeasonColors === null ? true : showSeasonColors === "true",
       reminderEnabled: reminderEnabled === "true",

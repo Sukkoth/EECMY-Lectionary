@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useColorScheme,
   useWindowDimensions,
   SafeAreaView,
 } from "react-native";
@@ -20,6 +19,7 @@ import {
 import { useDayInfo, getDayInfoForActiveMonth } from "@/lib/hooks/useDayInfo";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
+import { useIsDark } from "@/lib/useIsDark";
 import { HOLIDAY_COLORS } from "@/constants";
 import {
   gregorianToEthiopian,
@@ -46,7 +46,7 @@ function getInitialCurrent(isEth: boolean) {
 export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const today = new Date();
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
   const isEth = settings.calendarStyle === "ethiopian";
