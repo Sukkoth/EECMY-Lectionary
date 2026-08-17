@@ -13,21 +13,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
-
-function formatTimeString(timeStr: string, format: "12h" | "24h" = "12h"): string {
-  const [hStr, mStr] = timeStr.split(":");
-  const h = parseInt(hStr, 10) || 7;
-  const m = parseInt(mStr, 10) || 0;
-  if (format === "24h") {
-    const hh = String(h).padStart(2, "0");
-    const mm = String(m).padStart(2, "0");
-    return `${hh}:${mm}`;
-  }
-  const period = h >= 12 ? "PM" : "AM";
-  const displayHour = h % 12 === 0 ? 12 : h % 12;
-  const displayMin = String(m).padStart(2, "0");
-  return `${displayHour}:${displayMin} ${period}`;
-}
+import { formatTimeString } from "@/lib/settings";
 
 export default function SettingsScreen() {
   const isDark = useIsDark();

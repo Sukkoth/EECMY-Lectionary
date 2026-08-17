@@ -218,3 +218,19 @@ export function getReadingFontFamily(key?: string): string {
       return "ReadingFont";
   }
 }
+
+/** Formats HH:mm string to 12h/24h display format */
+export function formatTimeString(timeStr: string, format: TimeFormat = "12h"): string {
+  const [hStr, mStr] = timeStr.split(":");
+  const h = parseInt(hStr, 10) || 7;
+  const m = parseInt(mStr, 10) || 0;
+  if (format === "24h") {
+    const hh = String(h).padStart(2, "0");
+    const mm = String(m).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+  const period = h >= 12 ? "PM" : "AM";
+  const displayHour = h % 12 === 0 ? 12 : h % 12;
+  const displayMin = String(m).padStart(2, "0");
+  return `${displayHour}:${displayMin} ${period}`;
+}
