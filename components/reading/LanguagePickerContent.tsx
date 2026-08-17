@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Text, TouchableOpacity, View, useColorScheme, ActivityIndicator } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "@/lib/SettingsContext";
 import { useOnboarding } from "@/lib/OnboardingContext";
 import { useTranslation } from "@/lib/i18n";
@@ -49,28 +49,16 @@ export default function LanguagePickerContent({
   const { isOnboardingComplete, completeOnboarding } = useOnboarding();
   const db = useSQLiteContext();
 
-  const [manifest, setManifest] = useState<Manifest | null>(null);
-  const [isLoadingManifest, setIsLoadingManifest] = useState(false);
   const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
   const [errorMessageModal, setErrorMessageModal] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOnboarding) return;
-
-    let isMounted = true;
-    setIsLoadingManifest(true);
-    fetchManifest()
-      .then((data) => {
-        if (isMounted) setManifest(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (isMounted) setIsLoadingManifest(false);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, [isOnboarding]);
+  const { data: manifest = null, isLoading: isLoadingManifest } = useQuery<Manifest>({
+    queryKey: ["remoteManifest"],
+    queryFn: fetchManifest,
+    enabled: !isOnboarding,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 60,
+  });
 
   const handleDownloadContent = async () => {
     if (!isOnboardingComplete) {
