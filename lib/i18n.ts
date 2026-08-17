@@ -299,7 +299,7 @@ const translations = {
   },
   om: {
     home: "Fuula Duraa",
-    appTitle: "Sirna Dubbisa EECMY",
+    appTitle: "Leekshinarii WKWWMY",
     today: "Har'a",
     todaysReading: "Dubbisa Har'aa",
     dailyPassage: "Caqasa Har'aa",

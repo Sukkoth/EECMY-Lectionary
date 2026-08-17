@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "YeiLet",
-    "slug": "YeiLet",
+    "name": "EECMY Lectionary",
+    "slug": "eecmy-lectionary",
     "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "yeilet",
+    "scheme": "eecmy-lectionary",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sukkoth.yeilet"
+      "bundleIdentifier": "com.sukkoth.eecmylectionary"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +24,7 @@
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.SCHEDULE_EXACT_ALARM"
       ],
-      "package": "com.sukkoth.yeilet"
+      "package": "com.sukkoth.eecmylectionary"
     },
     "web": {
       "output": "static",

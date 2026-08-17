@@ -1,8 +1,8 @@
-# 📖 YeiLet (የዕለት) — EECMY Daily Lectionary & Scripture Companion
+# 📖 EECMY Lectionary (የዕለት) — Daily Scripture Companion
 
-**YeiLet (የዕለት)** is a modern, offline-first mobile application built for mobile platforms (iOS & Android) that provides daily scripture readings, liturgical day information, holy commemorations, and calendar synchronization based on the **Ethiopian Evangelical Church Mekane Yesus (EECMY / የኢትዮጵያ ወንጌላዊት ቤተ ክርስቲያን መካነ ኢየሱስ)** lectionary calendar.
+**EECMY Lectionary (የዕለት)** is a modern, offline-first mobile application built for mobile platforms (iOS & Android) that provides daily scripture readings, liturgical day information, holy commemorations, and calendar synchronization based on the **Ethiopian Evangelical Church Mekane Yesus (EECMY / የኢትዮጵያ ወንጌላዊት ቤተ ክርስቲያን መካነ ኢየሱስ)** lectionary calendar.
 
-Built with **React Native**, **Expo SDK 54**, **Expo SQLite**, and **NativeWind v5**, YeiLet features dual calendar support (Ethiopian EC & Gregorian GC), offline lectionary data management, content pack updates, daily notification reminders, and a customizable reader interface.
+Built with **React Native**, **Expo SDK 54**, **Expo SQLite**, and **NativeWind v5**, EECMY Lectionary features dual calendar support (Ethiopian EC & Gregorian GC), offline lectionary data management, content pack updates, daily notification reminders, and a customizable reader interface.
 
 ---
 
