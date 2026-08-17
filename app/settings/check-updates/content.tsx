@@ -355,11 +355,15 @@ export default function ContentUpdateScreen() {
     abortRef.current = false;
 
     const year = selectedYear.year;
-    let completed = 0;
+    const safeTotalTasks = Math.max(1, totalDownloadTasks);
+    let completedTasks = 0;
 
-    const updateProgress = () => {
-      completed++;
-      setProgress(Math.round((completed / totalDownloadTasks) * 100));
+    const updateProgress = (fraction: number = 1.0) => {
+      const currentProgress = ((completedTasks + fraction) / safeTotalTasks) * 100;
+      setProgress(Math.min(100, Math.max(0, Math.round(currentProgress))));
+      if (fraction >= 1.0) {
+        completedTasks += 1;
+      }
     };
 
     try {
@@ -370,19 +374,21 @@ export default function ContentUpdateScreen() {
         if (items.includes("__holidays__")) {
           if (abortRef.current) return;
           const pkg = await downloadHolidays(lang.holidays.path);
+          updateProgress(0.5);
           const prepared = prepareHolidays(pkg, lang.code);
           const sync = prepareSyncRecord(year, lang.code, lang.name, null, null, "holidays", "", lang.holidays.version);
           await commitStatements(db, [...prepared.statements, sync]);
-          updateProgress();
+          updateProgress(1.0);
         }
 
         if (items.includes("__dayinfo__")) {
           if (abortRef.current) return;
           const pkg = await downloadDayInfo(lang.dayInfo.path);
+          updateProgress(0.5);
           const prepared = prepareDayInfo(pkg, lang.code);
           const sync = prepareSyncRecord(year, lang.code, lang.name, null, null, "day-info", "", lang.dayInfo.version);
           await commitStatements(db, [...prepared.statements, sync]);
-          updateProgress();
+          updateProgress(1.0);
         }
 
         const readingVersions = items.filter((v) => v !== "__holidays__" && v !== "__dayinfo__");
@@ -391,6 +397,7 @@ export default function ContentUpdateScreen() {
 
           const versionMeta = lang.versions.find((v) => v.code === versionCode);
           const readingsPkg = await downloadReadings(versionMeta!.path);
+          updateProgress(0.5);
           const readingsPrepared = prepareReadings(readingsPkg, lang.code, versionCode);
           const readingsSync = prepareSyncRecord(
             year,
@@ -403,7 +410,7 @@ export default function ContentUpdateScreen() {
             versionMeta!.contentVersion,
           );
           await commitStatements(db, [...readingsPrepared.statements, readingsSync]);
-          updateProgress();
+          updateProgress(1.0);
         }
       }
 

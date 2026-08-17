@@ -18,7 +18,7 @@ function DownloadProgressStep({
   isDark,
 }: Props) {
   const { t } = useTranslation();
-  const progressPercent = Math.round(progress);
+  const progressPercent = Math.min(100, Math.max(0, isNaN(progress) ? 0 : Math.round(progress)));
   const statusText =
     progress < 10
       ? t("preparingDownload")

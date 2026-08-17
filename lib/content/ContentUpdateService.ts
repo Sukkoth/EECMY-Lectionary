@@ -214,8 +214,20 @@ export async function commitStatements(
   // Chain transaction onto the mutex queue so only 1 SQLite transaction executes at a time
   const nextLock = dbTransactionMutex.then(async () => {
     await db.withTransactionAsync(async () => {
-      for (const stmt of stmts) {
-        await db.runAsync(stmt.sql, ...stmt.params);
+      const statementCache = new Map<string, any>();
+      try {
+        for (const stmt of stmts) {
+          let prep = statementCache.get(stmt.sql);
+          if (!prep) {
+            prep = await db.prepareAsync(stmt.sql);
+            statementCache.set(stmt.sql, prep);
+          }
+          await prep.executeAsync(stmt.params);
+        }
+      } finally {
+        for (const prep of statementCache.values()) {
+          await prep.finalizeAsync().catch(() => {});
+        }
       }
     });
   });
