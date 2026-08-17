@@ -31,6 +31,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   reminderEnabled: false,
   reminderTime: "07:00",
   timeFormat: "12h",
+  versionUsageCount: {},
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);

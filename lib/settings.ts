@@ -34,6 +34,7 @@ export type AppSettings = {
   reminderEnabled: boolean;
   reminderTime: string; // "HH:mm" format, e.g. "07:00"
   timeFormat: TimeFormat;
+  versionUsageCount: Record<string, number>;
 };
 
 const KEYS = {
@@ -51,6 +52,7 @@ const KEYS = {
   reminderEnabled: "yeilet_reminder_enabled",
   reminderTime: "yeilet_reminder_time",
   timeFormat: "yeilet_time_format",
+  versionUsageCount: "yeilet_version_usage_count",
   onboardingComplete: "yeilet_onboarding_complete",
 };
 
@@ -69,6 +71,7 @@ const DEFAULTS: AppSettings = {
   reminderEnabled: false,
   reminderTime: "08:30",
   timeFormat: "24h",
+  versionUsageCount: {},
 };
 
 export async function loadSettings(): Promise<AppSettings> {
@@ -88,6 +91,7 @@ export async function loadSettings(): Promise<AppSettings> {
       reminderEnabled,
       reminderTime,
       timeFormat,
+      rawUsageCount,
     ] = await Promise.all([
       SecureStore.getItemAsync(KEYS.language),
       SecureStore.getItemAsync(KEYS.appLanguage),
@@ -103,9 +107,16 @@ export async function loadSettings(): Promise<AppSettings> {
       SecureStore.getItemAsync(KEYS.reminderEnabled),
       SecureStore.getItemAsync(KEYS.reminderTime),
       SecureStore.getItemAsync(KEYS.timeFormat),
+      SecureStore.getItemAsync(KEYS.versionUsageCount),
     ]);
 
     const systemTheme = Appearance.getColorScheme() === "dark" ? "dark" : "light";
+    let versionUsageCount: Record<string, number> = {};
+    if (rawUsageCount) {
+      try {
+        versionUsageCount = JSON.parse(rawUsageCount);
+      } catch {}
+    }
 
     return {
       language: language ?? DEFAULTS.language,
@@ -122,6 +133,7 @@ export async function loadSettings(): Promise<AppSettings> {
       reminderEnabled: reminderEnabled === "true",
       reminderTime: reminderTime ?? DEFAULTS.reminderTime,
       timeFormat: timeFormat === "24h" ? "24h" : "12h",
+      versionUsageCount,
     };
   } catch {
     return { ...DEFAULTS };
@@ -144,6 +156,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     SecureStore.setItemAsync(KEYS.reminderEnabled, String(settings.reminderEnabled)),
     SecureStore.setItemAsync(KEYS.reminderTime, settings.reminderTime),
     SecureStore.setItemAsync(KEYS.timeFormat, settings.timeFormat),
+    SecureStore.setItemAsync(KEYS.versionUsageCount, JSON.stringify(settings.versionUsageCount ?? {})),
   ]);
 }
 

@@ -181,10 +181,23 @@ export default function LanguagePickerContent({
     langCode: string,
     versionCode: string,
   ) => {
+    // If the user taps the version that is ALREADY active, just close without incrementing count!
+    if (settings.language === langCode && settings.version === versionCode) {
+      onVersionSelect?.();
+      return;
+    }
+
+    const currentUsage = settings.versionUsageCount ?? {};
+    const updatedUsage = {
+      ...currentUsage,
+      [versionCode]: (currentUsage[versionCode] ?? 0) + 1,
+    };
+
     await setAllSettings({
       ...settings,
       language: langCode,
       version: versionCode,
+      versionUsageCount: updatedUsage,
     });
 
     if (settings.reminderEnabled) {
@@ -205,15 +218,29 @@ export default function LanguagePickerContent({
     onVersionSelect?.();
   };
 
-  // Installed versions from SQLite
-  const installedVersions = availableLanguages.flatMap((lang) =>
-    lang.versions.map((ver) => ({
-      langCode: lang.code,
-      langName: lang.language,
-      versionCode: ver.code,
-      versionLabel: ver.label,
-    })),
-  );
+  const usageCount = settings.versionUsageCount ?? {};
+
+  // Installed versions from SQLite sorted with currently active version pinned to top, then by usage frequency
+  const installedVersions = availableLanguages
+    .flatMap((lang) =>
+      lang.versions.map((ver) => ({
+        langCode: lang.code,
+        langName: lang.language,
+        versionCode: ver.code,
+        versionLabel: ver.label,
+        count: usageCount[ver.code] ?? 0,
+      })),
+    )
+    .sort((a, b) => {
+      const isActiveA =
+        a.langCode === settings.language && a.versionCode === settings.version;
+      const isActiveB =
+        b.langCode === settings.language && b.versionCode === settings.version;
+
+      if (isActiveA) return -1;
+      if (isActiveB) return 1;
+      return b.count - a.count;
+    });
 
   const installedKeys = new Set(
     installedVersions.map((v) => `${v.langCode}-${v.versionCode}`),
