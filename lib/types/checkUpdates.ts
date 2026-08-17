@@ -13,12 +13,12 @@ export type WizardStep =
   | "downloading"
   | "success";
 
-export type VersionOption = ManifestVersion;
-export type LanguageOption = ManifestLanguage;
+type VersionOption = ManifestVersion;
+type LanguageOption = ManifestLanguage;
 export type YearOption = ManifestYear;
 export type Manifest = ContentManifest;
 
-export const STEP_LABELS = ["Year", "Content", "Progress", "Done"] as const;
+const STEP_LABELS = ["Year", "Content", "Progress", "Done"] as const;
 export const STEP_ICONS = [
   "calendar-outline",
   "list-outline",

@@ -75,8 +75,8 @@ export function getLanguage(
   return languages.find((l) => l.code === code);
 }
 
-/** Get the first version code for a language from a given list. */
-export function getDefaultVersion(
+/** Get default version code for a language from a given list. */
+function getDefaultVersion(
   code: string,
   languages: LanguageEntry[],
 ): string | undefined {
@@ -84,7 +84,7 @@ export function getDefaultVersion(
 }
 
 /** Check if a version code exists for a language in a given list. */
-export function isValidVersion(
+function isValidVersion(
   langCode: string,
   versionCode: string,
   languages: LanguageEntry[],

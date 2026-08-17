@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSQLiteContext } from "expo-sqlite";
 import { ReadingsDB, toDateString, type DayData } from "../database";
 
-export const READING_KEYS = {
+const READING_KEYS = {
   all: ["readings"] as const,
   today: (date: string, language: string, version: string) =>
     ["readings", "today", date, language, version] as const,

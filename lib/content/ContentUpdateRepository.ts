@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
-export type SyncRecordRow = {
+type SyncRecordRow = {
   id: string;
   type: string;
   language: string;
@@ -118,19 +118,6 @@ export async function getInstalledLangPacksWithContentVersion(
   }
 
   return results;
-}
-
-export async function getDownloadedLangsForYear(
-  db: SQLiteDatabase,
-  year: number,
-): Promise<{ lang: string; langFullName: string }[]> {
-  return db.getAllAsync<{ lang: string; langFullName: string }>(
-    `SELECT DISTINCT language AS lang, languageFullName AS langFullName
-     FROM SyncRecord
-     WHERE year = ?
-     ORDER BY language`,
-    [year],
-  );
 }
 
 export async function getDownloadedVersionsForYearLang(

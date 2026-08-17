@@ -7,10 +7,17 @@ import {
 } from "../content";
 
 
+export type UpdateInfo = {
+  year: number;
+  lang?: string;
+  version?: string;
+};
+
 export function useCheckContentUpdate() {
   const db = useSQLiteContext();
   const [hasUpdate, setHasUpdate] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
 
   const checkUpdate = useCallback(async () => {
     try {
@@ -18,6 +25,7 @@ export function useCheckContentUpdate() {
       const manifest = await fetchManifest();
       if (!manifest || !manifest.years) {
         setHasUpdate(false);
+        setUpdateInfo(null);
         return;
       }
 
@@ -27,6 +35,7 @@ export function useCheckContentUpdate() {
       ]);
 
       let updateFound = false;
+      let firstUpdate: UpdateInfo | null = null;
 
       for (const yearOpt of manifest.years) {
         for (const langOpt of yearOpt.languages) {
@@ -39,6 +48,7 @@ export function useCheckContentUpdate() {
             );
             if (match && Number(match.contentVersion) < Number(verOpt.contentVersion)) {
               updateFound = true;
+              firstUpdate = { year: yearOpt.year, lang: langOpt.code, version: verOpt.code };
               break;
             }
           }
@@ -56,6 +66,7 @@ export function useCheckContentUpdate() {
               Number(matchHolidays.contentVersion) < Number(langOpt.holidays.version)
             ) {
               updateFound = true;
+              firstUpdate = { year: yearOpt.year, lang: langOpt.code };
               break;
             }
           }
@@ -72,6 +83,7 @@ export function useCheckContentUpdate() {
               Number(matchDayInfo.contentVersion) < Number(langOpt.dayInfo.version)
             ) {
               updateFound = true;
+              firstUpdate = { year: yearOpt.year, lang: langOpt.code };
               break;
             }
           }
@@ -80,9 +92,11 @@ export function useCheckContentUpdate() {
       }
 
       setHasUpdate(updateFound);
+      setUpdateInfo(firstUpdate);
     } catch (err) {
       console.warn("Check update failed:", err);
       setHasUpdate(false);
+      setUpdateInfo(null);
     } finally {
       setChecking(false);
     }
@@ -92,5 +106,5 @@ export function useCheckContentUpdate() {
     checkUpdate();
   }, [checkUpdate]);
 
-  return { hasUpdate, checking, checkUpdate };
+  return { hasUpdate, checking, checkUpdate, updateInfo };
 }

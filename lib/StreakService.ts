@@ -43,7 +43,7 @@ export async function loadStreak(): Promise<ReadingStreak> {
   }
 }
 
-export async function saveStreak(streak: ReadingStreak): Promise<void> {
+async function saveStreak(streak: ReadingStreak): Promise<void> {
   await SecureStore.setItemAsync(STREAK_KEY, JSON.stringify(streak));
 }
 

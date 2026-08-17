@@ -49,7 +49,7 @@ export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
   const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
-  const { hasUpdate, checkUpdate } = useCheckContentUpdate();
+  const { hasUpdate, checkUpdate, updateInfo } = useCheckContentUpdate();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -155,7 +155,24 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-2">
             {hasUpdate && (
               <TouchableOpacity
-                onPress={() => router.push("/settings/check-updates/content")}
+                onPress={() => {
+                  if (updateInfo) {
+                    router.push({
+                      pathname: "/settings/check-updates/content",
+                      params: {
+                        preselectYear: String(updateInfo.year),
+                        ...(updateInfo.lang ? { preselectLang: updateInfo.lang } : {}),
+                        ...(updateInfo.version ? { preselectVersion: updateInfo.version } : {}),
+                        autoCheck: "true",
+                      },
+                    });
+                  } else {
+                    router.push({
+                      pathname: "/settings/check-updates/content",
+                      params: { autoCheck: "true" },
+                    });
+                  }
+                }}
                 activeOpacity={0.7}
               >
                 <Animated.View

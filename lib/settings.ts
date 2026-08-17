@@ -3,8 +3,8 @@ import { Platform } from "react-native";
 
 export type TextAlignment = "left" | "center" | "justify";
 export type CalendarStyle = "gregorian" | "ethiopian";
-export type AppLanguage = "am" | "en" | "om";
-export type TimeFormat = "12h" | "24h";
+type AppLanguage = "am" | "en" | "om";
+type TimeFormat = "12h" | "24h";
 export type ReadingFontFamily =
   | "reading"
   | "benaiah"

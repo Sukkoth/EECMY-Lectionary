@@ -3,7 +3,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import type { DayInfoRow } from "../types";
 import { gregorianToEthiopian } from "../ethiopianCalendar";
 
-export const DAY_INFO_KEYS = {
+const DAY_INFO_KEYS = {
   all: ["dayinfo"] as const,
   language: (language: string) => ["dayinfo", language] as const,
 };

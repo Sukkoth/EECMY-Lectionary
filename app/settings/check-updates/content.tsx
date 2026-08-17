@@ -50,6 +50,7 @@ export default function ContentUpdateScreen() {
     preselectYear?: string;
     preselectLang?: string;
     preselectVersion?: string;
+    autoCheck?: string;
   }>();
 
   const [step, setStep] = useState<WizardStep>("idle");
@@ -204,13 +205,23 @@ export default function ContentUpdateScreen() {
           ]);
           setIsYearLoading(false);
 
-          if (params.preselectLang && params.preselectVersion) {
+          if (params.preselectLang) {
+            const itemsToSelect: string[] = [];
+            if (params.preselectVersion) {
+              itemsToSelect.push(params.preselectVersion);
+            }
+            const langOpt = targetYearOpt.languages.find((l) => l.code === params.preselectLang);
+            if (langOpt) {
+              if (langOpt.holidays && langOpt.holidays.version > 0) {
+                itemsToSelect.push("__holidays__");
+              }
+              if (langOpt.dayInfo && langOpt.dayInfo.version > 0) {
+                itemsToSelect.push("__dayinfo__");
+              }
+            }
+
             setSelectedLangs({
-              [params.preselectLang]: [
-                params.preselectVersion,
-                "__holidays__",
-                "__dayinfo__",
-              ],
+              [params.preselectLang]: Array.from(new Set(itemsToSelect)),
             });
             setExpandedLangs({ [params.preselectLang]: true });
           }
@@ -237,10 +248,10 @@ export default function ContentUpdateScreen() {
   ]);
 
   useEffect(() => {
-    if (params.preselectYear) {
+    if (params.preselectYear || params.autoCheck === "true") {
       handleCheck();
     }
-  }, [params.preselectYear, handleCheck]);
+  }, [params.preselectYear, params.autoCheck, handleCheck]);
 
   const handleYearSelect = useCallback(
     async (year: YearOption) => {

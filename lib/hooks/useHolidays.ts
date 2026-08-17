@@ -11,12 +11,12 @@ import {
   gregorianToEthiopian,
 } from "../ethiopianCalendar";
 
-export const HOLIDAY_KEYS = {
+const HOLIDAY_KEYS = {
   all: ["holidays"] as const,
   language: (language: string) => ["holidays", language] as const,
 };
 
-export type HolidayIndexEntry = {
+type HolidayIndexEntry = {
   row: HolidayRow;
   /** Gregorian date components parsed once */
   gcYear: number;

@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
-export const DEFAULT_LANG = "en";
-export const DEFAULT_VERSION = "niv";
+const DEFAULT_LANG = "en";
+const DEFAULT_VERSION = "niv";
 
 export type ReadingRow = {
   order: number;

@@ -9,7 +9,7 @@ export const READING_KEYS = {
     ["readings", date, language, version] as const,
 };
 
-export function useReading(
+function useReading(
   date: Date,
   language: string,
   version: string,

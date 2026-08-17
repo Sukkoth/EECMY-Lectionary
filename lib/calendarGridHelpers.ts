@@ -75,7 +75,7 @@ export function getGregorianWeeks(year: number, month: number): (number | null)[
 /**
  * Formats border outline style for liturgical season colors.
  */
-export function getSeasonContainerStyle(
+function getSeasonContainerStyle(
   seasonColor?: string,
   today = false,
   showSeasonColors = true,
