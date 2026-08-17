@@ -17,18 +17,18 @@ export default function LanguageSelectionScreen() {
             className="text-center text-2xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            Select Your Language
+            Select Bible Version
           </Text>
           <Text
             className="mt-2 text-center text-sm text-muted dark:text-muted-dark"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
-            Choose your preferred Bible translation
+            Choose your preferred Bible translation for daily readings
           </Text>
         </View>
 
         {/* Language Picker */}
-        <LanguagePickerContent onVersionSelect={handleVersionSelect} hideHeader />
+        <LanguagePickerContent onVersionSelect={handleVersionSelect} hideHeader isOnboarding />
       </View>
     </SafeAreaView>
   );

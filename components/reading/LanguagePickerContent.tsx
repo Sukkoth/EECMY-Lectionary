@@ -25,6 +25,7 @@ import {
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
   hideHeader?: boolean;
+  isOnboarding?: boolean;
 };
 
 type DownloadableVersion = {
@@ -38,6 +39,7 @@ type DownloadableVersion = {
 export default function LanguagePickerContent({
   onVersionSelect,
   hideHeader,
+  isOnboarding,
 }: LanguagePickerContentProps) {
   const isDark = useColorScheme() === "dark";
   const { t } = useTranslation();
@@ -53,6 +55,8 @@ export default function LanguagePickerContent({
   const [errorMessageModal, setErrorMessageModal] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isOnboarding) return;
+
     let isMounted = true;
     setIsLoadingManifest(true);
     fetchManifest()
@@ -66,7 +70,7 @@ export default function LanguagePickerContent({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isOnboarding]);
 
   const handleDownloadContent = async () => {
     if (!isOnboardingComplete) {
@@ -419,6 +423,29 @@ export default function LanguagePickerContent({
               </TouchableOpacity>
             );
           })}
+        </View>
+      )}
+
+      {/* Onboarding Notice Card */}
+      {isOnboarding && (
+        <View className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-4 flex-row items-center gap-3.5">
+          <View className="h-10 w-10 rounded-full bg-primary/10 items-center justify-center">
+            <Ionicons name="cloud-download-outline" size={20} color="#3b82f6" />
+          </View>
+          <View className="flex-1">
+            <Text
+              className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+            >
+              {t("moreTranslationsNoticeTitle")}
+            </Text>
+            <Text
+              className="mt-0.5 text-xs text-muted dark:text-muted-dark leading-relaxed"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              {t("moreTranslationsNoticeDesc")}
+            </Text>
+          </View>
         </View>
       )}
 

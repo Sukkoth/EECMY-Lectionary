@@ -142,6 +142,9 @@ export const translations = {
     checking: "Checking for updates...",
     fetchingManifests: "Fetching available content manifests…",
     upToDate: "Content is up to date",
+
+    moreTranslationsNoticeTitle: "More Translations Available",
+    moreTranslationsNoticeDesc: "Additional Bible versions and languages can be downloaded anytime in Settings after setup.",
   },
   am: {
     home: "መነሻ",
@@ -284,6 +287,9 @@ export const translations = {
     checking: "በመፈለግ ላይ…",
     fetchingManifests: "የሚገኙ የመረጃ ስብስቦችን በማምጣት ላይ…",
     upToDate: "መረጃው የተሻሻለ ነው",
+
+    moreTranslationsNoticeTitle: "ተጨማሪ ትርጉሞች ይገኛሉ",
+    moreTranslationsNoticeDesc: "ተጨማሪ የመጽሐፍ ቅዱስ ትርጉሞችንና ቋንቋዎችን በኋለኛው ጊዜ በማስተካከያ ገጽ ላይ ማውረድ ይችላሉ።",
   },
   om: {
     home: "Fuula Duraa",
@@ -424,8 +430,11 @@ export const translations = {
     fontSize: "Hammangaa Barruu",
 
     checking: "Barbaadaa jira…",
-    fetchingManifests: "Manfeestii qabiyyee argamu fidaa jira…",
+    fetchingManifests: "Deetaa qabiyyee argamu fidaa jira…",
     upToDate: "Deetaan haaromfameera",
+
+    moreTranslationsNoticeTitle: "Hiikawwan Dabalataa",
+    moreTranslationsNoticeDesc: "Hiikawwan Macaafa Qulqulluu fi afaanota dabalataa booda qindaa'ina keessatti buufachuu dandeessu.",
   },
 } as const;
 

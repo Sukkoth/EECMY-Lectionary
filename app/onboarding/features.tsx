@@ -166,7 +166,7 @@ export default function FeaturesScreen() {
             className="text-base font-semibold text-white"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
-            {currentPage === FEATURES.length - 1 ? "Choose Language" : "Next"}
+            {currentPage === FEATURES.length - 1 ? "Choose Bible Version" : "Next"}
           </Text>
         </TouchableOpacity>
       </View>
