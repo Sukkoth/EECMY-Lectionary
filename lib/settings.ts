@@ -234,9 +234,11 @@ export function getReadingFontFamily(key?: string): string {
 
 /** Formats HH:mm string to 12h/24h display format */
 export function formatTimeString(timeStr: string, format: TimeFormat = "12h"): string {
-  const [hStr, mStr] = timeStr.split(":");
-  const h = parseInt(hStr, 10) || 7;
-  const m = parseInt(mStr, 10) || 0;
+  const [hStr, mStr] = (timeStr || "07:00").split(":");
+  const parsedH = parseInt(hStr, 10);
+  const parsedM = parseInt(mStr, 10);
+  const h = isNaN(parsedH) ? 7 : parsedH;
+  const m = isNaN(parsedM) ? 0 : parsedM;
   if (format === "24h") {
     const hh = String(h).padStart(2, "0");
     const mm = String(m).padStart(2, "0");

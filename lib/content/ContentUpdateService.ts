@@ -85,7 +85,14 @@ export type PreparedReadings = {
 export function prepareDayInfo(
   pkg: DayInfoPackage,
   lang: string,
+  expectedVersion?: number,
 ): PreparedDayInfo {
+  if (expectedVersion != null && pkg.version != null && pkg.version !== expectedVersion) {
+    throw new Error(
+      `DayInfo version mismatch for ${lang.toUpperCase()}: manifest requested v${expectedVersion}, but downloaded package contains v${pkg.version}.`
+    );
+  }
+
   const statements: PreparedStatement[] = [];
 
   for (const row of pkg.dayInfo) {
@@ -109,7 +116,14 @@ export function prepareDayInfo(
 export function prepareHolidays(
   pkg: HolidayPackage,
   lang: string,
+  expectedVersion?: number,
 ): PreparedHolidays {
+  if (expectedVersion != null && pkg.version != null && pkg.version !== expectedVersion) {
+    throw new Error(
+      `Holidays version mismatch for ${lang.toUpperCase()}: manifest requested v${expectedVersion}, but downloaded package contains v${pkg.version}.`
+    );
+  }
+
   const statements: PreparedStatement[] = [];
   const dateCounts: Record<string, number> = {};
 
@@ -138,9 +152,16 @@ export function prepareReadings(
   pkg: ReadingsPackage,
   lang: string,
   version: string,
+  expectedVersion?: number,
 ): PreparedReadings {
   if (!pkg || !Array.isArray(pkg.readings) || pkg.readings.length === 0) {
     throw new Error(`The content package for ${version.toUpperCase()} is empty or invalid.`);
+  }
+
+  if (expectedVersion != null && pkg.version != null && pkg.version !== expectedVersion) {
+    throw new Error(
+      `Content version mismatch for ${version.toUpperCase()}: manifest requested v${expectedVersion}, but downloaded file contains v${pkg.version}.`
+    );
   }
 
   const statements: PreparedStatement[] = [];

@@ -1,6 +1,6 @@
 import { useSettings } from "@/lib/SettingsContext";
 
-const translations = {
+export const translations = {
   en: {
     home: "Home",
     appTitle: "EECMY Lectionary",

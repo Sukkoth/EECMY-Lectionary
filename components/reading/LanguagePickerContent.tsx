@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Text, TouchableOpacity, View, useColorScheme, ActivityIndicator } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
@@ -19,6 +19,7 @@ import {
   prepareSyncRecord,
   commitStatements,
   isContentDownloaded,
+  getInstalledVersionsWithContentVersion,
   type Manifest,
 } from "@/lib/content";
 
@@ -52,13 +53,44 @@ export default function LanguagePickerContent({
   const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
   const [errorMessageModal, setErrorMessageModal] = useState<string | null>(null);
 
-  const { data: manifest = null, isLoading: isLoadingManifest } = useQuery<Manifest>({
+  const { data: manifest = null } = useQuery<Manifest>({
     queryKey: ["remoteManifest"],
     queryFn: fetchManifest,
     enabled: !isOnboarding,
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 60,
   });
+
+  const { data: installedVersionsWithMeta = [] } = useQuery({
+    queryKey: ["installedVersionsWithMeta"],
+    queryFn: () => getInstalledVersionsWithContentVersion(db),
+    enabled: !isOnboarding,
+  });
+
+  // Map of installed version keys ("en-niv") that have a newer contentVersion in remote manifest
+  const updatesMap = useMemo(() => {
+    const map = new Map<string, { year: number; contentVersion: number }>();
+    if (!manifest || isOnboarding) return map;
+
+    const currentYear = new Date().getFullYear();
+    const yearOpt = manifest.years.find((y) => y.year === currentYear) ?? manifest.years[0];
+    if (!yearOpt) return map;
+
+    for (const lang of yearOpt.languages) {
+      for (const ver of lang.versions) {
+        const key = `${lang.code.toLowerCase()}-${ver.code.toLowerCase()}`;
+        const installed = installedVersionsWithMeta.find(
+          (i) =>
+            i.language.toLowerCase() === lang.code.toLowerCase() &&
+            i.version.toLowerCase() === ver.code.toLowerCase()
+        );
+        if (installed && ver.contentVersion > installed.contentVersion) {
+          map.set(key, { year: yearOpt.year, contentVersion: ver.contentVersion });
+        }
+      }
+    }
+    return map;
+  }, [manifest, installedVersionsWithMeta, isOnboarding]);
 
   const handleDownloadContent = async () => {
     if (!isOnboardingComplete) {
@@ -101,7 +133,12 @@ export default function LanguagePickerContent({
       const readingsPkg = await downloadReadings(verOpt.path);
       updateProgress(55);
 
-      const preparedReadings = prepareReadings(readingsPkg, langCode, versionCode);
+      const preparedReadings = prepareReadings(
+        readingsPkg,
+        langCode,
+        versionCode,
+        verOpt.contentVersion,
+      );
       const syncRecordReading = prepareSyncRecord(
         year,
         langCode,
@@ -110,7 +147,7 @@ export default function LanguagePickerContent({
         verOpt.name,
         "readings",
         "",
-        readingsPkg.version,
+        verOpt.contentVersion,
       );
 
       const allStatements = [...preparedReadings.statements, syncRecordReading];
@@ -119,7 +156,7 @@ export default function LanguagePickerContent({
       const hasHolidays = await isContentDownloaded(db, year, langCode, "holidays");
       if (!hasHolidays && langOpt.holidays) {
         const holidaysPkg = await downloadHolidays(langOpt.holidays.path);
-        const prep = prepareHolidays(holidaysPkg, langCode);
+        const prep = prepareHolidays(holidaysPkg, langCode, langOpt.holidays.version);
         const syncRecord = prepareSyncRecord(
           year,
           langCode,
@@ -128,7 +165,7 @@ export default function LanguagePickerContent({
           null,
           "holidays",
           "",
-          holidaysPkg.version,
+          langOpt.holidays.version,
         );
         allStatements.push(...prep.statements, syncRecord);
       }
@@ -136,7 +173,7 @@ export default function LanguagePickerContent({
       const hasDayInfo = await isContentDownloaded(db, year, langCode, "day-info");
       if (!hasDayInfo && langOpt.dayInfo) {
         const dayInfoPkg = await downloadDayInfo(langOpt.dayInfo.path);
-        const prep = prepareDayInfo(dayInfoPkg, langCode);
+        const prep = prepareDayInfo(dayInfoPkg, langCode, langOpt.dayInfo.version);
         const syncRecord = prepareSyncRecord(
           year,
           langCode,
@@ -250,7 +287,7 @@ export default function LanguagePickerContent({
   const currentYear = new Date().getFullYear();
   const downloadableVersions: DownloadableVersion[] = [];
 
-  if (manifest) {
+  if (!isOnboarding && manifest) {
     // Look for current year or fallback to latest available year
     const yearOpt =
       manifest.years.find((y) => y.year === currentYear) ??
@@ -411,7 +448,7 @@ export default function LanguagePickerContent({
                   </View>
                 </View>
 
-                {/* Right side: Version Code Badge + Native Checkmark Icon */}
+                {/* Right side: Version Code Badge + Native Checkmark Icon / Update Button */}
                 <View className="flex-row items-center gap-2.5">
                   <View
                     className={`px-2.5 py-1 rounded-lg border ${
@@ -431,9 +468,47 @@ export default function LanguagePickerContent({
                       {item.versionCode}
                     </Text>
                   </View>
-                  {isActive && (
-                    <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />
-                  )}
+
+                  {/* If CDN has a newer contentVersion for this installed translation, show Update button */}
+                  {(() => {
+                    const updateMeta = updatesMap.get(`${item.langCode.toLowerCase()}-${item.versionCode.toLowerCase()}`);
+                    const downloadKey = `${item.langCode}-${item.versionCode}`;
+                    const isDownloadingThis = downloadProgressMap[downloadKey] !== undefined;
+
+                    if (updateMeta) {
+                      return (
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleInlineDownload(item.langCode, item.versionCode, updateMeta.year);
+                          }}
+                          disabled={isDownloadingThis}
+                          activeOpacity={0.8}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500/15 flex-row items-center gap-1.5 border border-amber-500/30"
+                        >
+                          {isDownloadingThis ? (
+                            <ActivityIndicator size="small" color="#f59e0b" />
+                          ) : (
+                            <>
+                              <Ionicons name="refresh-outline" size={14} color="#f59e0b" />
+                              <Text
+                                className="text-amber-600 dark:text-amber-400 text-xs font-semibold"
+                                style={{ fontFamily: "ReadingFont" }}
+                              >
+                                Update
+                              </Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    }
+
+                    if (isActive) {
+                      return <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />;
+                    }
+
+                    return null;
+                  })()}
                 </View>
               </TouchableOpacity>
             );
@@ -563,17 +638,6 @@ export default function LanguagePickerContent({
         </View>
       )}
 
-      {isLoadingManifest && downloadableVersions.length === 0 && (
-        <View className="py-4 items-center justify-center flex-row gap-2">
-          <ActivityIndicator size="small" color="#3b82f6" />
-          <Text
-            className="text-xs text-muted dark:text-muted-dark"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            Checking available translations...
-          </Text>
-        </View>
-      )}
       {/* Custom In-App Error Overlay (Works inside Bottom Sheet Modal and full screen) */}
       {Boolean(errorMessageModal) && (
         <View className="absolute inset-0 z-50 items-center justify-center bg-black/60 px-6 py-8">

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "EECMY Lectionary",
-    "slug": "eecmy-lectionary",
+    "slug": "YeiLet",
     "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -67,6 +67,7 @@
       "eas": {
         "projectId": "208d6879-a339-481e-b62e-8a26219f2ede"
       }
-    }
+    },
+    "owner": "sukkoth"
   }
 }

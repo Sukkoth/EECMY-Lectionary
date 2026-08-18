@@ -19,6 +19,7 @@ import { SettingsProvider } from "@/lib/SettingsContext";
 import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { fetchManifest } from "@/lib/content";
 import { useIsDark } from "@/lib/useIsDark";
 import "./global.css";
 
@@ -113,6 +114,14 @@ function AppContent() {
     });
     return () => subscription.remove();
   }, [router]);
+
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ["remoteManifest"],
+      queryFn: fetchManifest,
+      staleTime: 1000 * 60 * 15,
+    });
+  }, []);
 
   if (loading) {
     return (

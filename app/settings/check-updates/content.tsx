@@ -375,7 +375,7 @@ export default function ContentUpdateScreen() {
           if (abortRef.current) return;
           const pkg = await downloadHolidays(lang.holidays.path);
           updateProgress(0.5);
-          const prepared = prepareHolidays(pkg, lang.code);
+          const prepared = prepareHolidays(pkg, lang.code, lang.holidays.version);
           const sync = prepareSyncRecord(year, lang.code, lang.name, null, null, "holidays", "", lang.holidays.version);
           await commitStatements(db, [...prepared.statements, sync]);
           updateProgress(1.0);
@@ -385,7 +385,7 @@ export default function ContentUpdateScreen() {
           if (abortRef.current) return;
           const pkg = await downloadDayInfo(lang.dayInfo.path);
           updateProgress(0.5);
-          const prepared = prepareDayInfo(pkg, lang.code);
+          const prepared = prepareDayInfo(pkg, lang.code, lang.dayInfo.version);
           const sync = prepareSyncRecord(year, lang.code, lang.name, null, null, "day-info", "", lang.dayInfo.version);
           await commitStatements(db, [...prepared.statements, sync]);
           updateProgress(1.0);
@@ -398,7 +398,7 @@ export default function ContentUpdateScreen() {
           const versionMeta = lang.versions.find((v) => v.code === versionCode);
           const readingsPkg = await downloadReadings(versionMeta!.path);
           updateProgress(0.5);
-          const readingsPrepared = prepareReadings(readingsPkg, lang.code, versionCode);
+          const readingsPrepared = prepareReadings(readingsPkg, lang.code, versionCode, versionMeta!.contentVersion);
           const readingsSync = prepareSyncRecord(
             year,
             lang.code,

@@ -135,7 +135,7 @@ export function formatMonth(month: number, isEth: boolean, lang: string = "am"):
 }
 
 /** Get the number of days in an Ethiopian month (0-indexed month: 0..12) */
-function getDaysInEthiopianMonth(ethYear: number, monthIndex: number): number {
+export function getDaysInEthiopianMonth(ethYear: number, monthIndex: number): number {
   if (monthIndex < 0 || monthIndex > 12) return 30;
   if (monthIndex < 12) return 30;
   // Pagume (month 12): 6 days in leap years, 5 days in normal years
