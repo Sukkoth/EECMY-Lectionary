@@ -52,7 +52,7 @@ export default function ChurchYearScreen() {
             </Text>
 
             <Text
-              className="text-muted dark:text-muted-dark text-xs uppercase tracking-wider mb-1"
+              className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
               Purpose
@@ -65,7 +65,7 @@ export default function ChurchYearScreen() {
             </Text>
 
             <Text
-              className="text-muted dark:text-muted-dark text-xs uppercase tracking-wider mb-1"
+              className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
               Theme
@@ -78,7 +78,7 @@ export default function ChurchYearScreen() {
             </Text>
 
             <Text
-              className="text-muted dark:text-muted-dark text-xs uppercase tracking-wider mb-1"
+              className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
               Duration

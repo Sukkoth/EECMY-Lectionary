@@ -38,8 +38,8 @@ export default function LectionaryScreen() {
         {content.lectionary.sections.map((section, index) => (
           <View key={index} className="px-6">
             <Text
-              className="text-primary mb-2 ml-1 text-xs uppercase tracking-widest"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              className="text-primary mb-2.5 text-xl font-semibold leading-snug"
+              style={{ fontFamily: "ReadingFont" }}
             >
               {section.heading}
             </Text>
