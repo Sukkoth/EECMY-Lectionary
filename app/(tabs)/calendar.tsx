@@ -114,7 +114,7 @@ export default function CalendarScreen() {
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       {/* Top Header Bar */}
-      <View className="flex-row items-center justify-between px-6 pt-12 pb-4">
+      <View className="flex-row items-center justify-between px-6 pt-11 pb-3">
         <TouchableOpacity
           onPress={() => pickerSheetRef.current?.present()}
           activeOpacity={0.7}
@@ -198,7 +198,7 @@ export default function CalendarScreen() {
       </View>
 
       {/* Calendar System Segmented Bar */}
-      <View className="mb-3 flex-row items-center justify-between px-6">
+      <View className="mb-2.5 flex-row items-center justify-between px-6">
         <Text
           className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-wider"
           style={{ fontFamily: "ReadingFont" }}

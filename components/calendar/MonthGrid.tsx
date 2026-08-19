@@ -70,7 +70,7 @@ export default function MonthGrid({
       {/* Sleek Modern Card Surface */}
       <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-3">
         {/* Day labels header */}
-        <View className="mb-3 flex-row items-center border-b border-stone-200/40 dark:border-stone-800/40 pb-2.5">
+        <View className="mb-2 flex-row items-center border-b border-stone-200/40 dark:border-stone-800/40 pb-2">
           {getDayLabels(lang).map((label, index) => {
             const isWeekend = index === 0 || index === 6;
             return (
@@ -95,9 +95,9 @@ export default function MonthGrid({
         </View>
 
         {/* Week rows */}
-        <View className="space-y-1">
+        <View className="space-y-0.5">
           {gridRows.map((week, wi) => (
-            <View key={wi} className="flex-row items-center py-1">
+            <View key={wi} className="flex-row items-center py-0.5">
               {week.map((cell) => {
                 if (cell.isNull) {
                   return (
@@ -124,7 +124,7 @@ export default function MonthGrid({
                   >
                     {/* Day number container */}
                     <View
-                      style={[{ width: cellWidth - 4, height: 46 }, cell.seasonStyle]}
+                      style={[{ width: cellWidth - 4, height: 42 }, cell.seasonStyle]}
                       className={`items-center justify-center rounded-2xl ${
                         cell.today ? "bg-primary" : ""
                       }`}
@@ -165,7 +165,7 @@ export default function MonthGrid({
 
                       {/* Event Indicator Dots */}
                       {cell.types.length > 0 && (
-                        <View className="mt-1 flex-row items-center justify-center gap-1">
+                        <View className="mt-0.5 flex-row items-center justify-center gap-1">
                           {cell.types.map((type, i) => (
                             <View
                               key={i}
