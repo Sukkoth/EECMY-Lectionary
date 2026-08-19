@@ -12,15 +12,21 @@ const JSDELIVR_HEADERS = {
 };
 
 async function fetchJSON<T>(url: string): Promise<T> {
-  /**
-   * Add query param `t` to bypass caching
-   */
-  const res = await fetch(`${url}?t=${Date.now()}`, { headers: JSDELIVR_HEADERS });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+  if (!CONTENT_BASE_URL) {
+    throw new Error("Content update server is not configured.");
   }
-
-  return res.json() as Promise<T>;
+  try {
+    const res = await fetch(`${url}?t=${Date.now()}`, { headers: JSDELIVR_HEADERS });
+    if (!res.ok) {
+      throw new Error(`Server returned HTTP ${res.status}`);
+    }
+    return (await res.json()) as T;
+  } catch (err) {
+    if (err instanceof Error && (err.message.startsWith("Server returned HTTP") || err.message.startsWith("Content update server"))) {
+      throw err;
+    }
+    throw new Error("Unable to connect to update server. Please check your internet connection.");
+  }
 }
 
 export async function fetchManifest(): Promise<Manifest> {
