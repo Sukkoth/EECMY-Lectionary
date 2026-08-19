@@ -229,23 +229,23 @@ Amen.`,
 
 const amharicContent: GlossaryContent = {
   lectionary: {
-    title: "ሥርዓተ ንባብ (ሌክቲዮናሪ)",
+    title: "የመካነ ኢየሱስ የዕለት ንባብ (ሌክሽነሪ)",
     sections: [
       {
-        heading: "«ሌክቲዮናሪ» ማለት ምን ማለት ነው?",
-        body: `«ሌክቲዮናሪ» የሚለው ቃል «lectionarium» ከተባለው የላቲን ቃል የተገኘ ሲሆን ትርጉሙም «የንባብ መጽሐፍ» ማለት ነው። ሌክቲዮናሪ በክርስቲያናዊ የአምልኮ ሥርዓት ውስጥ ጥቅም ላይ እንዲውል በልዩ ተစဉ်ኖ የተዘጋጀ የመጽሐፍ ቅዱስ ንባቦች ስብስብ ነው። ክፍሎችን በዘፈቀደ ከመምረጥ ይልቅ፥ ሌክቲዮናሪ ዓመቱን ሙሉ የእግዚአብሔርን ቃል በሥርዓትና በቅደም ተከተል እንድናጠና ይረዳናል።`,
+        heading: "«ሌክሽነሪ» ማለት ምን ማለት ነው?",
+        body: `«ሌክሽነሪ» የሚለው ቃል «lectionarium» ከተባለው የላቲን ቃል የተገኘ ሲሆን ትርጉሙም «የንባብ መጽሐፍ» ማለት ነው። ሌክሽነሪ በክርስቲያናዊ የአምልኮ ሥርዓት ውስጥ ጥቅም ላይ እንዲውል የተዘጋጀ የመጽሐፍ ቅዱስ ንባቦች ስብስብ ነው። ክፍሎችን በዘፈቀደ ከመምረጥ ይልቅ፥ ሌክሽነሪ ዓመቱን ሙሉ የእግዚአብሔርን ቃል በሥርዓትና በቅደም ተከተል እንድናጠና ይረዳናል።`,
       },
       {
-        heading: "አብያተ ክርስቲያናት ሌክቲዮናሪን ለምን ይጠቀማሉ?",
-        body: `አብያተ ክርስቲያናት ሌክቲዮናሪን የሚጠቀሙት ምእመናን በጊዜ ሂደት የተለያዩ የመጽሐፍ ቅዱስ ክፍሎችን እንዲሰሙ ለማድረግ ነው። በጥንቃቄ የተዘጋጀ ሌክቲዮናሪ አምላኪዎችን ከፍጥረት እስከ ራእይ ካሉት ዋና ዋና የመጽሐፍ ቅዱስ ርዕሶች ጋር ያስተዋውቃቸዋል። በተጨማሪም አገልጋዮች በዓለም ዙሪያ ካሉ ክርስቲያኖች ጋር በተመሳሳይ ቀን የሚነበቡትን መልእክቶች እንዲያስተምሩ ይረዳቸዋል።`,
+        heading: "አብያተ ክርስቲያናት ሌክሽነሪን ለምን ይጠቀማሉ?",
+        body: `አብያተ ክርስቲያናት ሌክሽነሪን የሚጠቀሙት ምእመናን በጊዜ ሂደት የተለያዩ የመጽሐፍ ቅዱስ ክፍሎችን እንዲሰሙ ለማድረግ ነው። በጥንቃቄ የተዘጋጀ ሌክሽነሪ አምላኪዎችን ከፍጥረት እስከ ራእይ ካሉት ዋና ዋና የመጽሐፍ ቅዱስ ርዕሶች ጋር ያስተዋውቃቸዋል። በተጨማሪም አገልጋዮች በዓለም ዙሪያ ካሉ ክርስቲያኖች ጋር በተመሳሳይ ቀን የሚነበቡትን መልእክቶች እንዲያስተምሩ ይረዳቸዋል።`,
       },
       {
-        heading: "ሌክቲዮናሪ የቤተ ክርስቲያንን ዓመት እንዴት ይከተላል?",
-        body: `ሌክቲዮናሪ የቤተ ክርስቲያን ዘመን (የሥርዓተ አምልኮ ካሌንደር) ጋር በጥብቅ የተያያዘ ነው። ይህም ካሌንደር የክርስቶስን ምድራዊ ሕይወትና የቤተ ክርስቲያንን ሁነቶች መሠረት ያደርጋል። ለምሳሌ በአድቬንት (ጾመ ነቢያት) ወቅት ንባቦቹ በጽኑ ተስፋና በመጠባበቅ ላይ ያተኩራሉ። በዐብይ ጾም ወቅት ደግሞ ወደ ንስሐና ወደ መስቀሉ ጉዞ ያደላሉ።`,
+        heading: "ሌክሽነሪ የቤተ ክርስቲያንን ዓመት እንዴት ይከተላል?",
+        body: `ሌክሽነሪ የቤተ ክርስቲያን ዘመን (የሥርዓተ አምልኮ ካሌንደር) ጋር በጥብቅ የተያያዘ ነው። ይህም ካሌንደር የክርስቶስን ምድራዊ ሕይወትና የቤተ ክርስቲያንን ሁነቶች መሠረት ያደርጋል። ለምሳሌ በአድቬንት (ጾመ ነቢያት) ወቅት ንባቦቹ በጽኑ ተስፋና በመጠባበቅ ላይ ያተኩራሉ። በዐብይ ጾም ወቅት ደግሞ ወደ ንስሐና ወደ መስቀሉ ጉዞ ያደላሉ።`,
       },
       {
         heading: "ንባቦች እንዴት ተደራጅተዋል?",
-        body: `በዚህ መተግበሪያ ውስጥ ያለው ሌክቲዮናሪ በየዕለቱ ሦስት የንባብ ክፍሎችን ያቀርባል፦
+        body: `በዚህ መተግበሪያ ውስጥ ያለው ሌክሽነሪ በየዕለቱ ሦስት የንባብ ክፍሎችን ያቀርባል፦
 
 • ብሉይ ኪዳን — ለወንጌል ጥላና ምስክር የሆኑ ከብሉይ ኪዳን የተወሰዱ ክፍሎች።
 • መልእክት — ከሐዋርያት መልእክታት (እንደ ሮሜ፥ ኤፌሶን፥ ያዕቆብ) የተወሰዱ የመመሪያና የምክር ንባቦች።
@@ -258,7 +258,7 @@ const amharicContent: GlossaryContent = {
         body: `የዕለት ንባቦች የግል መንፈሳዊ ሕይወትን ያጠናክራሉ፥ ለማሰላሰልና ለጸሎት ግብዓት ይሆናሉ፥ እንዲሁም ምእመናንን ከዓለም አቀፍ ቤተ ክርስቲያን ጋር ያገናኛሉ። በዓለም ዙሪያ ያሉ ክርስቲያኖች በተመሳሳይ ቀን አንድ ዓይነት ጥቅስ ሲያነቡ፥ በልዩ ልዩ ቋንቋና ባህል ውስጥ ቢሆኑም በእግዚአብሔር ቃል አንድ ይሆናሉ።`,
       },
       {
-        heading: "በዚህ መተግበሪያ ውስጥ ሌክቲዮናሪን እንዴት መጠቀም ይቻላል?",
+        heading: "በዚህ መተግበሪያ ውስጥ ሌክሽነሪን እንዴት መጠቀም ይቻላል?",
         body: `ይህ መተግበሪያ በተመረጠው ቋንቋና የመጽሐፍ ቅዱስ ትርጉም መሠረት የዕለት ንባቦችን ያቀርባል። በመደበኛ ቀናት የዕለቱን ንባብ ያገኛሉ። በእሁድና በበዓላት ደግሞ ብሉይ ኪዳን፥ መልእክት እና ወንጌል ተዘጋጅተው ይቀርባሉ። የካሌንደር ገጽን በመጠቀም የማንኛውንም ቀን ንባብ መመልከት እና የተወደዱ ጥቅሶችን ማስቀመጥ ይችላሉ።`,
       },
     ],
@@ -324,58 +324,103 @@ const amharicContent: GlossaryContent = {
         name: "የሐዋርያት እምነት (Apostles' Creed)",
         introduction:
           "የሐዋርያት እምነት መግለጫ እጅግ ጥንታዊና በስፋት የሚታወቅ የክርስቲያናዊ እምነት ማጠቃለያ ነው። በአምልኮ፥ በጥምቀት እና በዕለት ጸሎት ውስጥ ይደገማል።",
-        text: `ሁሉን በሚችል ሰማይንና ምድርን በፈጠረ በእግዚአብሔር አብ አመናለሁ።
+        text: `እኔ ሁሉን በሚችል፤
+ሰማይንና ምድርን በፈጠረ፤
+በእግዚአብሔር አብ አምናለሁ።
 
-በአንድ ልጁም በጌታችን በኢየሱስ ክርስቶስ አመናለሁ፤
-እርሱ ከመንፈስ ቅዱስ ተፀንሶ ከድንግል ማርያም ተወለደ፤
-በጴንጤናዊው ጲላጦስ ዘመን መከራን ተቀበለ፤
-ተሰቀለ፤ ሞተ፤ ተቀበረ፤ ወደ ሲኦል ወረደ፤
-በሦስተኛውም ቀን ከሙታን ተለይቶ ተነሣ፤
-ወደ ሰማይ አረገ፤
-ሁሉን በሚችል በእግዚአብሔር አብ ቀኝ ተቀመጠ፤
-ከዚያም በሕያዋንና በሙታን ላይ ሊፈርድ ይመጣል።
+ደግሞም በአንድ ልጁ፤
+በመንፈስ ቅዱስ በተፀነሰ፤
+ከድንግል ማርያም በተወለደ፤
+በጴንጤናዊው በጲላጦስ ዘመን መከራ የተቀበለ፤
+በተሰቀለ፤
+በሞተ፤
+ተቀበረ፤
+ወደ ሲኦል በወረደ፤
+በሦስተኛውም ቀን ከሙታን በተነሣ፤
+ወደ ሰማይ በወጣ፤
+ሁሉን በሚችል በእግዚአብሔር አብ ቀኝ የተቀመጠ፤
+በሕያዋንና በሙታን ሊፈርድ ከዚያ በሚመለስ፤
+በጌታችን በኢየሱስ ክርስቶስ አምናለሁ።
 
-ከመንፈስ ቅዱስ፥
-ከቅድስት አጽናፋዊት ቤተ ክርስቲያን፥
-ከቅዱሳን ኅብረት፥
-ከኃጢአት ይቅርታ፥
-ከሥጋ ትንሣኤና ከዘላለም ሕይወት አመናለሁ።
-አሜን።`,
+ደግሞም በመንፈስ ቅዱስ፤
+በአንዲት ቅድስት የሐዋርያት ቤተ ክርስቲያን፤
+በቅዱሳን አንድነት፤
+በኃጢአት ሥርየት፤
+በሥጋ ትንሣኤ፤
+በዘላለም ሕይወት አምናለሁ። አሜን።`,
       },
       {
-        name: "ጸሎተ ሃይማኖት (Nicene Creed)",
+        name: "የኒቅያ ሃይማኖት መግለጫ (Nicene Creed)",
         introduction:
-          "ጸሎተ ሃይማኖት በኒቂያ (325 ዓ.ም) እና በቁስጥንጥንያ (381 ዓ.ም) ጉባኤዎች የተደነገገ የሃይማኖት መግለጫ ሲሆን በብዙ አብያተ ክርስቲያናት በአምልኮ ጊዜ ይጸለያል።",
-        text: `ሁሉን በያዘ ሰማይንና ምድርን የሚታየውንና የማይታየውን በፈጠረ በአንድ አምላክ በእግዚአብሔር አብ አመናለሁ።
+          "ማህበሩ እንደቆመ በበዓላት ጊዜና በልዩ ሥነ ሥርዓት ጊዜ የሚነበብ። በኒቂያ (325 ዓ.ም) እና በቁስጥንጥንያ (381 ዓ.ም) ጉባኤዎች የተደነገገ የሃይማኖት መግለጫ።",
+        text: `ሁሉን በሚችል፤
+ሰማይንና ምድርን፤
+የሚታየውንና የማይታየውን በፈጠረ፤
+አንድ አምላክ በሚሆን፤
+በእግዚአብሔር አብ እናምናለን።
 
-ዓለም ሳይፈጠር ከእርሱ ጋር በነበረ በአንድ ጌታ በኢየሱስ ክርስቶስ አመናለሁ፤
-ከአምላክ የተገኘ አምላክ፥ ከብርሃን የተገኘ ብርሃን፥ እውነተኛ አምላክ የተገኘ እውነተኛ አምላክ፥ የተወለደ እንጂ ያልተፈጠረ፥ በባሕርዩ ከአብ ጋር የሚስተካከል፤
-ሁሉ በእርሱ ሆነ፥ ያለ እርሱ ግን ምንም የሆነ የለም።
-ስለ እኛ ስለ ሰዎች ስለ መዳናችን ከሰማይ ወረደ፤
-ከመንፈስ ቅዱስና ከድንግል ማርያም ሰው ሆነ፤
-ስለ እኛ በጴንጤናዊው ጲላጦስ ዘመን ተሰቀለ፤ መከራን ተቀበለ፤ ሞተ፤ ተቀበረ፤
-በቅዱሳት መጻሕፍት እንደተጻፈ በሦስተኛው ቀን ከሙታን ተለይቶ ተነሣ፤
-ወደ ሰማይ አረገ፥ በአባቱም ቀኝ ተቀመጠ፤
-በሕያዋንና በሙታን ላይ ሊፈርድ በጌትነት እንደገና ይመጣል፤
-ለመንግሥቱም ፍጻሜ የለውም።
+እርሱ ብቻ የአብ ልጅ በሚሆን፤
+ዓለም ሳይፈጠር ከአብ በተወለደ፤
+ከአምላክ በተገኘ አምላክ፤
+ከብርሃን በተገኘ ብርሃን፤
+እውነተኛ አምላክ በተገኘ እውነተኛ አምላክ፤
+በህልውናው ከአብ ጋር አንድ በሆነ፤
+በተፈጠረ ሳይሆን በተወለደ፤
+ሁሉ በእርሱ ሆነ፤
+ስለ እኛ ስለ ሰዎች ስለ ድኅንነታችንም ከሰማይ በወረደ፤
+በመንፈስ ቅዱስ ከድንግል ማርያም ሥጋ ነሥቶ ሰው በሆነ፤
+በጴንጤናዊው በጲላጦስ ዘመንም ስለ እኛ በተሰቀለ፤
+መከራ የተቀበለ፤
+በሞተ፤
+በተቀበረም።
+በቅዱሳት መጻሕፍትም እንደ ተጻፈ፤
+በሦስተኛው ቀን ከሙታን ተለይቶ በተነሣ፤
+ወደ ሰማይም በወጣ፤
+በአብ ቀኝ በተቀመጠ፤
+በሕያዋንና በሙታን ሊፈርድ ዳግመኛ በክብር በሚመጣ፤
+ለመንግሥቱ ፍጻሜ በሌለው፤
+በአንድ ጌታ በኢየሱስ ክርስቶስ እናምናለን።
 
-ከአብ በሚወጣ ከአብና ከወልድ ጋር አብሮ በሚሰገድለትና በሚመሰገንበት፥ በነቢያትም ሲናገር በነበረ ጌታና ሕይወትን በሚሰጥ በመንፈስ ቅዱስ አመናለሁ።
-በሁሉ በምትሆን በአንዲት ቅድስት አጽናፋዊትና ሐዋርያዊት ቤተ ክርስቲያን አመናለሁ።
-ለኃጢአት ይቅርታ በአንዲት ጥምቀት አመናለሁ፤
-የሙታንንም ትንሣኤና የሚመጣውን የዘላለም ሕይወት ተስፋ አደርጋለሁ።
-አሜን።`,
+ከአብና ከወልድ ጋር በሚሰገድለትና በሚከበር፤
+ከአብና ከወልድ በሚወርድ፤
+በነቢያት በተናገረ፤
+የሕይወት ጌታና ሰጪ በሚሆን፤
+በመንፈስ ቅዱስም እናምናለን።
+
+የሁሉም በሆነች፤
+በአንዲት ቅድስት የሐዋርያት ቤተ ክርስቲያንም እናምናለን።
+ለኃጢአት ማስተስረያ በተደረገች፤
+በአንዲት ጥምቀትም እናምናለን።
+የሙታንንም ትንሣኤ፤
+ገና የሚመጣውን ዓለም ሕይወትም እንጠብቃለን። አሜን።`,
       },
       {
         name: "የአትናቴዎስ ሃይማኖት (Athanasian Creed)",
         introduction:
           "የአትናቴዎስ የሃይማኖት መግለጫ በቅዱስ አትናቴዎስ ስም የሚጠራ ጥንታዊ መግለጫ ሲሆን ስለ ሥላሴ ምስጢርና ስለ ክርስቶስ ሰው መሆን በስፋት ያብራራል።",
-        text: `የሚድን ዘንድ የሚወድ ሁሉ ከሁሉ በፊት አጽናፋዊቷን ሃይማኖት ሊጠብቅ ይገባዋል። እርሷንም ሙሉና ንጹሕ አድርጎ የማይጠብቅ ሁሉ ያለ መጠራጠር ለዘላለም ይጠፋል።
+        text: `ለመዳን የሚፈልግ ሰው ሁሉ ከሁሉም ነገር አስቀድሞ የሁሉ የሆነች የቤተ ክርስቲያንን ሃይማኖት እውነተኛ አድርጎ ሊቀበል ያስፈልገዋል። ንጽሕና ሙሉ አድርጎ ያልጠበቀው ሰው ሁሉ ያለ ጥርጥር የዘላለም ጥፋት ይደርስበታል።
 
-አጽናፋዊቷም ሃይማኖት ይህች ናት፦ በአንድ አምላክ በሥላሴ፥ በሥላሴም በአንድነት እንሰግዳለን፤ አካላትን ሳንቀላቅል፥ ባሕርይንም ሳንከፍል፤ አብ አንድ አካል ነውና፥ ወልድም ሌላ አካል ነው፥ መንፈስ ቅዱስም ሌላ አካል ነው። ነገር ግን የአብና የወልድ የመንፈስ ቅዱስም አምላክነት አንድ ነው፤ ክብራቸው እኩል ነው፥ ጌትነታቸውም አብሮ የሚኖር ነው።
+በሦስትነቱ አንድነቱን፤ በአንድነቱም ሦስትነቱን አምነን አንድ አምላክን እናመልካለን። ይህም እውነተኛ የክርስቲያን ሃይማኖት ነው። ይህንም የምናደርገው አካላትን ሳንደባልቅ መለኮታዊ ህልውናንም ሳንክፈል ነው። ምክንያቱም የአብ አካል ለብቻው፤ የወልድ ለብቻው፤ የመንፈስ ቅዱስም ለብቻው ስለሆነ ነው።
 
-አብ እንደሆነ ወልድም እንዲሁ ነው፥ መንፈስ ቅዱስም እንዲሁ ነው። አብ ያልተፈጠረ ነው፥ ወልድ ያልተፈጠረ ነው፥ መንፈስ ቅዱስም ያልተፈጠረ ነው። አብ ወሰን የሌለው ነው፥ ወልድ ወሰን የሌለው ነው፥ መንፈስ ቅዱስም ወሰን የሌለው ነው። አብ ዘለዓለማዊ ነው፥ ወልድ ዘለዓለማዊ ነው፥ መንፈስ ቅዱስም ዘለዓለማዊ ነው። ነገር ግን አንድ ዘለዓለማዊ እንጂ ሦስት ዘለዓለማውያን አይደሉም።
+ሆኖም የአብ፤ የወልድና የመንፈስ ቅዱስ መለኮት አንድ ነው፤ ክብሩና ሥልጣኑም አካል ሆኖ ይኖራል። ወልድ በህልውናው እንደ አብ ነው፤ መንፈስ ቅዱስም እንዲሁ ነው።
 
-እንዲሁም ሦስት ያልተፈጠሩ ወይም ሦስት ወሰን የሌላቸው አይደሉም፤ አንድ ያልተፈጠረና አንድ ወሰን የሌለው ነው እንጂ። አሜን።`,
+አብ አልተፈጠረም፤ ወልድ አልተፈጠረም፤ መንፈስ ቅዱስም አልተፈጠረም። አብ ወሰን የለውም፤ ወልድ ወሰን የለውም፤ መንፈስ ቅዱስም ወሰን የለውም። አብ ዘላለማዊ ነው፤ ወልድ ዘላለማዊ ነው፤ መንፈስ ቅዱስም ዘላለማዊ ነው። ቢሆንም፤ ዘላለማዊ የሚሆን አንድ እንጂ ሦስት አይደለም። ያልተፈጠረና ወሰን የሌለው ሦስት እንዳይሆን፤ እንዲሁም ያልተፈጠረና ወሰን የሌለውም አንድ ነው።
+
+እንዲሁም አብ ሁሉን ማድረግ የሚችል ነው፤ ወልድ ሁሉን ማድረግ የሚችል ነው፤ መንፈስ ቅዱስም ሁሉን ማድረግ የሚችል ነው። ቢሆንም፤ ሁሉን ማድረግ የሚችል አንድ እንጂ ሦስት አይደለም። ስለዚህ አብ አምላክ ነው፤ ወልድ አምላክ ነው፤ መንፈስ ቅዱስም አምላክ ነው። ሆኖም፤ አንድ አምላክ እንጂ ሦስት አማልክት አይደለም። ስለዚህ አብ ጌታ ነው፤ ወልድ ጌታ ነው፤ መንፈስ ቅዱስም ጌታ ነው። ሆኖም፤ አንድ ጌታ እንጂ ሦስት ጌቶች አይደለም።
+
+ምክንያቱም የክርስቲያን እምነት እውነተኝነት እያንዳንዱ አካል አምላክና ጌታ መሆኑን እንድናምን እንደሚያስገድደን ሁሉ፤ የክርስቲያን ሃይማኖት ሦስት አማልክት ወይም ሦስት ጌቶች እንዳንል ይከለክለናል።
+
+አብ በማንም አልተሠራም፤ አልተፈጠረም፤ አልተወለደምም። ወልድ ከአብ ተወለደ እንጂ፤ አልተሠራም፤ አልተፈጠረምም። መንፈስ ቅዱስ አልተሠራም፤ አልተፈጠረም፤ አልተወለደምም፤ ነገር ግን ከአብና ከወልድ የሚወርድ ነው።
+
+ስለዚህ አብ አንድ ስለሆነ ሦስት አብ አይደለም፤ ወልድም አንድ እንጂ ሦስት ወልድ አይደለም፤ መንፈስ ቅዱስም አንድ እንጂ ሦስት አይደለም። ከሦስቱ አካላት አንዱ ከሌላው ቀዳሚነት ወይም ደኃሪነት የለውም፤ አንዱም ሌላውን የሚበልጥ ወይም የሚያንስ አይደለም። ስለሆነም፤ ሦስቱ አካላት በእኩልነትና በዘላለማዊነት አንድ ናቸው። ከዚህ የተነሣም ቀደም ብሎ እንደ ተጠቀሰው ሦስቱ አካላት በአንድ መለኮት፤ አንድ አምላክም በሦስት አካላት ይመለካል። ለመዳን የሚፈልግ ሁሉ ስለ ሥላሴ እንዲሁ ማሰብ ይገባዋል።
+
+ከዚህም ሌላ የዘላለም ድኅነት ለማግኘት የጌታችንን የኢየሱስ ክርስቶስን በሥጋ መገለጥ በእውነት ማመን አስፈላጊ ነው። ምክንያቱም ትክክለኛው እምነት ጌታችን ኢየሱስ ክርስቶስ የእግዚአብሔር ልጅ፤ አምላክም ሰውም መሆኑን አምነን ማስታወቅ ነው። እርሱም ከዘመናት አስቀድሞ ከአብ የተወለደ አምላክ፤ ከእናቱ በሥጋ በዓለም የተወለደ ሰው ነው።
+
+የሚያስብ ነፍስ ያላትውና የሰውን ሥጋ የለበሰ ፍጹም አምላክ ፍጹም ሰው ነው። በአምላክነቱ ከአብ ጋር የተስተካከለ፤ በሰውነቱም ከአብ ያነሰ ነው። አምላክም ሰውም ቢሆንም፤ አንድ ክርስቶስ እንጂ ሁለት ክርስቶስ አይደለም። አንድ ነው ስንል ግን የሰውን ሥጋ ለበሰ እንጂ፤ መለኮትን ወደ ሥጋ አለወጠም። በእርግጥ አንድ የሆነውም በባሕርያት መደባለቅ ሳይሆን፤ በአካል አንድ በመሆኑ ነው። ምክንያቱም የሚያስብ ነፍስና ሥጋ አንድ ሰው እንደሆኑ ሁሉ፤ አምላክና ሰው በክርስቶስ አንድ ናቸው።
+
+እርሱም ለድኅነታችን ሲል መከራ የተቀበለ፤ ወደ ሲኦል የወረደ፤ ከሙታን የተነሣ፤ ወደ ሰማይ የወጣ፤ በአብ ቀኝ የተቀመጠ፤ በሕያዋንና በሙታንም ሊፈርድ ከዚያ በሚመለስ፤ በመጣበት ጊዜም ሰዎች ሁሉ በሥጋ ተነሥተው ስለ ሥራቸው መልስ ይሰጣሉ። መልካም የሠሩ ወደ ዘላለም ሕይወት፤ ክፉ የሠሩ ወደ ዘላለም እሳት ይገባሉ።
+
+ይህ እውነተኛው የክርስቲያን እምነት ነው፤ ይህን የማያምንና አጥብቆ የማይይዝ ሊድን አይችልም።`,
       },
     ],
   },
@@ -524,43 +569,72 @@ Ameen`,
         name: "Amanaa Nikiya (Nicene Creed)",
         introduction:
           "Amanaa Nikiya ibsa amantaa Kora Nikiya (325 AD) fi Kora Kaanstaantiinoopil (381 AD) irratti murtaa'ee dha.",
-        text: `Waaqayyo Abbaa tokkicha isa danda'aa hundumaa,
-isa waaqaa fi lafa, waan mul'atuufi waan hin mul'anne hundumaa uumetti ni amanna.
-
-Gooftaa tokkicha Yesuus Kiristoos, Ilma Waaqayyoo tokkicha,
-barri osoo hin jalqabin Abbaa irraa dhalatetti ni amanna.
-Waaqa irraa Waaqa, Ifa irraa Ifa,
-Waaqa dhugaa irraa Waaqa dhugaa,
-kan dhalate malee kan hin uumamne,
-Abbaa waliin amala tokko kan qabu,
-inni waan hundumaa uume.
-Nuuf jedhee nu fayyisuuf waaqarraa gad bu'e.
-Hafuura Qulqulluu fi Durboo Maariyaam irraa foon uffate,
-nama dhugaas ta'e.
-Nuuf jedhee Phalaaxos jalatti fannifame, du'e, awwaalame.
-Akka Kitaabni Qulqulluun jedhutti guyyaa sadaffaatti du'a ka'e.
-Gara waaqatti ol ba'e, mirga Abbaa taa'e.
-Warra jiraatotaa fi du'an irratti murteessuuf ulfinaan deebi'ee ni dhufa;
-mootummaan isaas dhuma hin qabu.
-
-Hafuura Qulqulluu, Gooftaa fi Arjoomaa jireenyaa,
-isa Abbaa irraa ba'u,
-isa Abbaa fi Ilma waliin sagadamuufi ulfeeffamu,
-isa raajotaan dubbatetti ni amanna.
-Waldaa Qulqulluu tokkitti, hunda galeessa fi kan apostolootaatti ni amanna.
-Dhiifama cubbuutiif cuuphaa tokkitti ni beekna.
-Du'a ka'uu warra du'anii fi jireenya bara dhufuuf eegganna.
-Ameen.`,
+        text: `In amanna hundumaa kan danda'u Waaqayyo Isa tokkicha
+Abbaatti,
+Uumaa waaqaatii fi lafaa,
+Uumaa wanta argamuu fi wanta hin argamne hundumaa.
+In amanna kan dhalate tokkicha Ilma Waaqayyoo,
+Yesus Kristos Gooftaa tokkichatti;
+Biyyi lafaa utuu hin uumamin bara hundumaa dura
+Abbaattii kan dhalate,
+Waaqayyo Waaqayyottii argame, Ifa Ifatti argame,
+Waaqayyo Isa dhugaa Waaqayyo Isa dhugaattii argame;
+Jiraachuun Isaa Abbaadhaa wajjin tokko kan ta'e;
+Inni kan uumame utuu hin ta'in kan dhalatee dha;
+Wanti hundinuu Isaan kan ta'e;
+Waa'ee keenyaaf, waa'ee fayyina namootaatiif waaqa irraa
+kan gadi bu'e;
+Hafuura Qulqulluudhaan Maariyaam durba irraa
+foon uffatee nama kan ta'e;
+Bara Philaaxos Phenxenichaattis nuuf jedhee kan fannifame;
+Kan dhiphate, kan du'e, kan awwaalames;
+Macaafa Qulqulluu keessatti barreeffamee akka jiru,
+Guyyaa sadaffaatti warra du'an keessaa kan ka'e;
+Gara waaqaattis kan ol ba'e; gara mirga Abbaa kan taa'u;
+Warra jiranii fi warra du'anitti faraduudhaaf lammaffaa
+deebi'ee ulfinaan kan dhufu;
+Mootummaan Isaas dhuma kan hin qabnetti.
+In amanna Hafuura Qulqulluutti;
+Goofticha Isa jireenya kennu;
+Isa Abbaa fi Ilma biraa ba'u;
+Abbaa fi Ilmaa wajjin kan waaqeffamu,
+Ulfina argachuun kan Isaaf ta'u,
+Isa karaa raajotaa dubbatetti.
+In amanna kan nama hundumaa kan taate tokkittii
+qulqullooftuu Waldaa Kristaanaa Ergamootaa;
+Dhiifamuu cubbuu kan argachiisu cuuphaa tokkicha,
+Du'aa ka'uu warra du'aniitii fi jireenya bara baraa
+isa dhufuuf jiruus in eegganna. Ameen!`,
       },
       {
         name: "Amanaa Atanaatewos (Athanasian Creed)",
         introduction:
           "Amanaa Atanaatewos ibsa amantaa qulqulluu Atanaatewosiin kenname yoo ta'u, Sillaasee fi qulqullummaa Kiristoos bal'inaan ibsa.",
-        text: `Namni fayyuu fedhu kamiyyuu, waan hundumaa dura amantaa qulqulluu sanas qabachuu qaba. Isas osoo hin hir'isin qulqullummaadhaan kan hin eegne, dhabama malee bara baraaf ni bada.
+        text: `Namni fayyuu barbaadu hundinuu waan hundumaa dura amantiin Waldaa Kristaanaa kan nama hundumaa taate kun amantii dhuga-qabeessa ta'uu isaa amanee fudhachuun in barbaachisaaf. Namni guutummaatti, qulqullinattis isa hin eegne hundinuu, mamii tokko malee badiisni bara baraa isa irra in ga'a.
 
-Amantaan qulqulluun isaniis kana: Waaqa tokko Sillaaseedhaan, Sillaasees tokkummaadhaan sagadna. Qaamota osoo hin walitti makin, amalas osoo hin qoodin. Abbaan qaama tokko, Ilmis qaama biraa, Hafuurri Qulqulluuns qaama biraa dha. Garuu Waaqayyummaan Abbaa, Ilmaa fi Hafuura Qulqulluu tokko, ulfinni isaanii qixxee, surraan isaaniis bara baraaf tokko.
+Nuyi sadanummaa Isaatti tokkummaa Isaa, tokkummaa Isaattis sadanummaa Isaa amannee, Waaqayyo tokkicha in waaqeffanna; kun Amantii Kristaanaa isa dhugaa dha. Kanas eenyummaa Isaa utuu waliin hin makin, jiraachuu Waaqayyummaa Isaatii utuu gargar hin baasin in amanna. Sababiin isaa immoo, qaamni Abbaa addaan, kan Ilmaa addaan, kan Hafuura Qulqulluus addaan.
 
-Abbaan akkuma ta'e, Ilmis akkasuma, Hafuurri Qulqulluuns akkasuma. Abbaan kan hin uumamne, Ilmis kan hin uumamne, Hafuurri Qulqulluuns kan hin uumamne. Abbaan daangaa kan hin qabne, Ilmis daangaa kan hin qabne, Hafuurri Qulqulluuns daangaa kan hin qabne. Abbaan bara baraa, Ilmis bara baraa, Hafuurri Qulqulluuns bara baraa. Garuu bara baraa tokko malee bara baraa sadii miti. Ameen.`,
+Haa ta'u iyyuu malee, Waaqayyummaan Abbaa, kan Ilmaa, kan Hafuura Qulqulluus tokko; ulfinatti, gooftummaatti, wal-qixxee ta'ee in jiraata. Ilmi jiraachuu Isaatti akka Abbaa ti, Hafuurri Qulqulluunis jiraachuu Isaatti akkasuma.
+
+Abbaan hin uumamne, Ilmi hin uumamne, Hafuurri Qulqulluunis hin uumamne. Abbaan iddoo hundumaa jira, Ilmi iddoo hundumaa jira, Hafuurri Qulqulluunis iddoo hundumaa jira. Abbaan bara baraan jiraata, Ilmi bara baraan jiraata, Hafuurri Qulqulluunis bara baraan jiraata. Akkas yoo ta'e iyyuu bara baraan jiraataa kan ta'u kun tokko malee sadii miti. Kan hin uumamnee fi kan iddoo hundumaa jiru tokko akka ta'e, akkanuma immoo kan hin uumamnee fi kan iddoo hundumaa jiru sadii miti.
+
+Akkuma kanatti Abbaan hundumaa kan danda'uu dha, Ilmi hundumaa kan danda'uu dha, Hafuurri Qulqulluunis hundumaa kan danda'uu dha. Haa ta'u iyyuu malee, hundumaa kan danda'u kun tokko malee sadii miti. Kanaafis Abbaan Waaqayyoo dha, Ilmi Waaqayyoo dha, Hafuurri Qulqulluunis Waaqayyoo dha. Akkas ta'u iyyuu Waaqayyo tokko malee, waaqayyoolii sadii miti. Kanaafis Abbaan Gooftaa dha, Ilmi Gooftaa dha, Hafuurri Qulqulluunis Gooftaa dha. Akkas ta'u iyyuu Gooftaa tokko malee, gooftota sadii miti.
+
+Sababiin isaas dhugummaan Amantii Kristaanaa tokkoon tokkoon qaamichaa, Waaqayyo ta'uu Isaa fi Gooftaa ta'uu Isaa akka amannuuf akkuma nu dirqisiisutti, Amantiin Kristaanaa kun akka nuyi waaqayyoolii sadii yookiis gooftota sadii hin jenneefis nu dhowwa.
+
+Abbaan eenyuun iyyuu hin hojjetamne, eenyuun iyyuu hin uumamne, eenyuttii iyyuu hin dhalanne. Ilmi Abbaattii dhalate malee, hin hojjetamne, hin uumamnes. Hafuurri Qulqulluun Abbaadhaa fi Ilma biraa kan ba'uudha malee, hin hojjetamne, hin uumamne, hin dhalannes.
+
+Akkuma kanatti Abbaa tokkichatu jira malee, abbootii sadii miti; Ilma tokkichatu jira malee, ilmaan sadii miti; Hafuura Qulqulluu tokkichatu jira malee, hafuurota qulqulloota sadiitu jira miti. Qaama sadan kana keessaa inni tokko isa kaan dura yookiis isa kaan booddee miti; akkuma kanatti inni tokko isa kaan kan caalu yookiis isa kaanii gadi miti. Kanaafis qaamni sadan kun wal-qixxee ta'uu isaaniitii fi bara barummaatti tokko; kana irraa kan ka'e, akkuma kana duratti mul'ifamee dubbatametti, qaamni sadan kun Waaqayyummaatti tokko; Waaqayyo tokkos; qaamni sadan tokkummaa Waaqayyootti in waaqeffama. Namni fayyuu barbaadu hundinuu, waa'ee sadan tokkummaatiif akkuma kana yaaduun isaaf in ta'a.
+
+Kana malees immoo fayyina bara baraa argachuudhaaf, nama ta'ee mul'achuu Gooftaa keenya Yesus Kristos garaa guutuudhaan amanuun barbaachisaa dha. Sababiin isaas Gooftaan keenya Yesus Kristos Ilmi Waaqayyoo, Waaqayyo ta'uu Isaa, nama ta'uu Isaas amanuunii fi dhugaa ba'uun amantii isa sirrii dha.
+
+Inni baroota dura Abbaattii kan dhalate Waaqayyoo dha. Inni nama haadha Isaattii fooniin biyya lafaa irratti dhalatee dha. Inni nama lubbuu yaaduu danda'u qabuu fi foon namaa kan uffate, Waaqayyo mudaa hin qabnee fi nama mudaa hin qabnee dha. Waaqayyummaa Isaatiin Abbaadhaa wajjin waluma qixxee dha; namummaa Isaatiin immoo Abbaadhaa gadi.
+
+Inni utuma Waaqayyoo fi nama dhugaa ta'ee jiruu iyyuu, Inni Kristos tokkicha malee, Kristos lama miti. Tokko yommuu jennu, foon namaa uffate jechuu keenya malee, Waaqayyummaa gara fooniitti geddare jechuu keenya miti. Dhugumaan tokko; tokko ta'uun Isaa qaama tokkotti tokko ta'udhaan malee, Waaqayyummaa Isaa fi namummaa Isaa walitti makuudhaan miti. Sababiin isaas foonii fi lubbuun yaaduu danda'u nama tokkicha akkuma ta'an, Waaqayyoo fi namni Kristos tokkicha ta'an.
+
+Inni egaa fayyina keenyaaf jedhee kan dhiphate, Si'olitti kan gadi bu'e, du'aas kan ka'e; Gara waaqaattis kan ol ba'e, gara mirga Abbaa kan taa'u, warra jiranii fi warra du'anitti faraduudhaaf achii kan deebi'u; Yeroo dhufa Isaatti namoonni hundinuu fooniin du'aa ka'anii, waa'ee waan hojjetaniif deebii deebisuuf jiru. Wanta gaarii warri hojjetan, jireenya bara baraatti in galu; wanta hamaa warri hojjetan immoo gara ibidda bara baraatti in naqamu.
+
+Kun Amantii Kristaanaa isa dhugaa dha; namni kana hin amannee fi jabeessee hin qabanne fayyuu hin danda'u.`,
       },
     ],
   },
@@ -568,18 +642,18 @@ Abbaan akkuma ta'e, Ilmis akkasuma, Hafuurri Qulqulluuns akkasuma. Abbaan kan hi
     title: "Kadhannaa Gooftaa",
     introduction:
       "Kadhannaa Gooftaa kadhannaa Yesuus bartoota isaa yeroo isaan kadhachuu nu barsiisi jedhanii isa gaafatan barsiisee dha. Kadhannaa kiristaanummaa keessatti beekamaa fi bal'inaan fayyadamaa dha.",
-      text: `Yaa Abbaa keenyaa, waaqa irra kan jiraattu,
-      Maqaan Kee haa qulqullaa'u,
-      Mootummaan Kee haa dhufu,
-      Jaalalli Kee waaqa irratti akka ta'u,
-      Akkasuma lafa irratti haa ta'u;
-      Kan nu ga'u buddeena keenya har'aa nuuf kenni,
-      Yakka keenya nuuf dhiisi;
-      Nuyis kan nu yakkaniif akkuma dhiifnu,
-      Qoramatti nu hin galchin;
-      Hamaa nu oolchi malee,
-      Mootummaan kan Kee ti'oo,
-      Humnis, galannis, baruma baraan. Ameen!`,
+    text: `Yaa Abbaa keenyaa, waaqa irra kan jiraattu,
+Maqaan Kee haa qulqullaa'u,
+Mootummaan Kee haa dhufu,
+Jaalalli Kee waaqa irratti akka ta'u,
+Akkasuma lafa irratti haa ta'u;
+Kan nu ga'u buddeena keenya har'aa nuuf kenni,
+Yakka keenya nuuf dhiisi;
+Nuyis kan nu yakkaniif akkuma dhiifnu,
+Qoramatti nu hin galchin;
+Hamaa nu oolchi malee,
+Mootummaan kan Kee ti'oo,
+Humnis, galannis, baruma baraan. Ameen!`,
   },
 };
 
