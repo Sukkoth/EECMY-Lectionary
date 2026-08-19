@@ -493,29 +493,32 @@ Guyyoota hojii keessa dubbisni tokko qofti kan kennamu yoo ta'u, Dilbata fi Ayya
     title: "Ibsa ejjennaa Amantaa",
     creeds: [
       {
-        name: "Amanaa Apostoloota (Apostles' Creed)",
+        name: "Dhugaa Ba'uu Amantii Kiristaanaa Kan Ergamoota",
         introduction:
           "Amanaa Apostoloota ibsa amantaa kiristaanaa isa antique fi bal'inaan fayyadamaa dha. Tajaajila sagadaa, cuuphaa fi kadhanna keessatti deebi'ee dubbatama.",
-        text: `Waaqayyo Abbaa danda'aa hundumaa,
-isa waaqaa fi lafa uumetti nan amana.
+        text: `Nan amana
+Hundumaa kan danda'u, Waaqayyo Abbaatti,
+Uumaa Waaqaa fi Lafaatti,
+Tokkicha Ilma Isaa Yesus Kiristoos Gooftaa Keenyatti,
+Kan ulfeefame Hafuura Qulqulluudhaan,
+Kan dhalate Maariyaam durba irraa,
+Kan dhiphates bara philaaxos pheenxinichaatti,
+Kan fannifames, kan du'es, kan awwalames,
+Sii'olittis kan gadi bu'e,
+Guyyaa sadaffaattis du'aa kan ka'ee
+Gara waaqaattis kan ol ba'e,
+Hundumaa kan danda'u, gara mirga Waaqayyo Abbaas kan taa'e;
+Achiiyis Kan deebi'u,
+Warra jiranii fi warra du'anitti faraduudhaaf
 
-Ilma isaa tokkicha Gooftaa keenya Yesuus Kiristoosittis nan amana.
-Inni Hafuura Qulqulluudhaan ulfaa'ee,
-Durboo Maariyaam irraa dhalate.
-Phonxos Philaaxos jalattis rakkina arge,
-fannifame, du'e, awwaalames;
-gara iddoo du'aattis gad bu'e.
-Guyyaa sadaffaatti du'a ka'e,
-gara waaqatti ol ba'e.
-Waaqayyo Abbaa danda'aa hundumaa mirga taa'e.
-Achillasaas warra jiraatotaa fi warra du'an irratti murteessuuf ni dhufa.
-
-Hafuura Qulqulluutti,
-Waldaa Qulqulluu,
-tokkummaa qulqullootaatti,
-dhiifama cubbuutti,
-du'a ka'uu fooniitiifi jireenya bara baraatti nan amana.
-Ameen.`,
+Nan amana
+Hafuura qulqulluutti
+Tokkicha Qulqullaa'aa Waldaa Kiristaanaa,
+Tokkummaa Qulqullootaas,
+Dhiifamuu cubbus,
+Du'aa ka'uu fooniis,
+Jireenya bara-baraas,
+Ameen`,
       },
       {
         name: "Amanaa Nikiya (Nicene Creed)",
@@ -565,18 +568,18 @@ Abbaan akkuma ta'e, Ilmis akkasuma, Hafuurri Qulqulluuns akkasuma. Abbaan kan hi
     title: "Kadhannaa Gooftaa",
     introduction:
       "Kadhannaa Gooftaa kadhannaa Yesuus bartoota isaa yeroo isaan kadhachuu nu barsiisi jedhanii isa gaafatan barsiisee dha. Kadhannaa kiristaanummaa keessatti beekamaa fi bal'inaan fayyadamaa dha.",
-    text: `Yaa Abbaa keenya isa waaqa irra jirtuu,
-Maqaan kee qulqulluu ta'ee haa eebbifamu.
-Mootummaan kee haa dhufu,
-Feeteen kee akkuma waaqa irratti ta'u,
-akkasuma lafa irratti haa ta'u.
-Buddeena keenya kan guyyaa har'aa nuu kenni.
-Akkuma nuti warra nu yakkaniif dhiisnu,
-yakka keenyas nuu dhiisi.
-Qormaata keessattis nu hin galchin,
-hamaa irraa nu oolchi malee.
-Mootummaan, humni, ulfinnis bara baraaf kan keeti.
-Ameen.`,
+      text: `Yaa Abbaa keenyaa, waaqa irra kan jiraattu,
+      Maqaan Kee haa qulqullaa'u,
+      Mootummaan Kee haa dhufu,
+      Jaalalli Kee waaqa irratti akka ta'u,
+      Akkasuma lafa irratti haa ta'u;
+      Kan nu ga'u buddeena keenya har'aa nuuf kenni,
+      Yakka keenya nuuf dhiisi;
+      Nuyis kan nu yakkaniif akkuma dhiifnu,
+      Qoramatti nu hin galchin;
+      Hamaa nu oolchi malee,
+      Mootummaan kan Kee ti'oo,
+      Humnis, galannis, baruma baraan. Ameen!`,
   },
 };
 
