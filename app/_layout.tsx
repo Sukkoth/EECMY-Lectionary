@@ -148,6 +148,7 @@ function AppContent() {
         <Stack.Screen name="settings/language" />
         <Stack.Screen name="settings/font-alignment" />
         <Stack.Screen name="settings/check-updates" />
+        <Stack.Screen name="settings/about" />
         <Stack.Screen name="glossary/lectionary" />
         <Stack.Screen name="glossary/church-year" />
         <Stack.Screen name="glossary/creeds" />

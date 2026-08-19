@@ -291,7 +291,7 @@ export default function SettingsScreen() {
         <TouchableOpacity
           onPress={() => router.push("/settings/check-updates")}
           activeOpacity={0.7}
-          className="bg-surface dark:bg-surface-dark mb-8 flex-row items-center justify-between rounded-2xl px-5 py-4"
+          className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4"
         >
           <View className="flex-row items-center gap-4">
             <View className="rounded-lg p-2" style={{ backgroundColor: isDark ? "#16a34a20" : "#DCFCE7" }}>
@@ -309,6 +309,38 @@ export default function SettingsScreen() {
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
                 {t("appAndContentUpdates")}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={isDark ? "#737373" : "#A3A3A3"}
+          />
+        </TouchableOpacity>
+
+        {/* About App */}
+        <TouchableOpacity
+          onPress={() => router.push("/settings/about")}
+          activeOpacity={0.7}
+          className="bg-surface dark:bg-surface-dark mb-8 flex-row items-center justify-between rounded-2xl px-5 py-4"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="information-circle-outline" size={20} color="#3b82f6" />
+            </View>
+            <View>
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {t("aboutApp")}
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {t("aboutAppDesc")}
               </Text>
             </View>
           </View>
