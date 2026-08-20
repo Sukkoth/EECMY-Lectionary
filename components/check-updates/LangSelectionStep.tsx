@@ -76,7 +76,7 @@ function LangSelectionStep({
       const record = syncedLangPackVersions.find(
         (r) =>
           r.year === yearNum &&
-          r.language === langCode &&
+          r.language.toLowerCase() === langCode.toLowerCase() &&
           r.type === (type === "holidays" ? "holidays" : "day-info"),
       );
       return !!record && record.contentVersion >= manifestVersion;
@@ -86,8 +86,11 @@ function LangSelectionStep({
 
   const isVersionSynced = useCallback(
     (langCode: string, version: { code: string; contentVersion: number }) => {
-      const downloaded = downloadedVersions[langCode]?.find(
-        (d) => d.version === version.code,
+      const langVersions = Object.entries(downloadedVersions).find(
+        ([lCode]) => lCode.toLowerCase() === langCode.toLowerCase()
+      )?.[1] ?? [];
+      const downloaded = langVersions.find(
+        (d) => d.version.toLowerCase() === version.code.toLowerCase(),
       );
       return !!downloaded && downloaded.contentVersion >= version.contentVersion;
     },
@@ -186,8 +189,14 @@ function LangSelectionStep({
         let langUpdateCount = 0;
         let langAvailableCount = 0;
 
+        const langVersions = Object.entries(downloadedVersions).find(
+          ([lCode]) => lCode.toLowerCase() === lang.code.toLowerCase()
+        )?.[1] ?? [];
+
         lang.versions.forEach((v) => {
-          const downloaded = downloadedVersions[lang.code]?.find((d) => d.version === v.code);
+          const downloaded = langVersions.find(
+            (d) => d.version.toLowerCase() === v.code.toLowerCase(),
+          );
           if (!downloaded) {
             langAvailableCount++;
           } else if (downloaded.contentVersion < v.contentVersion) {
@@ -199,13 +208,13 @@ function LangSelectionStep({
           const holidaysRecord = syncedLangPackVersions.find(
             (r) =>
               r.year === year.year &&
-              r.language === lang.code &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
               r.type === "holidays",
           );
           const dayInfoRecord = syncedLangPackVersions.find(
             (r) =>
               r.year === year.year &&
-              r.language === lang.code &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
               r.type === "day-info",
           );
           if (holidaysRecord || dayInfoRecord) {
@@ -362,8 +371,8 @@ function LangSelectionStep({
                 </Text>
 
                 {lang.versions.map((version) => {
-                  const downloaded = downloadedVersions[lang.code]?.find(
-                    (d) => d.version === version.code,
+                  const downloaded = langVersions.find(
+                    (d) => d.version.toLowerCase() === version.code.toLowerCase(),
                   );
                   const isInstalled = !!downloaded;
                   const synced = isInstalled && downloaded.contentVersion >= version.contentVersion;
@@ -488,13 +497,13 @@ function LangSelectionStep({
                   const holidaysRecord = syncedLangPackVersions.find(
                     (r) =>
                       r.year === year.year &&
-                      r.language === lang.code &&
+                      r.language.toLowerCase() === lang.code.toLowerCase() &&
                       r.type === "holidays",
                   );
                   const dayInfoRecord = syncedLangPackVersions.find(
                     (r) =>
                       r.year === year.year &&
-                      r.language === lang.code &&
+                      r.language.toLowerCase() === lang.code.toLowerCase() &&
                       r.type === "day-info",
                   );
                   const isInstalled = !!holidaysRecord || !!dayInfoRecord;

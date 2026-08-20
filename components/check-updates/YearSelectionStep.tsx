@@ -65,8 +65,8 @@ function YearSelectionStep({
             const record = syncedReadingVersions.find(
               (r) =>
                 r.year === yearOption.year &&
-                r.language === lang.code &&
-                r.version === ver.code,
+                r.language.toLowerCase() === lang.code.toLowerCase() &&
+                r.version.toLowerCase() === ver.code.toLowerCase(),
             );
             if (!record) {
               newAvailableCount++;
@@ -84,8 +84,8 @@ function YearSelectionStep({
               const record = syncedReadingVersions.find(
                 (r) =>
                   r.year === yearOption.year &&
-                  r.language === lang.code &&
-                  r.version === ver.code,
+                  r.language.toLowerCase() === lang.code.toLowerCase() &&
+                  r.version.toLowerCase() === ver.code.toLowerCase(),
               );
               return !!record && record.contentVersion >= ver.contentVersion;
             }),
@@ -96,7 +96,7 @@ function YearSelectionStep({
           const record = syncedLangPackVersions.find(
             (r) =>
               r.year === yearOption.year &&
-              r.language === lang.code &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
               r.type === "holidays",
           );
           return !!record && record.contentVersion >= lang.holidays.version;
@@ -107,7 +107,7 @@ function YearSelectionStep({
           const record = syncedLangPackVersions.find(
             (r) =>
               r.year === yearOption.year &&
-              r.language === lang.code &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
               r.type === "day-info",
           );
           return !!record && record.contentVersion >= lang.dayInfo.version;
