@@ -8,6 +8,7 @@ import { useSettings } from "@/lib/SettingsContext";
 import { useOnboarding } from "@/lib/OnboardingContext";
 import { useTranslation } from "@/lib/i18n";
 import { scheduleDailyReminder } from "@/lib/NotificationService";
+import { gregorianToEthiopian } from "@/lib/ethiopianCalendar";
 import {
   fetchManifest,
   downloadReadings,
@@ -20,6 +21,7 @@ import {
   commitStatements,
   isContentDownloaded,
   getInstalledVersionsWithContentVersion,
+  getSyncedLangPackVersions,
   type Manifest,
 } from "@/lib/content";
 
@@ -72,8 +74,12 @@ export default function LanguagePickerContent({
     const map = new Map<string, { year: number; contentVersion: number }>();
     if (!manifest || isOnboarding) return map;
 
-    const currentYear = new Date().getFullYear();
-    const yearOpt = manifest.years.find((y) => y.year === currentYear) ?? manifest.years[0];
+    const ethYear = gregorianToEthiopian(new Date()).year;
+    const yearOpt =
+      manifest.years.find((y) => y.year === ethYear) ??
+      manifest.years.find((y) => y.year === new Date().getFullYear()) ??
+      manifest.years[0];
+
     if (!yearOpt) return map;
 
     for (const lang of yearOpt.languages) {
@@ -105,7 +111,9 @@ export default function LanguagePickerContent({
     versionCode: string,
     year: number,
   ) => {
-    const key = `${langCode}-${versionCode}`;
+    const lCode = langCode.toLowerCase();
+    const vCode = versionCode.toLowerCase();
+    const key = `${lCode}-${vCode}`;
     if (downloadProgressMap[key] != null) return;
 
     if (!isOnboardingComplete) {
@@ -122,9 +130,9 @@ export default function LanguagePickerContent({
       if (!manifest) return;
       const yearOpt = manifest.years.find((y) => y.year === year);
       if (!yearOpt) return;
-      const langOpt = yearOpt.languages.find((l) => l.code === langCode);
+      const langOpt = yearOpt.languages.find((l) => l.code.toLowerCase() === lCode);
       if (!langOpt) return;
-      const verOpt = langOpt.versions.find((v) => v.code === versionCode);
+      const verOpt = langOpt.versions.find((v) => v.code.toLowerCase() === vCode);
       if (!verOpt) return;
 
       updateProgress(30);
@@ -135,15 +143,15 @@ export default function LanguagePickerContent({
 
       const preparedReadings = prepareReadings(
         readingsPkg,
-        langCode,
-        versionCode,
+        lCode,
+        vCode,
         verOpt.contentVersion,
       );
       const syncRecordReading = prepareSyncRecord(
         year,
-        langCode,
+        lCode,
         langOpt.name,
-        versionCode,
+        vCode,
         verOpt.name,
         "readings",
         "",
@@ -152,14 +160,22 @@ export default function LanguagePickerContent({
 
       const allStatements = [...preparedReadings.statements, syncRecordReading];
 
-      // Download liturgical packs if missing
-      const hasHolidays = await isContentDownloaded(db, year, langCode, "holidays");
-      if (!hasHolidays && langOpt.holidays) {
+      // Check holidays: download if missing or if newer version available
+      const syncedLangPacks = await getSyncedLangPackVersions(db);
+      const holidayRecord = syncedLangPacks.find(
+        (r) => r.year === year && r.language.toLowerCase() === lCode && r.type === "holidays",
+      );
+      const holidayNeedsDownload =
+        langOpt.holidays &&
+        langOpt.holidays.version > 0 &&
+        (!holidayRecord || holidayRecord.contentVersion < langOpt.holidays.version);
+
+      if (holidayNeedsDownload && langOpt.holidays?.path) {
         const holidaysPkg = await downloadHolidays(langOpt.holidays.path);
-        const prep = prepareHolidays(holidaysPkg, langCode, langOpt.holidays.version);
+        const prep = prepareHolidays(holidaysPkg, lCode, langOpt.holidays.version);
         const syncRecord = prepareSyncRecord(
           year,
-          langCode,
+          lCode,
           langOpt.name,
           null,
           null,
@@ -170,19 +186,27 @@ export default function LanguagePickerContent({
         allStatements.push(...prep.statements, syncRecord);
       }
 
-      const hasDayInfo = await isContentDownloaded(db, year, langCode, "day-info");
-      if (!hasDayInfo && langOpt.dayInfo) {
+      // Check dayInfo: download if missing or if newer version available
+      const dayInfoRecord = syncedLangPacks.find(
+        (r) => r.year === year && r.language.toLowerCase() === lCode && r.type === "day-info",
+      );
+      const dayInfoNeedsDownload =
+        langOpt.dayInfo &&
+        langOpt.dayInfo.version > 0 &&
+        (!dayInfoRecord || dayInfoRecord.contentVersion < langOpt.dayInfo.version);
+
+      if (dayInfoNeedsDownload && langOpt.dayInfo?.path) {
         const dayInfoPkg = await downloadDayInfo(langOpt.dayInfo.path);
-        const prep = prepareDayInfo(dayInfoPkg, langCode, langOpt.dayInfo.version);
+        const prep = prepareDayInfo(dayInfoPkg, lCode, langOpt.dayInfo.version);
         const syncRecord = prepareSyncRecord(
           year,
-          langCode,
+          lCode,
           langOpt.name,
           null,
           null,
           "day-info",
           "",
-          dayInfoPkg.version,
+          langOpt.dayInfo.version,
         );
         allStatements.push(...prep.statements, syncRecord);
       }

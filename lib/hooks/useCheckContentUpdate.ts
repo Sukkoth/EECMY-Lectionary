@@ -95,9 +95,8 @@ export function useCheckContentUpdate() {
       setHasUpdate(updateFound);
       setUpdateInfo(updateFound && primaryYear != null ? { year: primaryYear } : null);
     } catch (err) {
-      console.warn("Check update failed:", err);
-      setHasUpdate(false);
-      setUpdateInfo(null);
+      // Preserve previous update state on temporary network disconnection
+      console.warn("Check update failed (network or server unreachable):", err);
     } finally {
       setChecking(false);
     }

@@ -441,7 +441,7 @@ export default function ContentUpdateScreen() {
         const items = selectedLangs[lang.code];
         if (!items?.length) continue;
 
-        if (items.includes("__holidays__")) {
+        if (items.includes("__holidays__") && lang.holidays?.path) {
           if (abortRef.current) return;
           const pkg = await downloadHolidays(lang.holidays.path);
           updateProgress(0.5);
@@ -451,7 +451,7 @@ export default function ContentUpdateScreen() {
           updateProgress(1.0);
         }
 
-        if (items.includes("__dayinfo__")) {
+        if (items.includes("__dayinfo__") && lang.dayInfo?.path) {
           if (abortRef.current) return;
           const pkg = await downloadDayInfo(lang.dayInfo.path);
           updateProgress(0.5);
@@ -465,19 +465,23 @@ export default function ContentUpdateScreen() {
         for (const versionCode of readingVersions) {
           if (abortRef.current) return;
 
-          const versionMeta = lang.versions.find((v) => v.code === versionCode);
-          const readingsPkg = await downloadReadings(versionMeta!.path);
+          const versionMeta = lang.versions.find(
+            (v) => v.code.toLowerCase() === versionCode.toLowerCase(),
+          );
+          if (!versionMeta || !versionMeta.path) continue;
+
+          const readingsPkg = await downloadReadings(versionMeta.path);
           updateProgress(0.5);
-          const readingsPrepared = prepareReadings(readingsPkg, lang.code, versionCode, versionMeta!.contentVersion);
+          const readingsPrepared = prepareReadings(readingsPkg, lang.code, versionCode, versionMeta.contentVersion);
           const readingsSync = prepareSyncRecord(
             year,
             lang.code,
             lang.name,
             versionCode,
-            versionMeta!.name,
+            versionMeta.name,
             "readings",
             "",
-            versionMeta!.contentVersion,
+            versionMeta.contentVersion,
           );
           await commitStatements(db, [...readingsPrepared.statements, readingsSync]);
           updateProgress(1.0);

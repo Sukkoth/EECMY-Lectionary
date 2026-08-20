@@ -25,12 +25,12 @@ export async function getAvailableLanguages(
     `SELECT DISTINCT 
        r.language,
        COALESCE(
-         (SELECT languageFullName FROM SyncRecord WHERE language = r.language AND languageFullName IS NOT NULL AND languageFullName != '' LIMIT 1),
+         (SELECT languageFullName FROM SyncRecord WHERE LOWER(language) = LOWER(r.language) AND languageFullName IS NOT NULL AND languageFullName != '' LIMIT 1),
          r.language
        ) AS languageFullName,
        r.version,
        COALESCE(
-         (SELECT versionFullName FROM SyncRecord WHERE language = r.language AND version = r.version AND versionFullName IS NOT NULL AND versionFullName != '' LIMIT 1),
+         (SELECT versionFullName FROM SyncRecord WHERE LOWER(language) = LOWER(r.language) AND LOWER(version) = LOWER(r.version) AND versionFullName IS NOT NULL AND versionFullName != '' LIMIT 1),
          UPPER(r.version)
        ) AS versionFullName
      FROM Reading r
