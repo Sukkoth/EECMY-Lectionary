@@ -23,6 +23,7 @@ export type AppSettings = {
   language: string;
   appLanguage: AppLanguage;
   version: string;
+  showVersionFullName: boolean;
   fontSizeSimple: number;
   fontSizeExpanded: number;
   alignSimple: TextAlignment;
@@ -41,6 +42,7 @@ const KEYS = {
   language: "yeilet_language",
   appLanguage: "yeilet_app_language",
   version: "yeilet_version",
+  showVersionFullName: "yeilet_show_version_full_name",
   fontSizeSimple: "yeilet_font_size_simple",
   fontSizeExpanded: "yeilet_font_size_expanded",
   alignSimple: "yeilet_align_simple",
@@ -60,6 +62,7 @@ const DEFAULTS: AppSettings = {
   language: "en",
   appLanguage: "en",
   version: "niv",
+  showVersionFullName: false,
   fontSizeSimple: 20,
   fontSizeExpanded: 18,
   alignSimple: "center",
@@ -80,6 +83,7 @@ export async function loadSettings(): Promise<AppSettings> {
       language,
       appLanguage,
       version,
+      showVersionFullName,
       fontSizeSimple,
       fontSizeExpanded,
       alignSimple,
@@ -96,6 +100,7 @@ export async function loadSettings(): Promise<AppSettings> {
       SecureStore.getItemAsync(KEYS.language),
       SecureStore.getItemAsync(KEYS.appLanguage),
       SecureStore.getItemAsync(KEYS.version),
+      SecureStore.getItemAsync(KEYS.showVersionFullName),
       SecureStore.getItemAsync(KEYS.fontSizeSimple),
       SecureStore.getItemAsync(KEYS.fontSizeExpanded),
       SecureStore.getItemAsync(KEYS.alignSimple),
@@ -122,6 +127,7 @@ export async function loadSettings(): Promise<AppSettings> {
       language: language ?? DEFAULTS.language,
       appLanguage: appLanguage as AppLanguage || 'en',
       version: version ?? DEFAULTS.version,
+      showVersionFullName: showVersionFullName === "true",
       fontSizeSimple: fontSizeSimple ? safeParseInt(fontSizeSimple, DEFAULTS.fontSizeSimple) : DEFAULTS.fontSizeSimple,
       fontSizeExpanded: fontSizeExpanded ? safeParseInt(fontSizeExpanded, DEFAULTS.fontSizeExpanded) : DEFAULTS.fontSizeExpanded,
       alignSimple: parseAlignment(alignSimple, DEFAULTS.alignSimple),
@@ -145,6 +151,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     SecureStore.setItemAsync(KEYS.language, settings.language),
     SecureStore.setItemAsync(KEYS.appLanguage, settings.appLanguage),
     SecureStore.setItemAsync(KEYS.version, settings.version),
+    SecureStore.setItemAsync(KEYS.showVersionFullName, String(settings.showVersionFullName)),
     SecureStore.setItemAsync(KEYS.fontSizeSimple, String(settings.fontSizeSimple)),
     SecureStore.setItemAsync(KEYS.fontSizeExpanded, String(settings.fontSizeExpanded)),
     SecureStore.setItemAsync(KEYS.alignSimple, settings.alignSimple),

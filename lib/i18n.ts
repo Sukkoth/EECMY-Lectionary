@@ -110,6 +110,8 @@ export const translations = {
     textAlignment: "Text Alignment",
     selectBibleTranslation: "Select your preferred Bible translation",
     noTranslationsAvailable: "No translations available yet",
+    showFullVersionNames: "Show Full Version Names",
+    showFullVersionNamesDesc: "Show full translation names (e.g. New International Version) instead of short codes",
 
     stepYears: "Years",
     stepLanguages: "Languages",
@@ -278,6 +280,8 @@ export const translations = {
     textAlignment: "የጽሑፍ አሰላለፍ",
     selectBibleTranslation: "የሚመርጡትን የመጽሐፍ ቅዱስ ትርጉም ይምረጡ",
     noTranslationsAvailable: "እስካሁን ምንም ትርጉሞች የሉም",
+    showFullVersionNames: "የትርጉም ሙሉ ስም አሳይ",
+    showFullVersionNamesDesc: "በአጭር ምህጻረ ቃል ምትክ የትርጉሙን ሙሉ ስም አሳይ",
 
     stepYears: "ዓመታት",
     stepLanguages: "ቋንቋዎች",
@@ -446,6 +450,8 @@ export const translations = {
     textAlignment: "Hiriira Barruu",
     selectBibleTranslation: "Hiika Kitaaba Qulqulluu filadhu",
     noTranslationsAvailable: "Hanga ammaatti hiikni argamu hin jiru",
+    showFullVersionNames: "Maqaa Guutuu Hiikkaa Agarsiisi",
+    showFullVersionNamesDesc: "Gabaabduu qofa osoo hin taane maqaa guutuu hiikkaa agarsiisi",
 
     stepYears: "Waggaawwan",
     stepLanguages: "Afaanota",

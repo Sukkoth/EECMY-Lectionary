@@ -118,6 +118,35 @@ export default function SettingsScreen() {
           />
         </TouchableOpacity>
 
+        {/* Show Full Version Names Toggle */}
+        <View className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4">
+          <View className="flex-row items-center gap-4 flex-1 pr-4">
+            <View className="bg-primary-dimmed rounded-lg p-2">
+              <Ionicons name="text-outline" size={20} color="#3b82f6" />
+            </View>
+            <View className="flex-1">
+              <Text
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {t("showFullVersionNames")}
+              </Text>
+              <Text
+                className="text-muted dark:text-muted-dark mt-0.5 text-xs leading-relaxed"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {t("showFullVersionNamesDesc")}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={settings.showVersionFullName}
+            onValueChange={(val) => updateSetting("showVersionFullName", val)}
+            trackColor={{ false: isDark ? "#404040" : "#D4D4D4", true: "#3b82f6" }}
+            thumbColor="#ffffff"
+          />
+        </View>
+
         {/* Font & Alignment */}
         <TouchableOpacity
           onPress={() => router.push("/settings/font-alignment")}

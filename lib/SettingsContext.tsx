@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
   appLanguage: "en",
   version: "niv",
+  showVersionFullName: false,
   fontSizeSimple: 20,
   fontSizeExpanded: 18,
   alignSimple: "center",
