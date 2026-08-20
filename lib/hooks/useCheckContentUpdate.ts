@@ -35,7 +35,7 @@ export function useCheckContentUpdate() {
       ]);
 
       let updateFound = false;
-      let firstUpdate: UpdateInfo | null = null;
+      let primaryYear: number | null = null;
 
       for (const yearOpt of manifest.years) {
         for (const langOpt of yearOpt.languages) {
@@ -48,11 +48,11 @@ export function useCheckContentUpdate() {
             );
             if (match && Number(match.contentVersion) < Number(verOpt.contentVersion)) {
               updateFound = true;
-              firstUpdate = { year: yearOpt.year, lang: langOpt.code, version: verOpt.code };
-              break;
+              if (primaryYear == null) {
+                primaryYear = yearOpt.year;
+              }
             }
           }
-          if (updateFound) break;
 
           // Check Holidays (only if ALREADY installed for this language)
           if (langOpt.holidays && langOpt.holidays.version > 0) {
@@ -66,8 +66,9 @@ export function useCheckContentUpdate() {
               Number(matchHolidays.contentVersion) < Number(langOpt.holidays.version)
             ) {
               updateFound = true;
-              firstUpdate = { year: yearOpt.year, lang: langOpt.code };
-              break;
+              if (primaryYear == null) {
+                primaryYear = yearOpt.year;
+              }
             }
           }
 
@@ -83,16 +84,16 @@ export function useCheckContentUpdate() {
               Number(matchDayInfo.contentVersion) < Number(langOpt.dayInfo.version)
             ) {
               updateFound = true;
-              firstUpdate = { year: yearOpt.year, lang: langOpt.code };
-              break;
+              if (primaryYear == null) {
+                primaryYear = yearOpt.year;
+              }
             }
           }
         }
-        if (updateFound) break;
       }
 
       setHasUpdate(updateFound);
-      setUpdateInfo(firstUpdate);
+      setUpdateInfo(updateFound && primaryYear != null ? { year: primaryYear } : null);
     } catch (err) {
       console.warn("Check update failed:", err);
       setHasUpdate(false);

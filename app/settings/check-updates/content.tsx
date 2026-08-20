@@ -85,6 +85,7 @@ export default function ContentUpdateScreen() {
     setSyncedReadingCounts(readingMap);
     setSyncedLangPackVersions(langPackVersions);
     setSyncedReadingVersions(readingVersions);
+    return { years, readingCounts, langPackVersions, readingVersions };
   }, [db]);
 
   const loadDownloadedVersions = useCallback(async (year: number, languages: { code: string }[]) => {
@@ -109,6 +110,71 @@ export default function ContentUpdateScreen() {
     }
     setDownloadedLangPacks(result);
   }, [db]);
+
+  const getAvailableUpdatesForYear = useCallback(
+    async (
+      targetYearOpt: YearOption,
+      currentSyncedLangPacks: { year: number; language: string; type: string; contentVersion: number }[],
+    ) => {
+      const preselected: Record<string, string[]> = {};
+      const expanded: Record<string, boolean> = {};
+
+      for (const lang of targetYearOpt.languages) {
+        const lCode = lang.code.toLowerCase();
+        const items: string[] = [];
+
+        // Check reading updates for installed versions
+        const downloadedForLang = await getDownloadedVersionsForYearLang(db, targetYearOpt.year, lang.code);
+        for (const ver of lang.versions) {
+          const match = downloadedForLang.find(
+            (d) => d.version.toLowerCase() === ver.code.toLowerCase(),
+          );
+          if (match && match.contentVersion < ver.contentVersion) {
+            items.push(ver.code);
+          }
+        }
+
+        // Check Liturgical pack updates
+        const holidaysRecord = currentSyncedLangPacks.find(
+          (r) =>
+            r.year === targetYearOpt.year &&
+            r.language.toLowerCase() === lCode &&
+            r.type === "holidays",
+        );
+        const dayInfoRecord = currentSyncedLangPacks.find(
+          (r) =>
+            r.year === targetYearOpt.year &&
+            r.language.toLowerCase() === lCode &&
+            r.type === "day-info",
+        );
+
+        if (
+          holidaysRecord &&
+          lang.holidays &&
+          lang.holidays.version > 0 &&
+          holidaysRecord.contentVersion < lang.holidays.version
+        ) {
+          items.push("__holidays__");
+        }
+        if (
+          dayInfoRecord &&
+          lang.dayInfo &&
+          lang.dayInfo.version > 0 &&
+          dayInfoRecord.contentVersion < lang.dayInfo.version
+        ) {
+          items.push("__dayinfo__");
+        }
+
+        if (items.length > 0) {
+          preselected[lang.code] = items;
+          expanded[lang.code] = true;
+        }
+      }
+
+      return { preselected, expanded };
+    },
+    [db],
+  );
 
   const [progress, setProgress] = useState(0);
   const abortRef = useRef(false);
@@ -191,7 +257,7 @@ export default function ContentUpdateScreen() {
       const data = await fetchManifest();
       if (abortRef.current) return;
       setManifest(data);
-      await loadSyncedData();
+      const synced = await loadSyncedData();
 
       if (params.preselectYear) {
         const targetYearNum = parseInt(params.preselectYear, 10);
@@ -205,26 +271,25 @@ export default function ContentUpdateScreen() {
           ]);
           setIsYearLoading(false);
 
-          if (params.preselectLang) {
+          const { preselected, expanded } = await getAvailableUpdatesForYear(
+            targetYearOpt,
+            synced.langPackVersions,
+          );
+
+          if (Object.keys(preselected).length > 0) {
+            setSelectedLangs(preselected);
+            setExpandedLangs(expanded);
+          } else if (params.preselectLang) {
             const itemsToSelect: string[] = [];
             if (params.preselectVersion) {
               itemsToSelect.push(params.preselectVersion);
             }
-            const langOpt = targetYearOpt.languages.find((l) => l.code === params.preselectLang);
-            if (langOpt) {
-              if (langOpt.holidays && langOpt.holidays.version > 0) {
-                itemsToSelect.push("__holidays__");
-              }
-              if (langOpt.dayInfo && langOpt.dayInfo.version > 0) {
-                itemsToSelect.push("__dayinfo__");
-              }
-            }
-
             setSelectedLangs({
-              [params.preselectLang]: Array.from(new Set(itemsToSelect)),
+              [params.preselectLang]: itemsToSelect,
             });
             setExpandedLangs({ [params.preselectLang]: true });
           }
+
           setStep("selectLang");
           return;
         }
@@ -245,6 +310,7 @@ export default function ContentUpdateScreen() {
     params.preselectVersion,
     loadDownloadedVersions,
     loadLangPackStatus,
+    getAvailableUpdatesForYear,
   ]);
 
   useEffect(() => {
@@ -258,19 +324,23 @@ export default function ContentUpdateScreen() {
       if (isYearLoading) return;
       setIsYearLoading(true);
       setSelectedYear(year);
-      setSelectedLangs({});
-      setExpandedLangs({});
       try {
         await Promise.all([
           loadDownloadedVersions(year.year, year.languages),
           loadLangPackStatus(year.year, year.languages),
         ]);
+        const { preselected, expanded } = await getAvailableUpdatesForYear(
+          year,
+          syncedLangPackVersions,
+        );
+        setSelectedLangs(preselected);
+        setExpandedLangs(expanded);
         setStep("selectLang");
       } finally {
         setIsYearLoading(false);
       }
     },
-    [isYearLoading, loadDownloadedVersions, loadLangPackStatus],
+    [isYearLoading, loadDownloadedVersions, loadLangPackStatus, getAvailableUpdatesForYear, syncedLangPackVersions],
   );
 
   const isSentinel = (v: string) => v.startsWith("__");
