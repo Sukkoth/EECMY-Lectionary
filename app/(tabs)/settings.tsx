@@ -318,7 +318,7 @@ export default function SettingsScreen() {
           {t("updates")}
         </Text>
         <TouchableOpacity
-          onPress={() => router.push("/settings/check-updates")}
+          onPress={() => router.push("/settings/check-updates/content")}
           activeOpacity={0.7}
           className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4"
         >
@@ -331,13 +331,13 @@ export default function SettingsScreen() {
                 className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
-                {t("checkUpdates")}
+                {t("contentUpdate")}
               </Text>
               <Text
                 className="text-muted dark:text-muted-dark mt-0.5 text-sm"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
-                {t("appAndContentUpdates")}
+                {t("contentUpdateDesc")}
               </Text>
             </View>
           </View>
