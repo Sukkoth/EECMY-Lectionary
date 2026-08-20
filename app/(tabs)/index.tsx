@@ -351,7 +351,7 @@ export default function HomeScreen() {
                   />
                   <View className="mt-6 items-center">
                     <Text
-                      className="text-muted dark:text-muted-dark text-center text-xl leading-tight mb-2"
+                      className="text-muted dark:text-muted-dark text-center text-xl leading-tight mb-4"
                       style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                     >
                       {dayData.readings[0]?.reference}

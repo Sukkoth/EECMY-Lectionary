@@ -91,7 +91,7 @@ export default function ExpandedView({
       )}
 
       {/* Shared Translation Version Badge */}
-      <View className="mb-6 mt-6 items-center px-6">
+      <View className="mb-6 mt-4 items-center px-6">
         <VersionBadge version={readings[0]?.version ?? settings.version} />
       </View>
 
