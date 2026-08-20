@@ -74,7 +74,10 @@ export function FormattedText({
           {verseNum}
         </Text>
       );
-      parts.push(" ");
+      const nextChar = text[regex.lastIndex];
+      if (nextChar !== " " && nextChar !== "\n" && nextChar !== "\t") {
+        parts.push(" ");
+      }
     } else if (redMatch) {
       const redContent = redMatch.replace(/<\/?red>/gi, "");
       parts.push(
@@ -139,7 +142,10 @@ function parseInnerContent(
         {verseNum}
       </Text>
     );
-    parts.push(" ");
+    const nextChar = content[vRegex.lastIndex];
+    if (nextChar !== " " && nextChar !== "\n" && nextChar !== "\t") {
+      parts.push(" ");
+    }
     lastIdx = vRegex.lastIndex;
   }
 
