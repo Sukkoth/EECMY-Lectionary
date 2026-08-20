@@ -1,4 +1,4 @@
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { Linking, SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "@/lib/i18n";
@@ -45,36 +45,15 @@ export default function AboutSettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* App Title Section */}
-        <View className="mb-9 px-6">
+        <View className="mb-8 px-6">
           <Text
-            className="mb-1.5 text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
+            className="text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {t("appTitle")}
           </Text>
-          <Text
-            className="text-primary text-base font-semibold uppercase tracking-wider"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            {t("appVersion")} 1.0.0
-          </Text>
         </View>
 
-        {/* Church Tradition Section */}
-        <View className="mb-8 px-6">
-          <Text
-            className="text-primary mb-3 ml-0.5 text-sm uppercase tracking-widest"
-            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-          >
-            {t("churchTradition")}
-          </Text>
-          <Text
-            className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl leading-relaxed"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-          >
-            {t("churchTraditionDesc")}
-          </Text>
-        </View>
 
         {/* Purpose & Mission Section */}
         <View className="mb-8 px-6">
@@ -136,13 +115,111 @@ export default function AboutSettingsScreen() {
           </Text>
         </View>
 
-        {/* Soli Deo Gloria Footer */}
+        {/* In Loving Memory Section */}
+        <View className="mb-8 px-6">
+          <Text
+            className="text-primary mb-3 ml-0.5 text-sm uppercase tracking-widest"
+            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+          >
+            {t("memorialTitle")}
+          </Text>
+          <Text
+            className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl leading-relaxed mb-4"
+            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          >
+            {t("memorialDesc")}
+          </Text>
+
+          <View className="gap-4">
+            {/* Yohannes Ejigu */}
+            <View className="border-l-2 border-primary/40 pl-4 py-1">
+              <Text
+                className="text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {t("memorialYohannesTitle")}
+              </Text>
+              <Text
+                className="text-base text-muted dark:text-muted-dark leading-relaxed mt-1"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {t("memorialYohannesDesc")}
+              </Text>
+            </View>
+
+            {/* Takele Fekadu */}
+            <View className="border-l-2 border-primary/40 pl-4 py-1">
+              <Text
+                className="text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {t("memorialTakeleTitle")}
+              </Text>
+              <Text
+                className="text-base text-muted dark:text-muted-dark leading-relaxed mt-1"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {t("memorialTakeleDesc")}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Contact & Feedback Section */}
+        <View className="mb-8 px-6">
+          <Text
+            className="text-primary mb-3 ml-0.5 text-sm uppercase tracking-widest"
+            style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+          >
+            {t("contactAndFeedback")}
+          </Text>
+          <Text
+            className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl leading-relaxed mb-4"
+            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          >
+            {t("contactDesc")}
+          </Text>
+
+          <View className="gap-3">
+            {/* Telegram */}
+            <TouchableOpacity
+              onPress={() => Linking.openURL("https://t.me/sukkoth").catch(() => {})}
+              activeOpacity={0.7}
+              className="flex-row items-center gap-3 py-1"
+            >
+              <Ionicons name="paper-plane-outline" size={22} color="#3b82f6" />
+              <Text
+                className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+              >
+                {t("telegramContact")}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Email */}
+            <TouchableOpacity
+              onPress={() => Linking.openURL("mailto:suukootj@gmail.com").catch(() => {})}
+              activeOpacity={0.7}
+              className="flex-row items-center gap-3 py-1"
+            >
+              <Ionicons name="mail-outline" size={22} color="#3b82f6" />
+              <Text
+                className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+              >
+                {t("emailContact")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Footer */}
         <View className="mt-4 px-6">
           <Text
             className="text-muted dark:text-muted-dark text-sm"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
-            Soli Deo Gloria • EECMY Lectionary Companion
+            {t("appTitle")}
           </Text>
         </View>
       </ScrollView>
