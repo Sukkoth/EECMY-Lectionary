@@ -20,6 +20,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import { scheduleDailyReminder } from "@/lib/NotificationService";
 import { useCheckContentUpdate } from "@/lib/hooks/useCheckContentUpdate";
 import { FormattedText } from "@/lib/formatText";
+import VersionBadge from "@/components/reading/VersionBadge";
 import {
   formatDisplayDate,
   gregorianToEthiopian,
@@ -348,12 +349,15 @@ export default function HomeScreen() {
                     className="text-center text-2xl leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
                     style={{ fontFamily: "ReadingFont", fontWeight: "400", textAlign: "center" }}
                   />
-                  <Text
-                    className="text-muted dark:text-muted-dark mt-6 text-center text-xl leading-tight"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                  >
-                    {dayData.readings[0]?.reference} ({dayData.readings[0]?.version.toUpperCase()})
-                  </Text>
+                  <View className="mt-6 items-center">
+                    <Text
+                      className="text-muted dark:text-muted-dark text-center text-xl leading-tight mb-2"
+                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                    >
+                      {dayData.readings[0]?.reference}
+                    </Text>
+                    <VersionBadge version={dayData.readings[0]?.version} />
+                  </View>
                 </ScrollView>
               </>
             )}

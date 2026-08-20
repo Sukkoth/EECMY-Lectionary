@@ -5,6 +5,8 @@ import type { ReadingRow } from "@/lib/database";
 import { useSettings } from "@/lib/SettingsContext";
 import { getReadingFontFamily } from "@/lib/settings";
 
+import VersionBadge from "./VersionBadge";
+
 const SECTION_LABELS: Record<string, string> = {
   OLD_TESTAMENT: "Old Testament",
   EPISTLE: "Epistle",
@@ -90,14 +92,7 @@ export default function ExpandedView({
 
       {/* Shared Translation Version Badge */}
       <View className="mb-6 mt-6 items-center px-6">
-        <View className="rounded-xl border border-stone-200/80 dark:border-stone-800/80 bg-stone-100/80 dark:bg-stone-800/80 px-3 py-1">
-          <Text
-            className="text-xs font-semibold text-primary uppercase tracking-wider"
-            style={{ fontFamily, fontWeight: "600" }}
-          >
-            {(readings[0]?.version ?? settings.version).toUpperCase()}
-          </Text>
-        </View>
+        <VersionBadge version={readings[0]?.version ?? settings.version} />
       </View>
 
       {readings.map((reading, index) => (

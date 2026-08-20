@@ -3,6 +3,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { useFavourites, useAddFavourite, useRemoveFavourite } from "@/lib/hooks/useFavourites";
 
+import VersionBadge from "./VersionBadge";
+
 type ReadingFooterProps = {
   date: string;
   order: number;
@@ -34,22 +36,14 @@ export default function ReadingFooter({ date, order, reference, text, version }:
   return (
     <View className="items-center">
       {/* Reference + Version */}
-      <View className="flex-row items-center justify-center gap-2">
+      <View className="items-center justify-center">
         <Text
-          className="text-muted dark:text-muted-dark text-center text-xl"
+          className="text-muted dark:text-muted-dark text-center text-xl mb-2"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
           {reference}
         </Text>
-        <Text className="text-muted dark:text-muted-dark text-base font-semibold">
-          •
-        </Text>
-        <Text
-          className="text-primary text-sm font-semibold uppercase tracking-wider"
-          style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-        >
-          {version}
-        </Text>
+        <VersionBadge version={version} />
       </View>
 
       {/* Favourite + Share */}
