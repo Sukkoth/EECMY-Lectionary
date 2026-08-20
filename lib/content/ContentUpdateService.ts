@@ -30,7 +30,24 @@ async function fetchJSON<T>(url: string): Promise<T> {
 }
 
 export async function fetchManifest(): Promise<Manifest> {
-  return fetchJSON<Manifest>(`${CONTENT_BASE_URL}/manifest.json`);
+  const manifest = await fetchJSON<Manifest>(`${CONTENT_BASE_URL}/manifest.json`);
+  if (!manifest || !Array.isArray(manifest.years)) {
+    return manifest;
+  }
+  return {
+    ...manifest,
+    years: manifest.years.map((year) => ({
+      ...year,
+      languages: (year.languages || []).map((lang) => ({
+        ...lang,
+        code: lang.code.toLowerCase(),
+        versions: (lang.versions || []).map((ver) => ({
+          ...ver,
+          code: ver.code.toLowerCase(),
+        })),
+      })),
+    })),
+  };
 }
 
 export async function downloadDayInfo(path: string): Promise<DayInfoPackage> {
@@ -46,11 +63,11 @@ export async function downloadReadings(path: string): Promise<ReadingsPackage> {
 }
 
 function generateDayInfoId(lang: string, date: string): string {
-  return `dayinfo:${lang}:${date}`;
+  return `dayinfo:${lang.toLowerCase()}:${date}`;
 }
 
 function generateHolidayId(lang: string, date: string, index: number): string {
-  return `holiday:${lang}:${date}:${index}`;
+  return `holiday:${lang.toLowerCase()}:${date}:${index}`;
 }
 
 function generateReadingId(
@@ -59,7 +76,7 @@ function generateReadingId(
   date: string,
   order: number,
 ): string {
-  return `reading:${lang}:${version}:${date}:${order}`;
+  return `reading:${lang.toLowerCase()}:${version.toLowerCase()}:${date}:${order}`;
 }
 
 function generateSyncId(
@@ -68,7 +85,7 @@ function generateSyncId(
   lang: string,
   version: string,
 ): string {
-  return `sync:${type}:${year}:${lang}:${version}`;
+  return `sync:${type}:${year}:${lang.toLowerCase()}:${version.toLowerCase()}`;
 }
 
 export type PreparedStatement = {
@@ -107,7 +124,7 @@ export function prepareDayInfo(
             VALUES (?, ?, ?, ?, ?, ?)`,
       params: [
         generateDayInfoId(lang, row.date),
-        lang,
+        lang.toLowerCase(),
         row.date,
         row.title ?? null,
         row.description ?? null,
@@ -142,7 +159,7 @@ export function prepareHolidays(
             VALUES (?, ?, ?, ?, ?, ?)`,
       params: [
         generateHolidayId(lang, row.date, index),
-        lang,
+        lang.toLowerCase(),
         row.date,
         row.endDate ?? null,
         row.type,
@@ -189,8 +206,8 @@ export function prepareReadings(
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       params: [
         generateReadingId(lang, version, row.date, row.order ?? 0),
-        lang,
-        version,
+        lang.toLowerCase(),
+        version.toLowerCase(),
         row.date,
         row.order ?? 0,
         row.section ?? "READING",
@@ -221,9 +238,9 @@ export function prepareSyncRecord(
     params: [
       generateSyncId(type, year, lang, version ?? "none"),
       type,
-      lang,
+      lang.toLowerCase(),
       langFullName,
-      version ?? "",
+      (version ?? "").toLowerCase(),
       versionFullName ?? "",
       year,
       checksum,

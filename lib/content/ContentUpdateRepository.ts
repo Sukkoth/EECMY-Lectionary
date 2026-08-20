@@ -38,7 +38,7 @@ export async function getSyncedLangPackVersions(
   db: SQLiteDatabase,
 ): Promise<{ year: number; language: string; type: string; contentVersion: number }[]> {
   return db.getAllAsync<{ year: number; language: string; type: string; contentVersion: number }>(
-    `SELECT year, language, type, contentVersion
+    `SELECT year, LOWER(language) AS language, type, contentVersion
      FROM SyncRecord
      WHERE type IN ('holidays', 'day-info')
      ORDER BY year DESC, language ASC`,
@@ -49,7 +49,7 @@ export async function getSyncedReadingVersions(
   db: SQLiteDatabase,
 ): Promise<{ year: number; language: string; version: string; contentVersion: number }[]> {
   return db.getAllAsync<{ year: number; language: string; version: string; contentVersion: number }>(
-    `SELECT year, language, version, contentVersion
+    `SELECT year, LOWER(language) AS language, LOWER(version) AS version, contentVersion
      FROM SyncRecord
      WHERE type = 'readings'
      ORDER BY year DESC, language ASC, version ASC`,
@@ -65,15 +65,15 @@ export async function getInstalledVersionsWithContentVersion(
     contentVersion: number | null;
   }>(
     `SELECT DISTINCT 
-       r.language, 
-       r.version,
+       LOWER(r.language) AS language, 
+       LOWER(r.version) AS version,
        MAX(s.contentVersion) AS contentVersion
      FROM Reading r
      LEFT JOIN SyncRecord s 
        ON LOWER(s.language) = LOWER(r.language) 
       AND LOWER(s.version) = LOWER(r.version)
       AND s.type = 'readings'
-     GROUP BY r.language, r.version`,
+     GROUP BY LOWER(r.language), LOWER(r.version)`,
   );
 
   return rows.map((row) => ({
@@ -88,24 +88,24 @@ export async function getInstalledLangPacksWithContentVersion(
 ): Promise<{ language: string; type: "holidays" | "day-info"; contentVersion: number }[]> {
   const holidayRows = await db.getAllAsync<{ language: string; contentVersion: number | null }>(
     `SELECT DISTINCT 
-       h.language, 
+       LOWER(h.language) AS language, 
        MAX(s.contentVersion) AS contentVersion
      FROM Holiday h
      LEFT JOIN SyncRecord s 
        ON LOWER(s.language) = LOWER(h.language) 
       AND s.type = 'holidays'
-     GROUP BY h.language`,
+     GROUP BY LOWER(h.language)`,
   );
 
   const dayInfoRows = await db.getAllAsync<{ language: string; contentVersion: number | null }>(
     `SELECT DISTINCT 
-       d.language, 
+       LOWER(d.language) AS language, 
        MAX(s.contentVersion) AS contentVersion
      FROM DayInfo d
      LEFT JOIN SyncRecord s 
        ON LOWER(s.language) = LOWER(d.language) 
       AND s.type = 'day-info'
-     GROUP BY d.language`,
+     GROUP BY LOWER(d.language)`,
   );
 
   const results: { language: string; type: "holidays" | "day-info"; contentVersion: number }[] = [];
@@ -133,7 +133,7 @@ export async function getDownloadedVersionsForYearLang(
   }>(
     `SELECT version, versionFullName, pulledAt, contentVersion
      FROM SyncRecord
-     WHERE year = ? AND language = ? AND type = 'readings'
+     WHERE year = ? AND LOWER(language) = LOWER(?) AND type = 'readings'
      ORDER BY version`,
     [year, lang],
   );
@@ -147,7 +147,7 @@ export async function isContentDownloaded(
 ): Promise<boolean> {
   const row = await db.getFirstAsync<{ cnt: number }>(
     `SELECT COUNT(*) AS cnt FROM SyncRecord
-     WHERE year = ? AND language = ? AND type = ?`,
+     WHERE year = ? AND LOWER(language) = LOWER(?) AND type = ?`,
     [year, lang, type],
   );
   return (row?.cnt ?? 0) > 0;
