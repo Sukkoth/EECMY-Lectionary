@@ -183,6 +183,38 @@ function LangSelectionStep({
         const langAllSynced =
           unsyncedVersionCodes.length === 0 && !hasUnsyncedLiturgical;
 
+        let langUpdateCount = 0;
+        let langAvailableCount = 0;
+
+        lang.versions.forEach((v) => {
+          const downloaded = downloadedVersions[lang.code]?.find((d) => d.version === v.code);
+          if (!downloaded) {
+            langAvailableCount++;
+          } else if (downloaded.contentVersion < v.contentVersion) {
+            langUpdateCount++;
+          }
+        });
+
+        if (hasUnsyncedLiturgical) {
+          const holidaysRecord = syncedLangPackVersions.find(
+            (r) =>
+              r.year === year.year &&
+              r.language === lang.code &&
+              r.type === "holidays",
+          );
+          const dayInfoRecord = syncedLangPackVersions.find(
+            (r) =>
+              r.year === year.year &&
+              r.language === lang.code &&
+              r.type === "day-info",
+          );
+          if (holidaysRecord || dayInfoRecord) {
+            langUpdateCount++;
+          } else {
+            langAvailableCount++;
+          }
+        }
+
         const unsyncedSelectedCount =
           selectedVersions.filter((v) => unsyncedVersionCodes.includes(v))
             .length +
@@ -277,7 +309,11 @@ function LangSelectionStep({
                   >
                     {langAllSynced
                       ? t("allContentSynced")
-                      : `${totalUnsyncedCount} ${t("updateAvailable")}`}
+                      : langUpdateCount > 0 && langAvailableCount > 0
+                      ? `${langUpdateCount} ${t("updateAvailable")}, ${langAvailableCount} ${t("available")}`
+                      : langUpdateCount > 0
+                      ? `${langUpdateCount} ${t("updateAvailable")}`
+                      : `${langAvailableCount} ${t("available")}`}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -326,7 +362,12 @@ function LangSelectionStep({
                 </Text>
 
                 {lang.versions.map((version) => {
-                  const synced = isVersionSynced(lang.code, version);
+                  const downloaded = downloadedVersions[lang.code]?.find(
+                    (d) => d.version === version.code,
+                  );
+                  const isInstalled = !!downloaded;
+                  const synced = isInstalled && downloaded.contentVersion >= version.contentVersion;
+                  const isUpdate = isInstalled && downloaded.contentVersion < version.contentVersion;
                   const isSelected = selectedVersions.includes(version.code);
 
                   if (synced) {
@@ -408,17 +449,27 @@ function LangSelectionStep({
                           className="text-xs text-muted dark:text-muted-dark mt-0.5"
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          {version.contentVersion > 0
+                          {isUpdate
+                            ? `v${downloaded.contentVersion} → v${version.contentVersion}`
+                            : version.contentVersion > 0
                             ? `v${version.contentVersion}`
                             : t("available")}
                         </Text>
                       </View>
-                      <View className="rounded-full bg-primary/10 px-2 py-0.5">
+                      <View
+                        className={`rounded-full px-2 py-0.5 ${
+                          isUpdate ? "bg-amber-500/15" : "bg-primary/10"
+                        }`}
+                      >
                         <Text
-                          className="text-[10px] text-primary font-semibold"
+                          className={`text-[10px] font-semibold ${
+                            isUpdate
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-primary"
+                          }`}
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          {t("available")}
+                          {isUpdate ? t("updateAvailable") : t("available")}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -434,7 +485,21 @@ function LangSelectionStep({
                 </Text>
 
                 {(() => {
+                  const holidaysRecord = syncedLangPackVersions.find(
+                    (r) =>
+                      r.year === year.year &&
+                      r.language === lang.code &&
+                      r.type === "holidays",
+                  );
+                  const dayInfoRecord = syncedLangPackVersions.find(
+                    (r) =>
+                      r.year === year.year &&
+                      r.language === lang.code &&
+                      r.type === "day-info",
+                  );
+                  const isInstalled = !!holidaysRecord || !!dayInfoRecord;
                   const synced = liturgicalSynced;
+                  const isUpdate = isInstalled && !synced;
                   const isSelected =
                     selectedVersions.includes("__holidays__") ||
                     selectedVersions.includes("__dayinfo__");
@@ -514,12 +579,20 @@ function LangSelectionStep({
                           {t("holidaysFeastsDailyInfo")}
                         </Text>
                       </View>
-                      <View className="rounded-full bg-amber-500/10 px-2 py-0.5">
+                      <View
+                        className={`rounded-full px-2 py-0.5 ${
+                          isUpdate ? "bg-amber-500/15" : "bg-primary/10"
+                        }`}
+                      >
                         <Text
-                          className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold"
+                          className={`text-[10px] font-semibold ${
+                            isUpdate
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-primary"
+                          }`}
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          {t("updateAvailable")}
+                          {isUpdate ? t("updateAvailable") : t("available")}
                         </Text>
                       </View>
                     </TouchableOpacity>
