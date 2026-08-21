@@ -68,10 +68,7 @@ export default function LanguagePickerContent({
     if (!manifest) return map;
 
     const ethYear = gregorianToEthiopian(new Date()).year;
-    const yearOpt =
-      manifest.years.find((y) => y.year === ethYear) ??
-      manifest.years.find((y) => y.year === new Date().getFullYear()) ??
-      manifest.years[0];
+    const yearOpt = manifest.years.find((y) => y.year === ethYear);
 
     if (!yearOpt) return map;
 
@@ -285,32 +282,26 @@ export default function LanguagePickerContent({
     });
 
   const installedKeys = new Set(
-    installedVersions.map((v) => `${v.langCode}-${v.versionCode}`),
+    installedVersions.map((v) => `${v.langCode.toLowerCase()}-${v.versionCode.toLowerCase()}`),
   );
 
-  // Compute available versions to download from manifest
-  const currentYear = new Date().getFullYear();
+  // Compute available versions to download from manifest strictly for the CURRENT liturgical year
+  const ethYear = gregorianToEthiopian(new Date()).year;
+  const currentYearOpt = manifest?.years.find((y) => y.year === ethYear);
   const downloadableVersions: DownloadableVersion[] = [];
 
-  if (manifest) {
-    // Look for current year or fallback to latest available year
-    const yearOpt =
-      manifest.years.find((y) => y.year === currentYear) ??
-      manifest.years[0];
-
-    if (yearOpt) {
-      for (const lang of yearOpt.languages) {
-        for (const ver of lang.versions) {
-          const key = `${lang.code}-${ver.code}`;
-          if (!installedKeys.has(key)) {
-            downloadableVersions.push({
-              langCode: lang.code,
-              langName: lang.name,
-              versionCode: ver.code,
-              versionLabel: ver.name,
-              year: yearOpt.year,
-            });
-          }
+  if (currentYearOpt) {
+    for (const lang of currentYearOpt.languages) {
+      for (const ver of lang.versions) {
+        const key = `${lang.code.toLowerCase()}-${ver.code.toLowerCase()}`;
+        if (!installedKeys.has(key)) {
+          downloadableVersions.push({
+            langCode: lang.code,
+            langName: lang.name,
+            versionCode: ver.code,
+            versionLabel: ver.name,
+            year: currentYearOpt.year,
+          });
         }
       }
     }
@@ -533,7 +524,7 @@ export default function LanguagePickerContent({
             className="text-muted dark:text-muted-dark mb-1 text-xs font-semibold uppercase tracking-wider px-1"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Available to Download ({currentYear})
+            Available to Download ({ethYear})
           </Text>
           {downloadableVersions.map((item) => {
             const key = `${item.langCode}-${item.versionCode}`;
