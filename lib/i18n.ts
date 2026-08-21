@@ -173,6 +173,7 @@ export const translations = {
     noReadings: "No readings available",
     noReadingsForVersionAndYear: "No readings found for {version} in {year}",
     noReadingsSwitchOrDownload: "Try selecting another translation or downloading this year's content pack.",
+    noYearReadings: "No {year} readings",
     share: "Share",
     fontSize: "Font Size",
 
@@ -355,6 +356,7 @@ export const translations = {
     noReadings: "ምንም የሚገኝ ንባብ የለም",
     noReadingsForVersionAndYear: "ለ{year} ዓ.ም. በ{version} የተዘጋጀ ንባብ አልተገኘም",
     noReadingsSwitchOrDownload: "ሌላ ትርጉም ይምረጡ ወይም የዚህን ዓመት የንባብ ስብስብ ያውርዱ።",
+    noYearReadings: "ለ{year} ንባብ የለም",
     share: "አጋራ",
     fontSize: "የፊደል መጠን",
 
@@ -537,6 +539,7 @@ export const translations = {
     noReadings: "Dubbisni argamu hin jiru",
     noReadingsForVersionAndYear: "Bara {year} keessatti hiika {version}tiin dubbisni hin jiru",
     noReadingsSwitchOrDownload: "Hiika biraa filadhaa yookiin paakeejii qabiyyee bara kanaa buufadhaa.",
+    noYearReadings: "{year}f dubbisi hin jiru",
     share: "Qoodduu",
     fontSize: "Hammangaa Barruu",
 

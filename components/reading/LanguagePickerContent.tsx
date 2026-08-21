@@ -477,13 +477,34 @@ export default function LanguagePickerContent({
                       {item.years.length > 0 && (
                         <>
                           <Text className="text-muted dark:text-muted-dark text-xs">•</Text>
+                          {item.years.map((y, idx) => {
+                            const isCurrentReadingYear = y === activeReadingYear;
+                            return (
+                              <Text
+                                key={y}
+                                className={`text-xs ${
+                                  isCurrentReadingYear
+                                    ? "text-primary font-semibold"
+                                    : "text-muted dark:text-muted-dark font-medium"
+                                }`}
+                                style={{ fontFamily: "ReadingFont" }}
+                              >
+                                {y}{idx < item.years.length - 1 ? "," : ""}
+                              </Text>
+                            );
+                          })}
+                        </>
+                      )}
+
+                      {!item.years.includes(activeReadingYear) && item.years.length > 0 && (
+                        <View className="bg-amber-500/15 dark:bg-amber-500/20 px-1.5 py-0.5 rounded-md ml-0.5">
                           <Text
-                            className="text-muted dark:text-muted-dark text-xs font-medium"
+                            className="text-amber-700 dark:text-amber-400 text-[10px] font-medium"
                             style={{ fontFamily: "ReadingFont" }}
                           >
-                            {item.years.join(", ")}
+                            {t("noYearReadings").replace("{year}", String(activeReadingYear))}
                           </Text>
-                        </>
+                        </View>
                       )}
                     </View>
                   </View>
