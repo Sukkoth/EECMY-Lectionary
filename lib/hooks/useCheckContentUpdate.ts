@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSQLiteContext } from "expo-sqlite";
+import { gregorianToEthiopian } from "../ethiopianCalendar";
 import {
   fetchManifest,
   getInstalledVersionsWithContentVersion,
   getInstalledLangPacksWithContentVersion,
+  getSyncedReadingVersions,
 } from "../content";
 
 
@@ -11,6 +13,7 @@ export type UpdateInfo = {
   year: number;
   lang?: string;
   version?: string;
+  isUpcomingYear?: boolean;
 };
 
 export function useCheckContentUpdate() {
@@ -36,6 +39,7 @@ export function useCheckContentUpdate() {
 
       let updateFound = false;
       let primaryYear: number | null = null;
+      let isUpcomingYear = false;
 
       for (const yearOpt of manifest.years) {
         for (const langOpt of yearOpt.languages) {
@@ -92,8 +96,49 @@ export function useCheckContentUpdate() {
         }
       }
 
+      // Check for upcoming year transition (Nehase / Month 12 = 11, Pagume / Month 13 = 12 in 0-indexed EC)
+      const ethDate = gregorianToEthiopian(new Date());
+      const isYearEndTransition = ethDate.month >= 11;
+
+      if (isYearEndTransition && installedVersions.length > 0) {
+        const nextEthYear = ethDate.year + 1;
+        const nextYearManifest = manifest.years.find((y) => y.year === nextEthYear);
+
+        if (nextYearManifest) {
+          const nextYearSynced = await getSyncedReadingVersions(db);
+          const hasMissingNextYear = installedVersions.some((installed) => {
+            const inNextManifest = nextYearManifest.languages.some((l) =>
+              l.versions.some(
+                (v) =>
+                  l.code.toLowerCase() === installed.language.toLowerCase() &&
+                  v.code.toLowerCase() === installed.version.toLowerCase(),
+              ),
+            );
+            const isAlreadyDownloaded = nextYearSynced.some(
+              (s) =>
+                s.year === nextEthYear &&
+                s.language.toLowerCase() === installed.language.toLowerCase() &&
+                s.version.toLowerCase() === installed.version.toLowerCase(),
+            );
+            return inNextManifest && !isAlreadyDownloaded;
+          });
+
+          if (hasMissingNextYear) {
+            updateFound = true;
+            isUpcomingYear = true;
+            if (primaryYear == null) {
+              primaryYear = nextEthYear;
+            }
+          }
+        }
+      }
+
       setHasUpdate(updateFound);
-      setUpdateInfo(updateFound && primaryYear != null ? { year: primaryYear } : null);
+      setUpdateInfo(
+        updateFound && primaryYear != null
+          ? { year: primaryYear, isUpcomingYear }
+          : null,
+      );
     } catch (err) {
       // Preserve previous update state on temporary network disconnection
       console.warn("Check update failed (network or server unreachable):", err);

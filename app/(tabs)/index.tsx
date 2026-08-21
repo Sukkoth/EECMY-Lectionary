@@ -210,6 +210,47 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* UPCOMING LITURGICAL YEAR AVAILABLE BANNER */}
+        {hasUpdate && updateInfo?.isUpcomingYear && (
+          <TouchableOpacity
+            onPress={() => {
+              router.push({
+                pathname: "/settings/check-updates/content",
+                params: {
+                  preselectYear: String(updateInfo.year),
+                  autoCheck: "true",
+                },
+              });
+            }}
+            activeOpacity={0.8}
+            className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-7 flex-row items-center justify-between"
+          >
+            <View className="flex-1 flex-row items-center gap-3 pr-2">
+              <View className="h-10 w-10 rounded-full items-center justify-center bg-amber-500/20">
+                <Ionicons name="calendar" size={20} color="#d97706" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-amber-900 dark:text-amber-200 text-sm font-semibold"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("upcomingYearLectionaryReady").replace(
+                    "{year}",
+                    String(updateInfo.year),
+                  )}
+                </Text>
+                <Text
+                  className="text-amber-700/80 dark:text-amber-400/80 text-xs mt-0.5"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("downloadNewYearReadings")}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="arrow-forward-circle" size={24} color="#d97706" />
+          </TouchableOpacity>
+        )}
+
         {/* READING CARD AREA (loading / error / no-data / loaded) */}
         {isLoading ? (
           /* LOADING STATE */
