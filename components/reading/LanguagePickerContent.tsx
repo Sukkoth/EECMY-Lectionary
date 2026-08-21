@@ -560,14 +560,23 @@ export default function LanguagePickerContent({
       {/* Available to Download Section */}
       {downloadableVersions.length > 0 && (
         <View className="space-y-2 mt-4">
-          <Text
-            className="text-muted dark:text-muted-dark mb-1 text-xs font-semibold uppercase tracking-wider px-1"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            {availableDownloadYears.length > 1
-              ? "Available to Download"
-              : `Available to Download for ${activeReadingYear}`}
-          </Text>
+          <View className="flex-row items-center gap-1.5 px-1 mb-1">
+            <Text
+              className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-wider"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {availableDownloadYears.length > 1
+                ? "Available to Download"
+                : `Available to Download for ${availableDownloadYears[0]}`}
+            </Text>
+            {availableDownloadYears.length === 1 &&
+              availableDownloadYears[0] === nextEthYear &&
+              isYearEndTransition && (
+                <Animated.View style={{ opacity: pulseAnim }}>
+                  <Foundation name="burst-new" size={20} color="#f59e0b" />
+                </Animated.View>
+              )}
+          </View>
 
           {/* Full-width equally-spaced year navigation tabs (only when multiple years exist) */}
           {availableDownloadYears.length > 1 && (
