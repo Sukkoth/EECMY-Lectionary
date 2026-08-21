@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
-import { Text, TouchableOpacity, View, useColorScheme, ActivityIndicator } from "react-native";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { Text, TouchableOpacity, View, useColorScheme, ActivityIndicator, Animated } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import Foundation from "@expo/vector-icons/Foundation";
 import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +19,7 @@ import {
   prepareHolidays,
   prepareSyncRecord,
   commitStatements,
-  getInstalledVersionsWithContentVersion,
+  getSyncedReadingVersions,
   getSyncedLangPackVersions,
   type Manifest,
 } from "@/lib/content";
@@ -47,8 +48,30 @@ export default function LanguagePickerContent({
     useSettings();
   const db = useSQLiteContext();
 
+  const [selectedDownloadYear, setSelectedDownloadYear] = useState<number | null>(null);
   const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
   const [errorMessageModal, setErrorMessageModal] = useState<string | null>(null);
+
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.35,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pulseAnim]);
 
   const { data: manifest = null } = useQuery<Manifest>({
     queryKey: ["remoteManifest"],
@@ -57,9 +80,9 @@ export default function LanguagePickerContent({
     gcTime: 1000 * 60 * 60,
   });
 
-  const { data: installedVersionsWithMeta = [] } = useQuery({
-    queryKey: ["installedVersionsWithMeta"],
-    queryFn: () => getInstalledVersionsWithContentVersion(db),
+  const { data: syncedReadings = [] } = useQuery({
+    queryKey: ["syncedReadingVersions"],
+    queryFn: () => getSyncedReadingVersions(db),
   });
 
   // Map of installed version keys ("en-niv") that have a newer contentVersion in remote manifest
@@ -67,26 +90,29 @@ export default function LanguagePickerContent({
     const map = new Map<string, { year: number; contentVersion: number }>();
     if (!manifest) return map;
 
-    const ethYear = gregorianToEthiopian(new Date()).year;
-    const yearOpt = manifest.years.find((y) => y.year === ethYear);
+    for (const synced of syncedReadings) {
+      const yearOpt = manifest.years.find((y) => y.year === synced.year);
+      if (!yearOpt) continue;
 
-    if (!yearOpt) return map;
+      const langOpt = yearOpt.languages.find(
+        (l) => l.code.toLowerCase() === synced.language.toLowerCase(),
+      );
+      if (!langOpt) continue;
 
-    for (const lang of yearOpt.languages) {
-      for (const ver of lang.versions) {
-        const key = `${lang.code.toLowerCase()}-${ver.code.toLowerCase()}`;
-        const installed = installedVersionsWithMeta.find(
-          (i) =>
-            i.language.toLowerCase() === lang.code.toLowerCase() &&
-            i.version.toLowerCase() === ver.code.toLowerCase()
-        );
-        if (installed && ver.contentVersion > installed.contentVersion) {
-          map.set(key, { year: yearOpt.year, contentVersion: ver.contentVersion });
-        }
+      const verOpt = langOpt.versions.find(
+        (v) => v.code.toLowerCase() === synced.version.toLowerCase(),
+      );
+      if (!verOpt) continue;
+
+      if (verOpt.contentVersion > synced.contentVersion) {
+        map.set(`${synced.language.toLowerCase()}-${synced.version.toLowerCase()}`, {
+          year: synced.year,
+          contentVersion: verOpt.contentVersion,
+        });
       }
     }
     return map;
-  }, [manifest, installedVersionsWithMeta]);
+  }, [manifest, syncedReadings]);
 
   const handleInlineDownload = async (
     langCode: string,
@@ -95,7 +121,7 @@ export default function LanguagePickerContent({
   ) => {
     const lCode = langCode.toLowerCase();
     const vCode = versionCode.toLowerCase();
-    const key = `${lCode}-${vCode}`;
+    const key = `${lCode}-${vCode}-${year}`;
     if (downloadProgressMap[key] != null) return;
 
     const updateProgress = (pct: number) => {
@@ -262,13 +288,26 @@ export default function LanguagePickerContent({
   // Installed versions from SQLite sorted with currently active version pinned to top, then by usage frequency
   const installedVersions = availableLanguages
     .flatMap((lang) =>
-      lang.versions.map((ver) => ({
-        langCode: lang.code,
-        langName: lang.language,
-        versionCode: ver.code,
-        versionLabel: ver.label,
-        count: usageCount[ver.code] ?? 0,
-      })),
+      lang.versions.map((ver) => {
+        const matchingYears = syncedReadings
+          .filter(
+            (s) =>
+              s.language.toLowerCase() === lang.code.toLowerCase() &&
+              s.version.toLowerCase() === ver.code.toLowerCase(),
+          )
+          .map((s) => s.year);
+
+        const uniqueYears = Array.from(new Set(matchingYears)).sort((a, b) => a - b);
+
+        return {
+          langCode: lang.code,
+          langName: lang.language,
+          versionCode: ver.code,
+          versionLabel: ver.label,
+          years: uniqueYears,
+          count: usageCount[ver.code] ?? 0,
+        };
+      }),
     )
     .sort((a, b) => {
       const isActiveA =
@@ -281,31 +320,65 @@ export default function LanguagePickerContent({
       return b.count - a.count;
     });
 
-  const installedKeys = new Set(
-    installedVersions.map((v) => `${v.langCode.toLowerCase()}-${v.versionCode.toLowerCase()}`),
-  );
+  // Target years for available downloads:
+  // Always include current year. Include next year only if month >= 11 (Nehase/Month 12 or Pagume/Month 13).
+  const ethDate = gregorianToEthiopian(new Date());
+  const currentEthYear = ethDate.year;
+  const isYearEndTransition = ethDate.month >= 11; // 0-indexed: 11 is Nehase (Month 12), 12 is Pagume (Month 13)
+  const nextEthYear = currentEthYear + 1;
 
-  // Compute available versions to download from manifest strictly for the CURRENT liturgical year
-  const ethYear = gregorianToEthiopian(new Date()).year;
-  const currentYearOpt = manifest?.years.find((y) => y.year === ethYear);
+  const targetYears = [currentEthYear];
+  if (isYearEndTransition) {
+    targetYears.push(nextEthYear);
+  }
+
   const downloadableVersions: DownloadableVersion[] = [];
 
-  if (currentYearOpt) {
-    for (const lang of currentYearOpt.languages) {
-      for (const ver of lang.versions) {
-        const key = `${lang.code.toLowerCase()}-${ver.code.toLowerCase()}`;
-        if (!installedKeys.has(key)) {
-          downloadableVersions.push({
-            langCode: lang.code,
-            langName: lang.name,
-            versionCode: ver.code,
-            versionLabel: ver.name,
-            year: currentYearOpt.year,
-          });
+  if (manifest) {
+    for (const targetYear of targetYears) {
+      const yearOpt = manifest.years.find((y) => y.year === targetYear);
+      if (!yearOpt) continue;
+
+      for (const lang of yearOpt.languages) {
+        for (const ver of lang.versions) {
+          const isAlreadyDownloadedForYear = syncedReadings.some(
+            (s) =>
+              s.year === targetYear &&
+              s.language.toLowerCase() === lang.code.toLowerCase() &&
+              s.version.toLowerCase() === ver.code.toLowerCase(),
+          );
+
+          if (!isAlreadyDownloadedForYear) {
+            downloadableVersions.push({
+              langCode: lang.code,
+              langName: lang.name,
+              versionCode: ver.code,
+              versionLabel: ver.name,
+              year: targetYear,
+            });
+          }
         }
       }
     }
   }
+
+  const availableDownloadYears = useMemo(() => {
+    return Array.from(new Set(downloadableVersions.map((v) => v.year))).sort((a, b) => a - b);
+  }, [downloadableVersions]);
+
+  const activeYearTab =
+    selectedDownloadYear && availableDownloadYears.includes(selectedDownloadYear)
+      ? selectedDownloadYear
+      : availableDownloadYears.includes(currentEthYear)
+      ? currentEthYear
+      : availableDownloadYears[0] ?? currentEthYear;
+
+  const filteredDownloadableVersions = useMemo(() => {
+    if (availableDownloadYears.length <= 1) {
+      return downloadableVersions;
+    }
+    return downloadableVersions.filter((v) => v.year === activeYearTab);
+  }, [downloadableVersions, availableDownloadYears, activeYearTab]);
 
   return (
     <View className="px-6 pb-2">
@@ -341,58 +414,7 @@ export default function LanguagePickerContent({
 
 
 
-      {/* Upcoming Year Lectionary Transition Banner (Month 12 & 13) */}
-      {(() => {
-        const ethDate = gregorianToEthiopian(new Date());
-        const isYearEndTransition = ethDate.month >= 11; // 0-indexed: 11 is Nehase (Month 12), 12 is Pagume (Month 13)
-        const nextEthYear = ethDate.year + 1;
-        const nextYearManifest = isYearEndTransition
-          ? manifest?.years.find((y) => y.year === nextEthYear)
-          : null;
 
-        if (!nextYearManifest) return null;
-
-        return (
-          <TouchableOpacity
-            onPress={() => {
-              onVersionSelect?.();
-              router.push({
-                pathname: "/settings/check-updates/content",
-                params: {
-                  preselectYear: String(nextEthYear),
-                  autoCheck: "true",
-                },
-              });
-            }}
-            activeOpacity={0.8}
-            className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-4 flex-row items-center justify-between"
-          >
-            <View className="flex-1 flex-row items-center gap-3 pr-2">
-              <View className="h-9 w-9 rounded-full items-center justify-center bg-amber-500/20">
-                <Ionicons name="calendar" size={18} color="#d97706" />
-              </View>
-              <View className="flex-1">
-                <Text
-                  className="text-amber-900 dark:text-amber-200 text-sm font-semibold"
-                  style={{ fontFamily: "ReadingFont" }}
-                >
-                  {t("upcomingYearLectionaryReady").replace(
-                    "{year}",
-                    String(nextEthYear),
-                  )}
-                </Text>
-                <Text
-                  className="text-amber-700/80 dark:text-amber-400/80 text-xs mt-0.5"
-                  style={{ fontFamily: "ReadingFont" }}
-                >
-                  {t("downloadNewYearReadings")}
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="arrow-forward-circle" size={22} color="#d97706" />
-          </TouchableOpacity>
-        );
-      })()}
 
       {/* Installed Translations */}
       {installedVersions.length > 0 && (
@@ -438,12 +460,25 @@ export default function LanguagePickerContent({
                       {item.versionLabel}
                     </Text>
 
-                    <Text
-                      className="text-muted dark:text-muted-dark text-xs mt-0.5"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {item.langName}
-                    </Text>
+                    <View className="flex-row items-center gap-1.5 mt-0.5 flex-wrap">
+                      <Text
+                        className="text-muted dark:text-muted-dark text-xs"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {item.langName}
+                      </Text>
+                      {item.years.length > 0 && (
+                        <>
+                          <Text className="text-muted dark:text-muted-dark text-xs">•</Text>
+                          <Text
+                            className="text-muted dark:text-muted-dark text-xs font-medium"
+                            style={{ fontFamily: "ReadingFont" }}
+                          >
+                            {item.years.join(", ")}
+                          </Text>
+                        </>
+                      )}
+                    </View>
                   </View>
                 </View>
 
@@ -471,8 +506,8 @@ export default function LanguagePickerContent({
                   {/* If CDN has a newer contentVersion for this installed translation, show Update button */}
                   {(() => {
                     const updateMeta = updatesMap.get(`${item.langCode.toLowerCase()}-${item.versionCode.toLowerCase()}`);
-                    const downloadKey = `${item.langCode}-${item.versionCode}`;
-                    const isDownloadingThis = downloadProgressMap[downloadKey] !== undefined;
+                    const downloadKey = updateMeta ? `${item.langCode.toLowerCase()}-${item.versionCode.toLowerCase()}-${updateMeta.year}` : "";
+                    const isDownloadingThis = Boolean(downloadKey && downloadProgressMap[downloadKey] !== undefined);
 
                     if (updateMeta) {
                       return (
@@ -515,19 +550,60 @@ export default function LanguagePickerContent({
         </View>
       )}
 
-
-
       {/* Available to Download Section */}
       {downloadableVersions.length > 0 && (
-        <View className="space-y-2 mt-2">
+        <View className="space-y-2 mt-4">
           <Text
             className="text-muted dark:text-muted-dark mb-1 text-xs font-semibold uppercase tracking-wider px-1"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Available to Download ({ethYear})
+            Available to Download
           </Text>
-          {downloadableVersions.map((item) => {
-            const key = `${item.langCode}-${item.versionCode}`;
+
+          {/* Full-width equally-spaced year navigation tabs (only when multiple years exist) */}
+          {availableDownloadYears.length > 1 && (
+            <View className="flex-row bg-stone-200/60 dark:bg-stone-800/60 p-1 rounded-2xl mb-2">
+              {availableDownloadYears.map((yr) => {
+                const isTabActive = activeYearTab === yr;
+                const isUpcomingNextYear = yr === nextEthYear && isYearEndTransition;
+
+                return (
+                  <TouchableOpacity
+                    key={yr}
+                    onPress={() => setSelectedDownloadYear(yr)}
+                    activeOpacity={0.8}
+                    className={`flex-1 py-2.5 rounded-xl items-center justify-center transition-all ${
+                      isTabActive
+                        ? "bg-surface dark:bg-surface-dark shadow-sm"
+                        : "bg-transparent"
+                    }`}
+                  >
+                    <View className="flex-row items-center justify-center gap-1.5">
+                      <Text
+                        className={`text-sm font-semibold ${
+                          isTabActive
+                            ? "text-primary"
+                            : "text-muted dark:text-muted-dark"
+                        }`}
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {yr}
+                      </Text>
+
+                      {isUpcomingNextYear && (
+                        <Animated.View style={{ opacity: pulseAnim }}>
+                          <Foundation name="burst-new" size={22} color="#f59e0b" />
+                        </Animated.View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {filteredDownloadableVersions.map((item) => {
+            const key = `${item.langCode.toLowerCase()}-${item.versionCode.toLowerCase()}-${item.year}`;
             const isDownloading = downloadProgressMap[key] != null;
             const progress = downloadProgressMap[key] ?? 0;
 
@@ -572,7 +648,7 @@ export default function LanguagePickerContent({
                     >
                       {isDownloading
                         ? `Downloading... ${progress}%`
-                        : `${item.langName} • ${item.year}`}
+                        : item.langName}
                     </Text>
                   </View>
                 </View>
