@@ -13,7 +13,8 @@ import {
 
 const HOLIDAY_KEYS = {
   all: ["holidays"] as const,
-  language: (language: string) => ["holidays", language] as const,
+  language: (language: string, readingLanguage?: string) =>
+    ["holidays", language, readingLanguage ?? ""] as const,
 };
 
 type HolidayIndexEntry = {
@@ -84,26 +85,30 @@ function buildHolidayIndex(rows: HolidayRow[]): HolidayIndex {
   return { byGcMonth, byEthMonth };
 }
 
-export function useHolidays(language: string) {
+export function useHolidays(language: string, readingLanguage?: string) {
   const db = useSQLiteContext();
 
   return useQuery({
-    queryKey: HOLIDAY_KEYS.language(language),
+    queryKey: HOLIDAY_KEYS.language(language, readingLanguage),
     queryFn: async (): Promise<HolidayRow[]> => {
-      let rows = await db.getAllAsync<HolidayRow>(
-        "SELECT * FROM Holiday WHERE language = ? ORDER BY date",
-        [language],
+      // 3-tier cascade: 1. UI Language, 2. Reading Language, 3. Amharic (stops at 3)
+      const candidates = Array.from(
+        new Set([language, readingLanguage, "am"].filter(Boolean) as string[]),
       );
-      if (rows.length === 0 && language !== "am") {
-        // Fall back to Amharic if requested language holidays are not available in SQLite DB
-        rows = await db.getAllAsync<HolidayRow>(
-          "SELECT * FROM Holiday WHERE language = 'am' ORDER BY date",
+
+      for (const cand of candidates) {
+        const rows = await db.getAllAsync<HolidayRow>(
+          "SELECT * FROM Holiday WHERE language = ? ORDER BY date",
+          [cand],
         );
+        if (rows.length > 0) {
+          return rows.map((row) => ({
+            ...row,
+            type: row.type.toLowerCase() as HolidayRow["type"],
+          }));
+        }
       }
-      return rows.map((row) => ({
-        ...row,
-        type: row.type.toLowerCase() as HolidayRow["type"],
-      }));
+      return [];
     },
     // Build the index once when query data settles — O(n) only on load/language change
     select: buildHolidayIndex,

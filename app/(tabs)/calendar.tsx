@@ -74,8 +74,8 @@ export default function CalendarScreen() {
     setCurrent(getInitialCurrent(isEth));
   }
 
-  const { data: holidayIndex } = useHolidays(lang);
-  const { data: dayInfoIndex } = useDayInfo(lang);
+  const { data: holidayIndex } = useHolidays(lang, settings.language);
+  const { data: dayInfoIndex } = useDayInfo(lang, settings.language);
 
   // O(1) lookup — index was built once when query data settled
   const { map: holidayMap, list: holidays } = getHolidaysForActiveMonth(

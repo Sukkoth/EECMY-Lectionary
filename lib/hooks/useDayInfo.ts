@@ -5,7 +5,8 @@ import { gregorianToEthiopian } from "../ethiopianCalendar";
 
 const DAY_INFO_KEYS = {
   all: ["dayinfo"] as const,
-  language: (language: string) => ["dayinfo", language] as const,
+  language: (language: string, readingLanguage?: string) =>
+    ["dayinfo", language, readingLanguage ?? ""] as const,
 };
 
 export type DayInfoIndex = {
@@ -42,22 +43,27 @@ function buildDayInfoIndex(rows: DayInfoRow[]): DayInfoIndex {
   return { byGcMonth, byEthMonth };
 }
 
-export function useDayInfo(language: string) {
+export function useDayInfo(language: string, readingLanguage?: string) {
   const db = useSQLiteContext();
 
   return useQuery({
-    queryKey: DAY_INFO_KEYS.language(language),
+    queryKey: DAY_INFO_KEYS.language(language, readingLanguage),
     queryFn: async (): Promise<DayInfoRow[]> => {
-      let rows = await db.getAllAsync<DayInfoRow>(
-        "SELECT * FROM DayInfo WHERE language = ? ORDER BY date",
-        [language],
+      // 3-tier cascade: 1. UI Language, 2. Reading Language, 3. Amharic (stops at 3)
+      const candidates = Array.from(
+        new Set([language, readingLanguage, "am"].filter(Boolean) as string[]),
       );
-      if (rows.length === 0 && language !== "am") {
-        rows = await db.getAllAsync<DayInfoRow>(
-          "SELECT * FROM DayInfo WHERE language = 'am' ORDER BY date",
+
+      for (const cand of candidates) {
+        const rows = await db.getAllAsync<DayInfoRow>(
+          "SELECT * FROM DayInfo WHERE language = ? ORDER BY date",
+          [cand],
         );
+        if (rows.length > 0) {
+          return rows;
+        }
       }
-      return rows;
+      return [];
     },
     // Build the index once when query data settles — O(n) only on load/language change
     select: buildDayInfoIndex,
