@@ -171,6 +171,8 @@ export const translations = {
     startDownload: "Start Download",
 
     noReadings: "No readings available",
+    noReadingsForVersionAndYear: "No readings found for {version} in {year}",
+    noReadingsSwitchOrDownload: "Try selecting another translation or downloading this year's content pack.",
     share: "Share",
     fontSize: "Font Size",
 
@@ -351,6 +353,8 @@ export const translations = {
     startDownload: "ማውረድ ጀምር",
 
     noReadings: "ምንም የሚገኝ ንባብ የለም",
+    noReadingsForVersionAndYear: "ለ{year} ዓ.ም. በ{version} የተዘጋጀ ንባብ አልተገኘም",
+    noReadingsSwitchOrDownload: "ሌላ ትርጉም ይምረጡ ወይም የዚህን ዓመት የንባብ ስብስብ ያውርዱ።",
     share: "አጋራ",
     fontSize: "የፊደል መጠን",
 
@@ -531,6 +535,8 @@ export const translations = {
     startDownload: "Buufata Jalqabi",
 
     noReadings: "Dubbisni argamu hin jiru",
+    noReadingsForVersionAndYear: "Bara {year} keessatti hiika {version}tiin dubbisni hin jiru",
+    noReadingsSwitchOrDownload: "Hiika biraa filadhaa yookiin paakeejii qabiyyee bara kanaa buufadhaa.",
     share: "Qoodduu",
     fontSize: "Hammangaa Barruu",
 
