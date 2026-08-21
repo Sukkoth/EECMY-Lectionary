@@ -225,7 +225,12 @@ export default function ReadingScreen() {
         rebuildKey={rebuildKey}
         targetOrder={targetOrder}
       />
-      <LanguageSwitcherSheet ref={sheetRef} onChange={handleSheetChange} viewType={viewType} />
+      <LanguageSwitcherSheet
+        ref={sheetRef}
+        onChange={handleSheetChange}
+        viewType={viewType}
+        activeDate={centerDate}
+      />
     </View>
   );
 }

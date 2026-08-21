@@ -27,6 +27,7 @@ import {
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
   hideHeader?: boolean;
+  activeDate?: Date;
 };
 
 type DownloadableVersion = {
@@ -40,6 +41,7 @@ type DownloadableVersion = {
 export default function LanguagePickerContent({
   onVersionSelect,
   hideHeader,
+  activeDate,
 }: LanguagePickerContentProps) {
   const isDark = useColorScheme() === "dark";
   const { t } = useTranslation();
@@ -320,14 +322,19 @@ export default function LanguagePickerContent({
       return b.count - a.count;
     });
 
-  // Target years for available downloads:
-  // Always include current year. Include next year only if month >= 11 (Nehase/Month 12 or Pagume/Month 13).
-  const ethDate = gregorianToEthiopian(new Date());
-  const currentEthYear = ethDate.year;
-  const isYearEndTransition = ethDate.month >= 11; // 0-indexed: 11 is Nehase (Month 12), 12 is Pagume (Month 13)
-  const nextEthYear = currentEthYear + 1;
+  // Active reading year from currently viewed reading date (or new Date())
+  const readingDate = activeDate ?? new Date();
+  const readingEthDate = gregorianToEthiopian(readingDate);
+  const activeReadingYear = readingEthDate.year;
 
-  const targetYears = [currentEthYear];
+  // Real-world today's date: used strictly to check if we are in the transition window (Month 12/13) of current year
+  const todayDate = new Date();
+  const todayEthDate = gregorianToEthiopian(todayDate);
+  const isActualCurrentYear = activeReadingYear === todayEthDate.year;
+  const isYearEndTransition = isActualCurrentYear && todayEthDate.month >= 11; // 0-indexed: 11 is Nehase (Month 12), 12 is Pagume (Month 13)
+  const nextEthYear = activeReadingYear + 1;
+
+  const targetYears = [activeReadingYear];
   if (isYearEndTransition) {
     targetYears.push(nextEthYear);
   }
@@ -369,9 +376,9 @@ export default function LanguagePickerContent({
   const activeYearTab =
     selectedDownloadYear && availableDownloadYears.includes(selectedDownloadYear)
       ? selectedDownloadYear
-      : availableDownloadYears.includes(currentEthYear)
-      ? currentEthYear
-      : availableDownloadYears[0] ?? currentEthYear;
+      : availableDownloadYears.includes(activeReadingYear)
+      ? activeReadingYear
+      : availableDownloadYears[0] ?? activeReadingYear;
 
   const filteredDownloadableVersions = useMemo(() => {
     if (availableDownloadYears.length <= 1) {
@@ -557,7 +564,9 @@ export default function LanguagePickerContent({
             className="text-muted dark:text-muted-dark mb-1 text-xs font-semibold uppercase tracking-wider px-1"
             style={{ fontFamily: "ReadingFont" }}
           >
-            Available to Download
+            {availableDownloadYears.length > 1
+              ? "Available to Download"
+              : `Available to Download for ${activeReadingYear}`}
           </Text>
 
           {/* Full-width equally-spaced year navigation tabs (only when multiple years exist) */}
