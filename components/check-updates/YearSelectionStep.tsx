@@ -113,6 +113,34 @@ function YearSelectionStep({
           return !!record && record.contentVersion >= lang.dayInfo.version;
         });
 
+        const hasLiturgicalUpdate = yearOption.languages.some((lang) => {
+          const holidaysRecord = syncedLangPackVersions.find(
+            (r) =>
+              r.year === yearOption.year &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
+              r.type === "holidays",
+          );
+          const isHolidaysUpdate =
+            !!holidaysRecord &&
+            lang.holidays &&
+            lang.holidays.version > 0 &&
+            holidaysRecord.contentVersion < lang.holidays.version;
+
+          const dayInfoRecord = syncedLangPackVersions.find(
+            (r) =>
+              r.year === yearOption.year &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
+              r.type === "day-info",
+          );
+          const isDayInfoUpdate =
+            !!dayInfoRecord &&
+            lang.dayInfo &&
+            lang.dayInfo.version > 0 &&
+            dayInfoRecord.contentVersion < lang.dayInfo.version;
+
+          return isHolidaysUpdate || isDayInfoUpdate;
+        });
+
         const allSynced =
           allReadingsSynced && allHolidaysSynced && allDayInfoSynced;
 
@@ -195,7 +223,7 @@ function YearSelectionStep({
                   </Text>
                 </View>
               )}
-              {(!allHolidaysSynced || !allDayInfoSynced) && yearOption.languages.length > 0 && (
+              {hasLiturgicalUpdate && (
                 <View className="flex-row items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1">
                   <Ionicons name="calendar-outline" size={13} color="#d97706" />
                   <Text

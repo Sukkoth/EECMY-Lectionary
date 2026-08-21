@@ -210,7 +210,8 @@ export default function ContentUpdateScreen() {
       const readingCount = items.filter((v) => !v.startsWith("__")).length;
       const hasLiturgicalPack =
         items.includes("__holidays__") || items.includes("__dayinfo__");
-      return sum + readingCount + (hasLiturgicalPack ? 1 : 0);
+      if (readingCount > 0) return sum + readingCount;
+      return sum + (hasLiturgicalPack ? 1 : 0);
     },
     0,
   );
@@ -381,7 +382,12 @@ export default function ContentUpdateScreen() {
           }
           return { ...prev, [langCode]: [...sentinels] };
         }
-        return { ...prev, [langCode]: [...allVersionCodes, ...sentinels] };
+        return {
+          ...prev,
+          [langCode]: Array.from(
+            new Set([...allVersionCodes, ...sentinels, "__holidays__", "__dayinfo__"]),
+          ),
+        };
       });
     },
     [],
@@ -391,9 +397,18 @@ export default function ContentUpdateScreen() {
     setSelectedLangs((prev) => {
       const current = prev[langCode] ?? [];
       const isSelected = current.includes(version);
-      const nextVersions = isSelected
-        ? current.filter((v) => v !== version)
-        : [...current, version];
+      let nextVersions: string[];
+
+      if (isSelected) {
+        nextVersions = current.filter((v) => v !== version);
+      } else {
+        // Automatically select liturgical data alongside the version
+        const additions = [version];
+        if (!current.includes("__holidays__")) additions.push("__holidays__");
+        if (!current.includes("__dayinfo__")) additions.push("__dayinfo__");
+        nextVersions = [...current, ...additions];
+      }
+
       if (nextVersions.length === 0) {
         const next = { ...prev };
         delete next[langCode];

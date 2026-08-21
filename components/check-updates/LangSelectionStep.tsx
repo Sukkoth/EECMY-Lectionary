@@ -485,14 +485,6 @@ function LangSelectionStep({
                   );
                 })}
 
-                {/* Liturgical Data Pack Header */}
-                <Text
-                  className="mb-1 mt-3 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
-                  style={{ fontFamily: "ReadingFont" }}
-                >
-                  {t("liturgicalDataPack")}
-                </Text>
-
                 {(() => {
                   const holidaysRecord = syncedLangPackVersions.find(
                     (r) =>
@@ -513,17 +505,48 @@ function LangSelectionStep({
                     selectedVersions.includes("__holidays__") ||
                     selectedVersions.includes("__dayinfo__");
 
-                  if (synced) {
-                    return (
-                      <View className="my-1 flex-row items-center gap-3 rounded-xl bg-surface/30 dark:bg-surface-dark/30 px-3.5 py-3 opacity-90">
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={20}
-                          color="#16a34a"
-                        />
+                  // Auto-downloaded behind the scenes when available/synced; only show row if there is a newer update
+                  if (!isUpdate) return null;
+
+                  return (
+                    <>
+                      {/* Liturgical Data Pack Header */}
+                      <Text
+                        className="mb-1 mt-3 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {t("liturgicalDataPack")}
+                      </Text>
+
+                      <TouchableOpacity
+                        onPress={() => onToggleLangPack(lang.code, "liturgical")}
+                        activeOpacity={0.7}
+                        className={`my-1 flex-row items-center gap-3 rounded-xl px-3.5 py-3 ${
+                          isSelected
+                            ? "bg-primary/10"
+                            : "bg-surface/50 dark:bg-surface-dark/50"
+                        }`}
+                      >
+                        {isSelected ? (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color="#3b82f6"
+                          />
+                        ) : (
+                          <Ionicons
+                            name="ellipse-outline"
+                            size={20}
+                            color={isDark ? "#8a8480" : "#6b6560"}
+                          />
+                        )}
                         <View className="flex-1">
                           <Text
-                            className="text-sm text-[#2D2A24]/80 dark:text-[#E8E4DC]/80 font-normal"
+                            className={`text-sm ${
+                              isSelected
+                                ? "text-primary font-semibold"
+                                : "text-[#2D2A24] dark:text-[#E8E4DC] font-normal"
+                            }`}
                             style={{ fontFamily: "ReadingFont" }}
                           >
                             {t("liturgicalDataPack")}
@@ -535,76 +558,16 @@ function LangSelectionStep({
                             {t("holidaysFeastsDailyInfo")}
                           </Text>
                         </View>
-                        <View className="rounded-full bg-green-500/15 px-2 py-0.5">
+                        <View className="rounded-full px-2 py-0.5 bg-amber-500/15">
                           <Text
-                            className="text-[10px] text-green-600 dark:text-green-400 font-semibold"
+                            className="text-[10px] font-semibold text-amber-600 dark:text-amber-400"
                             style={{ fontFamily: "ReadingFont" }}
                           >
-                            {t("synced")}
+                            {t("updateAvailable")}
                           </Text>
                         </View>
-                      </View>
-                    );
-                  }
-
-                  return (
-                    <TouchableOpacity
-                      onPress={() => onToggleLangPack(lang.code, "liturgical")}
-                      activeOpacity={0.7}
-                      className={`my-1 flex-row items-center gap-3 rounded-xl px-3.5 py-3 ${
-                        isSelected
-                          ? "bg-primary/10"
-                          : "bg-surface/50 dark:bg-surface-dark/50"
-                      }`}
-                    >
-                      {isSelected ? (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={20}
-                          color="#3b82f6"
-                        />
-                      ) : (
-                        <Ionicons
-                          name="ellipse-outline"
-                          size={20}
-                          color={isDark ? "#8a8480" : "#6b6560"}
-                        />
-                      )}
-                      <View className="flex-1">
-                        <Text
-                          className={`text-sm ${
-                            isSelected
-                              ? "text-primary font-semibold"
-                              : "text-[#2D2A24] dark:text-[#E8E4DC] font-normal"
-                          }`}
-                          style={{ fontFamily: "ReadingFont" }}
-                        >
-                          {t("liturgicalDataPack")}
-                        </Text>
-                        <Text
-                          className="text-xs text-muted dark:text-muted-dark mt-0.5"
-                          style={{ fontFamily: "ReadingFont" }}
-                        >
-                          {t("holidaysFeastsDailyInfo")}
-                        </Text>
-                      </View>
-                      <View
-                        className={`rounded-full px-2 py-0.5 ${
-                          isUpdate ? "bg-amber-500/15" : "bg-primary/10"
-                        }`}
-                      >
-                        <Text
-                          className={`text-[10px] font-semibold ${
-                            isUpdate
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-primary"
-                          }`}
-                          style={{ fontFamily: "ReadingFont" }}
-                        >
-                          {isUpdate ? t("updateAvailable") : t("available")}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
+                      </TouchableOpacity>
+                    </>
                   );
                 })()}
               </View>
