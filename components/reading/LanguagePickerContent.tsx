@@ -5,7 +5,6 @@ import { router } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "@/lib/SettingsContext";
-import { useOnboarding } from "@/lib/OnboardingContext";
 import { useTranslation } from "@/lib/i18n";
 import { scheduleDailyReminder } from "@/lib/NotificationService";
 import { gregorianToEthiopian } from "@/lib/ethiopianCalendar";
@@ -19,7 +18,6 @@ import {
   prepareHolidays,
   prepareSyncRecord,
   commitStatements,
-  isContentDownloaded,
   getInstalledVersionsWithContentVersion,
   getSyncedLangPackVersions,
   type Manifest,
@@ -28,7 +26,6 @@ import {
 type LanguagePickerContentProps = {
   onVersionSelect?: () => void;
   hideHeader?: boolean;
-  isOnboarding?: boolean;
 };
 
 type DownloadableVersion = {
@@ -42,14 +39,12 @@ type DownloadableVersion = {
 export default function LanguagePickerContent({
   onVersionSelect,
   hideHeader,
-  isOnboarding,
 }: LanguagePickerContentProps) {
   const isDark = useColorScheme() === "dark";
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { settings, setAllSettings, availableLanguages, languagesError, refreshAvailableLanguages } =
     useSettings();
-  const { isOnboardingComplete, completeOnboarding } = useOnboarding();
   const db = useSQLiteContext();
 
   const [downloadProgressMap, setDownloadProgressMap] = useState<Record<string, number>>({});
@@ -58,7 +53,6 @@ export default function LanguagePickerContent({
   const { data: manifest = null } = useQuery<Manifest>({
     queryKey: ["remoteManifest"],
     queryFn: fetchManifest,
-    enabled: !isOnboarding,
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 60,
   });
@@ -66,13 +60,12 @@ export default function LanguagePickerContent({
   const { data: installedVersionsWithMeta = [] } = useQuery({
     queryKey: ["installedVersionsWithMeta"],
     queryFn: () => getInstalledVersionsWithContentVersion(db),
-    enabled: !isOnboarding,
   });
 
   // Map of installed version keys ("en-niv") that have a newer contentVersion in remote manifest
   const updatesMap = useMemo(() => {
     const map = new Map<string, { year: number; contentVersion: number }>();
-    if (!manifest || isOnboarding) return map;
+    if (!manifest) return map;
 
     const ethYear = gregorianToEthiopian(new Date()).year;
     const yearOpt =
@@ -96,15 +89,7 @@ export default function LanguagePickerContent({
       }
     }
     return map;
-  }, [manifest, installedVersionsWithMeta, isOnboarding]);
-
-  const handleDownloadContent = async () => {
-    if (!isOnboardingComplete) {
-      await completeOnboarding();
-    }
-    onVersionSelect?.();
-    router.push("/settings/check-updates/content");
-  };
+  }, [manifest, installedVersionsWithMeta]);
 
   const handleInlineDownload = async (
     langCode: string,
@@ -115,10 +100,6 @@ export default function LanguagePickerContent({
     const vCode = versionCode.toLowerCase();
     const key = `${lCode}-${vCode}`;
     if (downloadProgressMap[key] != null) return;
-
-    if (!isOnboardingComplete) {
-      await completeOnboarding();
-    }
 
     const updateProgress = (pct: number) => {
       setDownloadProgressMap((prev) => ({ ...prev, [key]: pct }));
@@ -311,7 +292,7 @@ export default function LanguagePickerContent({
   const currentYear = new Date().getFullYear();
   const downloadableVersions: DownloadableVersion[] = [];
 
-  if (!isOnboarding && manifest) {
+  if (manifest) {
     // Look for current year or fallback to latest available year
     const yearOpt =
       manifest.years.find((y) => y.year === currentYear) ??
@@ -367,57 +348,60 @@ export default function LanguagePickerContent({
         </View>
       )}
 
-      {/* Empty state with Download + Skip buttons */}
-      {!languagesError && availableLanguages.length === 0 && (
-        <View className="bg-surface dark:bg-surface-dark rounded-3xl p-6 items-center justify-center border border-stone-200/60 dark:border-stone-800/60">
-          <View className="bg-primary/10 rounded-2xl p-4 mb-3">
-            <Ionicons name="cloud-download-outline" size={28} color="#3b82f6" />
-          </View>
-          <Text
-            className="text-[#2D2A24] dark:text-[#E8E4DC] text-center text-lg font-semibold mb-1"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            No Translations Installed
-          </Text>
-          <Text
-            className="text-muted dark:text-muted-dark text-center text-xs mb-5 px-2"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            Download a scripture content pack to start reading your daily lectionary.
-          </Text>
 
-          {/* Primary Action: Download Content Pack */}
+
+      {/* Upcoming Year Lectionary Transition Banner (Month 12 & 13) */}
+      {(() => {
+        const ethDate = gregorianToEthiopian(new Date());
+        const isYearEndTransition = ethDate.month >= 11; // 0-indexed: 11 is Nehase (Month 12), 12 is Pagume (Month 13)
+        const nextEthYear = ethDate.year + 1;
+        const nextYearManifest = isYearEndTransition
+          ? manifest?.years.find((y) => y.year === nextEthYear)
+          : null;
+
+        if (!nextYearManifest) return null;
+
+        return (
           <TouchableOpacity
-            onPress={handleDownloadContent}
+            onPress={() => {
+              onVersionSelect?.();
+              router.push({
+                pathname: "/settings/check-updates/content",
+                params: {
+                  preselectYear: String(nextEthYear),
+                  autoCheck: "true",
+                },
+              });
+            }}
             activeOpacity={0.8}
-            className="w-full bg-primary rounded-xl py-3.5 items-center justify-center flex-row gap-2 mb-3"
+            className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-4 flex-row items-center justify-between"
           >
-            <Ionicons name="cloud-download" size={18} color="#ffffff" />
-            <Text
-              className="text-white text-sm font-semibold"
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              Download Content Pack
-            </Text>
+            <View className="flex-1 flex-row items-center gap-3 pr-2">
+              <View className="h-9 w-9 rounded-full items-center justify-center bg-amber-500/20">
+                <Ionicons name="calendar" size={18} color="#d97706" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-amber-900 dark:text-amber-200 text-sm font-semibold"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("upcomingYearLectionaryReady").replace(
+                    "{year}",
+                    String(nextEthYear),
+                  )}
+                </Text>
+                <Text
+                  className="text-amber-700/80 dark:text-amber-400/80 text-xs mt-0.5"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("downloadNewYearReadings")}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="arrow-forward-circle" size={22} color="#d97706" />
           </TouchableOpacity>
-
-          {/* Secondary Action: Continue without downloading */}
-          {onVersionSelect && (
-            <TouchableOpacity
-              onPress={onVersionSelect}
-              activeOpacity={0.7}
-              className="py-2 px-4"
-            >
-              <Text
-                className="text-muted dark:text-muted-dark text-xs font-medium underline"
-                style={{ fontFamily: "ReadingFont" }}
-              >
-                Skip for now — Continue to App
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+        );
+      })()}
 
       {/* Installed Translations */}
       {installedVersions.length > 0 && (
@@ -540,28 +524,7 @@ export default function LanguagePickerContent({
         </View>
       )}
 
-      {/* Onboarding Notice Card */}
-      {isOnboarding && (
-        <View className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-4 flex-row items-center gap-3.5">
-          <View className="h-10 w-10 rounded-full bg-primary/10 items-center justify-center">
-            <Ionicons name="cloud-download-outline" size={20} color="#3b82f6" />
-          </View>
-          <View className="flex-1">
-            <Text
-              className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-            >
-              {t("moreTranslationsNoticeTitle")}
-            </Text>
-            <Text
-              className="mt-0.5 text-xs text-muted dark:text-muted-dark leading-relaxed"
-              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-            >
-              {t("moreTranslationsNoticeDesc")}
-            </Text>
-          </View>
-        </View>
-      )}
+
 
       {/* Available to Download Section */}
       {downloadableVersions.length > 0 && (

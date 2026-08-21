@@ -1,10 +1,9 @@
 import { View, Text, SafeAreaView } from "react-native";
 import { router } from "expo-router";
-import LanguagePickerContent from "@/components/reading/LanguagePickerContent";
+import OnboardingLanguagePicker from "@/components/onboarding/OnboardingLanguagePicker";
 
 export default function LanguageSelectionScreen() {
-
-  const handleVersionSelect = () => {
+  const handleContinue = () => {
     router.push("/onboarding/complete");
   };
 
@@ -28,7 +27,7 @@ export default function LanguageSelectionScreen() {
         </View>
 
         {/* Language Picker */}
-        <LanguagePickerContent onVersionSelect={handleVersionSelect} hideHeader isOnboarding />
+        <OnboardingLanguagePicker onContinue={handleContinue} />
       </View>
     </SafeAreaView>
   );
