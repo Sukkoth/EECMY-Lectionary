@@ -100,35 +100,20 @@ export function useCheckContentUpdate() {
       const ethDate = gregorianToEthiopian(new Date());
       const isYearEndTransition = ethDate.month >= 11;
 
-      if (isYearEndTransition && installedVersions.length > 0) {
+      if (isYearEndTransition) {
         const nextEthYear = ethDate.year + 1;
-        const nextYearManifest = manifest.years.find((y) => y.year === nextEthYear);
+        const nextYearManifest = manifest.years.find((y) => Number(y.year) === Number(nextEthYear));
 
         if (nextYearManifest) {
           const nextYearSynced = await getSyncedReadingVersions(db);
-          const hasMissingNextYear = installedVersions.some((installed) => {
-            const inNextManifest = nextYearManifest.languages.some((l) =>
-              l.versions.some(
-                (v) =>
-                  l.code.toLowerCase() === installed.language.toLowerCase() &&
-                  v.code.toLowerCase() === installed.version.toLowerCase(),
-              ),
-            );
-            const isAlreadyDownloaded = nextYearSynced.some(
-              (s) =>
-                s.year === nextEthYear &&
-                s.language.toLowerCase() === installed.language.toLowerCase() &&
-                s.version.toLowerCase() === installed.version.toLowerCase(),
-            );
-            return inNextManifest && !isAlreadyDownloaded;
-          });
+          const hasDownloadedNextYear = nextYearSynced.some(
+            (s) => Number(s.year) === Number(nextEthYear),
+          );
 
-          if (hasMissingNextYear) {
+          if (!hasDownloadedNextYear) {
             updateFound = true;
             isUpcomingYear = true;
-            if (primaryYear == null) {
-              primaryYear = nextEthYear;
-            }
+            primaryYear = nextEthYear;
           }
         }
       }
