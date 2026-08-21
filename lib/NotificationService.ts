@@ -51,7 +51,7 @@ export async function scheduleDailyReminder(
 
   const now = new Date();
   const readingsDB = new ReadingsDB(db);
-  const verUpper = (version || "niv").toUpperCase();
+  const verUpper = (version || "am54").toUpperCase();
 
   const targets: Array<{ targetDate: Date; body: string }> = [];
   const targetDays = Math.min(Math.max(1, daysAheadCount), 21);

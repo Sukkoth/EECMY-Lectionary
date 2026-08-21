@@ -37,7 +37,7 @@ export default function DailyReminderScreen() {
   // Load preview body for today's reading
   useEffect(() => {
     async function loadPreview() {
-      const verUpper = (settings.version || "niv").toUpperCase();
+      const verUpper = (settings.version || "am54").toUpperCase();
       try {
         const readingsDB = new ReadingsDB(db);
         const dayData: DayData | null = await readingsDB.getReadingsForDate(

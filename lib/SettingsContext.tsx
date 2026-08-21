@@ -17,9 +17,9 @@ const getInitialTheme = (): "light" | "dark" =>
   Appearance.getColorScheme() === "dark" ? "dark" : "light";
 
 const DEFAULT_SETTINGS: AppSettings = {
-  language: "en",
+  language: "am",
   appLanguage: "en",
-  version: "niv",
+  version: "am54",
   showVersionFullName: false,
   fontSizeSimple: 20,
   fontSizeExpanded: 18,
