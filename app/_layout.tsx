@@ -98,8 +98,6 @@ function AppContent() {
 
     if (!isOnboardingComplete && !inOnboardingGroup) {
       router.replace("/onboarding");
-    } else if (isOnboardingComplete && inOnboardingGroup) {
-      router.replace("/(tabs)");
     }
   }, [isOnboardingComplete, loading, segments, router]);
 

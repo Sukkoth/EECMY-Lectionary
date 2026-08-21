@@ -28,6 +28,7 @@ import {
   getSyncedReadingVersions,
   getSyncedLangPackVersions,
   getDownloadedVersionsForYearLang,
+  getInstalledVersionsWithContentVersion,
   isContentDownloaded,
 } from "../../../lib/content";
 import {
@@ -119,18 +120,32 @@ export default function ContentUpdateScreen() {
       const preselected: Record<string, string[]> = {};
       const expanded: Record<string, boolean> = {};
 
+      const globalInstalled = await getInstalledVersionsWithContentVersion(db);
+
       for (const lang of targetYearOpt.languages) {
         const lCode = lang.code.toLowerCase();
         const items: string[] = [];
 
         // Check reading updates for installed versions
         const downloadedForLang = await getDownloadedVersionsForYearLang(db, targetYearOpt.year, lang.code);
+        const hasAnyDownloadedThisYear = downloadedForLang.length > 0;
+
         for (const ver of lang.versions) {
           const match = downloadedForLang.find(
             (d) => d.version.toLowerCase() === ver.code.toLowerCase(),
           );
           if (match && match.contentVersion < ver.contentVersion) {
             items.push(ver.code);
+          } else if (!hasAnyDownloadedThisYear) {
+            // If this year has not been downloaded at all, preselect versions that are installed globally on device
+            const isInstalledGlobally = globalInstalled.some(
+              (i) =>
+                i.language.toLowerCase() === lCode &&
+                i.version.toLowerCase() === ver.code.toLowerCase(),
+            );
+            if (isInstalledGlobally) {
+              items.push(ver.code);
+            }
           }
         }
 
@@ -155,13 +170,18 @@ export default function ContentUpdateScreen() {
           holidaysRecord.contentVersion < lang.holidays.version
         ) {
           items.push("__holidays__");
+        } else if (!hasAnyDownloadedThisYear && items.length > 0 && lang.holidays && lang.holidays.version > 0) {
+          items.push("__holidays__");
         }
+
         if (
           dayInfoRecord &&
           lang.dayInfo &&
           lang.dayInfo.version > 0 &&
           dayInfoRecord.contentVersion < lang.dayInfo.version
         ) {
+          items.push("__dayinfo__");
+        } else if (!hasAnyDownloadedThisYear && items.length > 0 && lang.dayInfo && lang.dayInfo.version > 0) {
           items.push("__dayinfo__");
         }
 
@@ -541,7 +561,15 @@ export default function ContentUpdateScreen() {
       <View className="flex-1 px-6 pt-12">
         <View className="mb-6 flex-row items-center gap-4">
           <TouchableOpacity
-            onPress={() => (step === "idle" ? router.back() : goBack())}
+            onPress={() => {
+              if (step !== "idle") {
+                goBack();
+              } else if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)");
+              }
+            }}
             activeOpacity={0.7}
             className="bg-surface dark:bg-surface-dark rounded-full p-2.5"
           >
