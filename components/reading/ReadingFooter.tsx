@@ -3,6 +3,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { useFavourites, useAddFavourite, useRemoveFavourite } from "@/lib/hooks/useFavourites";
 
+import { useSettings } from "@/lib/SettingsContext";
+import { getReadingFontFamily } from "@/lib/settings";
+
 import VersionBadge from "./VersionBadge";
 
 type ReadingFooterProps = {
@@ -14,6 +17,9 @@ type ReadingFooterProps = {
 };
 
 export default function ReadingFooter({ date, order, reference, text, version }: ReadingFooterProps) {
+  const { settings } = useSettings();
+  const fontFamily = getReadingFontFamily(settings.readingFontFamily);
+
   const { data: favourites = [] } = useFavourites();
   const addMut = useAddFavourite();
   const removeMut = useRemoveFavourite();
@@ -39,7 +45,7 @@ export default function ReadingFooter({ date, order, reference, text, version }:
       <View className="items-center justify-center">
         <Text
           className="text-muted dark:text-muted-dark text-center text-xl mb-4"
-          style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+          style={{ fontFamily, fontWeight: "400" }}
         >
           {reference}
         </Text>

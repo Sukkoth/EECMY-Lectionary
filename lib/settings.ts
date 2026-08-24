@@ -15,6 +15,7 @@ export type ReadingFontFamily =
   | "bitter"
   | "cormorant"
   | "inter"
+  | "playfair"
   | "serif"
   | "sans"
   | "mono";
@@ -201,6 +202,7 @@ function parseReadingFontFamily(value: string | null, fallback: ReadingFontFamil
     "bitter",
     "cormorant",
     "inter",
+    "playfair",
     "serif",
     "sans",
     "mono",
@@ -225,17 +227,18 @@ export function getReadingFontFamily(key?: string): string {
       return "Bitter";
     case "cormorant":
       return "CormorantGaramond";
-    case "inter":
-      return "Inter";
+    case "playfair":
+      return "Playfair";
     case "serif":
       return Platform.OS === "ios" ? "Georgia" : "serif";
     case "sans":
       return Platform.OS === "ios" ? "System" : "sans-serif";
     case "mono":
       return Platform.OS === "ios" ? "Courier" : "monospace";
+    case "inter":
     case "reading":
     default:
-      return "ReadingFont";
+      return "Inter";
   }
 }
 

@@ -18,14 +18,14 @@ const ALIGNMENTS: { value: TextAlignment }[] = [
 ];
 
 const FONT_FAMILIES: { id: ReadingFontFamily; label: string; key: string }[] = [
+  { id: "inter", label: "Inter (Default)", key: "inter" },
   { id: "benaiah", label: "Benaiah (በናያ)", key: "benaiah" },
   { id: "abyssinica", label: "Abyssinica SIL (አቢሲኒካ)", key: "abyssinica" },
-  { id: "reading", label: "Playfair Display (Default)", key: "reading" },
+  { id: "noto-ethiopic", label: "Noto Serif Ethiopic", key: "noto-ethiopic" },
   { id: "lora", label: "Lora (Scripture Serif)", key: "lora" },
   { id: "merriweather", label: "Merriweather (Editorial)", key: "merriweather" },
-  { id: "noto-ethiopic", label: "Noto Serif Ethiopic", key: "noto-ethiopic" },
   { id: "bitter", label: "Bitter (Slab Serif)", key: "bitter" },
-  { id: "inter", label: "Inter (Modern Sans)", key: "inter" },
+  { id: "playfair", label: "Playfair Display", key: "playfair" },
   { id: "serif", label: "System Serif", key: "serif" },
   { id: "sans", label: "System Sans", key: "sans" },
 ];
@@ -387,9 +387,11 @@ function FontDropdownPicker() {
   const [open, setOpen] = useState(false);
   const isDark = useColorScheme() === "dark";
 
-  const selectedOption = FONT_FAMILIES.find(
-    (f) => f.id === (settings.readingFontFamily ?? "reading")
-  ) ?? FONT_FAMILIES[0];
+  const currentFontId = settings.readingFontFamily ?? "inter";
+  const selectedOption =
+    FONT_FAMILIES.find(
+      (f) => f.id === currentFontId || (currentFontId === "reading" && f.id === "inter")
+    ) ?? FONT_FAMILIES[0];
 
   const selectedFontFamily = getReadingFontFamily(selectedOption.key);
 
@@ -428,7 +430,9 @@ function FontDropdownPicker() {
       {open && (
         <View className="bg-surface dark:bg-surface-dark mt-2 overflow-hidden rounded-2xl border border-stone-200/70 dark:border-stone-800/70 p-1.5">
           {FONT_FAMILIES.map((item) => {
-            const active = (settings.readingFontFamily ?? "reading") === item.id;
+            const active =
+              currentFontId === item.id ||
+              (currentFontId === "reading" && item.id === "inter");
             const targetFont = getReadingFontFamily(item.key);
             return (
               <TouchableOpacity
