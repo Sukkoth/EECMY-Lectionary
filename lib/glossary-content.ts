@@ -1,12 +1,28 @@
 export type GlossaryLanguage = "en" | "am" | "om";
 
 type ContentSection = { heading: string; body: string };
-type ChurchSeason = { name: string; purpose: string; theme: string; duration: string };
+type ChurchSeason = {
+  name: string;
+  purpose: string;
+  theme: string;
+  duration: string;
+  sundays?: string;
+};
 type Creed = { name: string; introduction: string; text: string };
 
 export type GlossaryContent = {
   lectionary: { title: string; sections: ContentSection[] };
-  churchYear: { title: string; intro: string; seasons: ChurchSeason[] };
+  churchYear: {
+    title: string;
+    intro: string;
+    labels?: {
+      purpose: string;
+      theme: string;
+      duration: string;
+      sundays: string;
+    };
+    seasons: ChurchSeason[];
+  };
   creeds: { title: string; creeds: Creed[] };
   lordsPrayer: { title: string; introduction: string; text: string };
 };
@@ -54,54 +70,75 @@ On normal days, only one reading is assigned — typically just one of the three
   churchYear: {
     title: "The Church Year",
     intro: `The Church Year (also called the liturgical calendar) is a cycle of seasons and holy days that structures the Christian's journey through the year. Each season has a distinct spiritual focus, guiding worshippers through the story of salvation — from anticipation and incarnation to resurrection and the life of the Church.`,
+    labels: {
+      purpose: "Purpose",
+      theme: "Theme",
+      duration: "Duration",
+      sundays: "Sundays & Feasts",
+    },
     seasons: [
       {
         name: "Advent",
         purpose: "A season of waiting and preparation for the celebration of Christ's birth at Christmas.",
         theme: "Hope, expectation, and the coming of the Messiah",
         duration: "4 weeks (beginning the Sunday closest to November 30)",
+        sundays: "1st, 2nd, 3rd, and 4th Sunday of Advent",
       },
       {
         name: "Christmas",
         purpose: "Celebrating the incarnation of God in the birth of Jesus Christ.",
         theme: "The Word became flesh — God enters human history",
-        duration: "12 days (December 25 through January 5)",
+        duration: "12 days (December 25 through January 5 / Tahsas 29)",
+        sundays: "Christmas Day, 1st Sunday after Christmas",
       },
       {
         name: "Epiphany",
-        purpose: "Marking the revelation of Christ to the world, beginning with the visit of the Magi.",
-        theme: "Christ is revealed as the Savior of all nations",
-        duration: "Variable (January 6 through the Sunday before Ash Wednesday)",
+        purpose: "Marking the revelation of Christ to the world, beginning with the visit of the Magi and His baptism.",
+        theme: "Christ is revealed as the Light and Savior of all nations",
+        duration: "Variable (January 19 / Tir 11 through the Sunday before Ash Wednesday)",
+        sundays: "Epiphany, 1st through 6th Sunday after Epiphany",
       },
       {
         name: "Lent",
         purpose: "A season of repentance, self-examination, and spiritual discipline in preparation for Easter.",
         theme: "Repentance, sacrifice, and the journey to the cross",
-        duration: "40 days (excluding Sundays, beginning Ash Wednesday)",
+        duration: "55 days (7 weeks leading up to Easter)",
+        sundays: "1st through 6th Sunday in Lent",
       },
       {
         name: "Holy Week",
-        purpose: "The most sacred week of the Church Year, commemorating the final days of Christ's earthly life.",
+        purpose: "The most sacred week of the Church Year, commemorating the final days and passion of Christ.",
         theme: "The Passion, death, and victory of Christ",
         duration: "1 week (Palm Sunday through Holy Saturday)",
+        sundays: "Palm Sunday, Maundy Thursday, Good Friday, Holy Saturday",
       },
       {
         name: "Easter",
         purpose: "The joyful celebration of Christ's resurrection from the dead — the foundation of Christian faith.",
         theme: "Resurrection, new life, and victory over sin and death",
         duration: "50 days (Easter Sunday through Pentecost)",
+        sundays: "Easter Day, 1st through 6th Sunday after Easter, Ascension Day",
       },
       {
         name: "Pentecost",
-        purpose: "Remembering the descent of the Holy Spirit upon the disciples, empowering the Church for mission.",
+        purpose: "Remembering the descent of the Holy Spirit upon the disciples and the birth of the Church.",
         theme: "The Holy Spirit, the birth of the Church, and the power of God's Word",
-        duration: "1 day (celebrated 50 days after Easter), often followed by Trinity Sunday",
+        duration: "1 day (celebrated 50 days after Easter), followed by Trinity Sunday",
+        sundays: "Pentecost Day, Trinity Sunday",
       },
       {
         name: "Trinity Season (Ordinary Time)",
         purpose: "A time of growth in faith and discipleship, focusing on the teachings and works of Christ.",
         theme: "The life of the Church, discipleship, and the reign of Christ",
         duration: "Variable (the Sundays after Pentecost until Advent; the longest season of the Church Year)",
+        sundays: "1st through 26th Sunday after Trinity",
+      },
+      {
+        name: "End of the Church Year (Judgment Sunday)",
+        purpose: "Remembering the end of times, watchfulness, and the return of Christ.",
+        theme: "Watchful preparation, eternal life, and the final judgment",
+        duration: "The final two Sundays before Advent",
+        sundays: "Sunday Preceding Judgment Sunday, Judgment Sunday",
       },
     ],
   },
@@ -266,54 +303,75 @@ const amharicContent: GlossaryContent = {
   churchYear: {
     title: "የቤተ ክርስቲያን ዓመት",
     intro: `የቤተ ክርስቲያን ዓመት (የሥርዓተ አምልኮ ካሌንደር) የክርስቲያኖችን ዓመታዊ የመንፈሳዊ ሕይወት ጉዞ የሚያደራጅ የዘመናትና የበዓላት አውድ ነው። እያንዳንዱ ዘመን ምእመናንን ከክርስቶስ ልደት እስከ ትንሣኤና እስከ ቤተ ክርስቲያን ሕይወት የሚያመላክት ልዩ መንፈሳዊ ዓላማ አለው።`,
+    labels: {
+      purpose: "ዓላማ",
+      theme: "ጭብጥ",
+      duration: "የቆይታ ጊዜ",
+      sundays: "የእሑድ ስሞችና በዓላት",
+    },
     seasons: [
       {
-        name: "አድቬንት (ጾመ ነቢያት)",
+        name: "የመምጣቱ ሰሞን (አድቬንት)",
         purpose: "የክርስቶስን ልደት ለማክበር የሚደረግ የዝግጅትና የጽኑ ተስፋ ዘመን።",
         theme: "ተስፋ፥ መጠባበቅ እና የመሲሑ ምጽአት",
-        duration: "4 ሳምንታት (ከኖቬምበር 30 አቅራቢያ ካለው እሑድ ጀምሮ)",
+        duration: "4 ሳምንታት (ከታኅሣሥ ወር መጀመሪያ ጀምሮ)",
+        sundays: "የመምጣቱ 1ኛ፥ 2ኛ፥ 3ኛ እና 4ኛ እሑድ",
       },
       {
-        name: "ክሪስማስ (ልደት)",
+        name: "የልደት በዓል (ዘመነ ልደት / ገና)",
         purpose: "የእግዚአብሔር ሰው መሆንና የኢየሱስ ክርስቶስ ልደት የሚከበርበት ታላቅ በዓል።",
         theme: "ቃሉም ሥጋ ሆነ — አምላክ ወደ ሰው ታሪክ ገባ",
-        duration: "12 ቀናት (ከዲሴምበር 25 እስከ ጃንዋሪ 5)",
+        duration: "12 ቀናት (ከታኅሣሥ 29/ጥር 7 ጀምሮ)",
+        sundays: "የልደት በዓል (ገና)፥ ከልደት በኋላ 1ኛ እሑድ",
       },
       {
-        name: "ኤፒፋኒ (ከተራ/ጥምቀት)",
-        purpose: "ክርስቶስ ለዓለም ሁሉ መድኃኒት ሆኖ መገለጡ የሚታሰብበት ዘመን።",
+        name: "ጥምቀት (ኤጲፋኒ)",
+        purpose: "ክርስቶስ ለዓለም ሁሉ መድኃኒት ሆኖ መገለጡና መጠመቁ የሚታሰብበት ዘመን።",
         theme: "ክርስቶስ የአሕዛብ ሁሉ ብርሃን ሆኖ ተገለጠ",
-        duration: "ከጃንዋሪ 6 እስከ ዐብይ ጾም ዋዜማ",
+        duration: "ከጥር 11 (ጥምቀት) እስከ ዐብይ ጾም ዋዜማ",
+        sundays: "የጥምቀት በዓል፥ ከአስተርእዮ/ጥምቀት በኋላ 1ኛ እስከ 6ኛ እሑድ",
       },
       {
-        name: "ዐብይ ጾም (ሌንት)",
+        name: "ዐብይ ጾም",
         purpose: "ለፋሲካ በዓል ለመዘጋጀት የሚደረግ የንስሐ፥ የጸሎትና የራስን የመመርመር ዘመን።",
         theme: "ንስሐ፥ መስዋዕትነት እና ወደ መስቀሉ የሚደረግ ጉዞ",
-        duration: "40 ቀናት (እሑዶችን ሳይጨምር)",
+        duration: "55 ቀናት (ከዘወረደ እስከ ትንሣኤ)",
+        sundays: "የዐብይ ጾም 1ኛ እስከ 6ኛ እሑዶች",
       },
       {
-        name: "ቅዱስ ሳምንት (ሕማማት)",
-        purpose: "የክርስቶስን ምድራዊ ሕይወት የመጨረሻ ቀናት የምናስብበት እጅግ ቅዱስ ሳምንት።",
-        theme: "የክርስቶስ ሕማማት፥ ሞት እና ድል አድራጊነት",
+        name: "ሰሙነ ሕማማት (ቅዱስ ሳምንት)",
+        purpose: "የክርስቶስን ምድራዊ ሕይወት የመጨረሻ ቀናትና መከራ የምናስብበት እጅግ ቅዱስ ሳምንት።",
+        theme: "የክርስቶስ ሕማማት፥ ስቅለትና ሞት",
         duration: "1 ሳምንት (ከሆሣዕና እስከ ቅዳሜ ሥዑር)",
+        sundays: "የሆሣዕና እሑድ፥ ጸሎተ ሐሙስ፥ ስቅለት፥ ቅዳሜ ሥዑር",
       },
       {
-        name: "ፋሲካ (ኤስተር/ትንሣኤ)",
+        name: "ትንሣኤ (ፋሲካ)",
         purpose: "የክርስቲያን እምነት መሠረት የሆነውን የክርስቶስን ከሙታን መነሣት የምናከብርበት የደስታ ዘመን።",
         theme: "ትንሣኤ፥ አዲስ ሕይወት እና በሞት ላይ የተገኘ ድል",
         duration: "50 ቀናት (ከትንሣኤ እሑድ እስከ ጴንጠቆስጤ)",
+        sundays: "የትንሣኤ በዓል፥ ከትንሣኤ በኋላ 1ኛ እስከ 6ኛ እሑድ፥ የዕርገት በዓል",
       },
       {
-        name: "ጴንጠቆስጤ",
+        name: "በዓለ ኀምሳ (ጴንጠቆስጤ)",
         purpose: "መንፈስ ቅዱስ በደቀ መዛሙርቱ ላይ የወረደበት እና ቤተ ክርስቲያን የተመሠረተችበት ቀን።",
         theme: "መንፈስ ቅዱስ፥ የቤተ ክርስቲያን ልደት እና የእግዚአብሔር ቃል ኃይል",
-        duration: "1 ቀን (ከትንሣኤ በኋላ በ50ኛው ቀን)",
+        duration: "ከትንሣኤ በኋላ በ50ኛው ቀን",
+        sundays: "በዓለ ኀምሳ (ጴንጠቆስጤ)፥ የሥላሴ በዓል",
       },
       {
-        name: "የሥላሴ ዘመን (መደበኛ ዘመን)",
+        name: "ሥላሴ (መደበኛ ዘመን)",
         purpose: "በእምነትና በደቀ መዝሙርነት የማደግ፥ በክርስቶስ ትምህርትና ሥራ ላይ የማተኮር ዘመን።",
         theme: "የቤተ ክርስቲያን ሕይወት፥ ደቀ መዝሙርነት እና የክርስቶስ መንግሥት",
-        duration: "ከጴንጠቆስጤ በኋላ እስከ አድቬንት ድረስ ያለው ረጅሙ ዘመን",
+        duration: "ከሥላሴ በዓል በኋላ እስከ አድቬንት ድረስ ያለው ረጅሙ ዘመን",
+        sundays: "ከሥላሴ በኋላ 1ኛ እስከ 26ኛ እሑድ",
+      },
+      {
+        name: "የቤተ ክርስቲያን ዓመት ፍጻሜ (የፍርድ እሑድ)",
+        purpose: "የዘመናት ፍጻሜና የክርስቶስ ዳግም ምጽአት የሚታሰብበት ዘመን።",
+        theme: "ስለ መጨረሻው ፍርድ፥ ንቃት እና ተዘጋጅቶ መጠበቅ",
+        duration: "ከመምጣቱ ሰሞን በፊት ያሉት የመጨረሻዎቹ ሁለት እሑዶች",
+        sundays: "ከፍርድ እሑድ የሚቀድም እሑድ፥ የፍርድ እሑድ",
       },
     ],
   },
@@ -483,54 +541,75 @@ Guyyoota hojii keessa dubbisni tokko qofti kan kennamu yoo ta'u, Dilbata fi Ayya
   churchYear: {
     title: "Waggaa Waldaa Kiristaanaa",
     intro: `Waggaa Waldaa Kiristaanaa (kalendarii lektiyonaarii) jireenya hafuuraa amantootaa waggaa guutuu qajeelcha. Barri kutaawwan adda addaa qabaachuun fayyina Kiristoos irraa jalqabee hanga jireenya waldaatti amantoota ni leenjisa.`,
+    labels: {
+      purpose: "Kaayyoo",
+      theme: "Dhaamsa",
+      duration: "Turtii",
+      sundays: "Sanbatoota Guddaa fi Ayyaanota",
+    },
     seasons: [
       {
-        name: "Advent (Eeggannoo)",
+        name: "Bara Dhufaatii (Advent)",
         purpose: "Dhaloota Kiristoos kabajuuf qophii fi abdiidhaan eeggachuuf bara dhihaatu.",
-        theme: "Abdiu, eeggannoo fi dhufaatii Masiihichaati",
+        theme: "Abdii, eeggannoo fi dhufaatii Masiihichaati",
         duration: "Torban 4 (Mudde dura torban Dilbata irraa jalqaba)",
+        sundays: "Kan Dhufaatii Isaatii SG 1ffaa, 2ffaa, 3ffaa fi 4ffaa",
       },
       {
         name: "Ayyaana Dhalootaa (Kristmas)",
         purpose: "Waaqayyo nama ta'ee dhalachuu Yesuus Kiristoos kabajuu.",
         theme: "Dubbiin foon ta'e — Waaqayyo seenaa namaa keessa gale",
-        duration: "Guyyoota 12 (Mudde 25 hanga Ammajjii 5)",
+        duration: "Guyyoota 12",
+        sundays: "Ayyaana Dhalootaa, Dhaloota Booda Sanbata Guddaa",
       },
       {
-        name: "Epiphany (Muldhina/Cuuphaa)",
-        purpose: "Kiristoos addunyaa hundaaf fayyisaa ta'ee mul'achuu isaa yaadachuu.",
+        name: "Cuuphaa (Epiphany)",
+        purpose: "Kiristoos addunyaa hundaaf fayyisaa ta'ee mul'achuu fi cuuphamuu isaa yaadachuu.",
         theme: "Kiristoos ifa saba hundaaf ta'ee mul'ate",
-        duration: "Ammajjii 6 irraa hanga Sooma Guddaa ዋዜማቲ",
+        duration: "Cuuphaa irraa hanga Sooma Guddaatti",
+        sundays: "Ayyaana Cuuphaa, Cuuphaa Booda SG 1ffaa hanga 6ffaa",
       },
       {
         name: "Sooma Guddaa (Lent)",
-        purpose: "Ayyaana Fannoo fi Du'a Ka'uuf qopha'uuf gaabbii fi kadhannaaf bara dhihaatu.",
+        purpose: "Ayyaana Du'aa Ka'uuf qopha'uuf gaabbii fi kadhannaaf bara dhihaatu.",
         theme: "Gaabbii, aarsaa fi gara fannoo deemuun",
-        duration: "Guyyoota 40 (Dilbata osoo hin dabalamin)",
+        duration: "Guyyoota 55 (Torban 7)",
+        sundays: "Sooma Guddaa SG 1ffaa hanga 6ffaa",
       },
       {
-        name: "Torban Qulqulluu (Holy Week)",
-        purpose: "Guyyoota dhumaa jireenya Kiristoos lafa irraa yaadachuuf torban qulqulluu.",
-        theme: "Rakkina, du'a fi mo'icha Kiristoos",
+        name: "Torban Dhiphinaa (Holy Week)",
+        purpose: "Guyyoota dhumaa jireenya Kiristoos lafa irraa fi fannoo yaadachuuf torban qulqulluu.",
+        theme: "Rakkina, fannoo, du'a fi mo'icha Kiristoos",
         duration: "Torban 1 (Dilbata Hoosaa'inaa irraa hanga Sanbata Guddaatti)",
+        sundays: "Dilbata Hoosaa'inaa, Kamisa Qulqulluu, Guyyaa Fannoo, Sanbata Guddaa",
       },
       {
-        name: "Fannoo fi Du'a Ka'uu (Easter)",
+        name: "Du'aa Ka'uu (Easter)",
         purpose: "Kiristoos du'a mo'ee ka'uu isaa gammachuudhaan kabajuu — hundee amantaa kiristaanaa.",
-        theme: "Du'a ka'uu, jireenya haarawa fi mo'icha du'a irratti",
-        duration: "Guyyoota 50 (Dilbata Easter irraa hanga Shantaffaatti)",
+        theme: "Du'aa ka'uu, jireenya haarawa fi mo'icha du'a irratti",
+        duration: "Guyyoota 50 (Easter irraa hanga Shantaffatti)",
+        sundays: "Ayyaana Du'aa Ka'uu, Du'aa Ka'uu Booda SG 1ffaa hanga 6ffaa, Guyyaa Ol Ba'uu",
       },
       {
-        name: "Pentecost (Shantaffaa)",
+        name: "Ayyaana Guyyaa Shantammaffaa (Pentecost)",
         purpose: "Hafuurni Qulqulluun bartoota irratti bu'uu fi waldaan dhalachuu ishee yaadachuu.",
         theme: "Hafuura Qulqulluu, dhaloota waldaa fi humna Dubbii Waaqayyoo",
-        duration: "Guyyaa 1 (Guyyaa 50ffaa Easter irrah)",
+        duration: "Guyyaa 50ffaa Easter irratti",
+        sundays: "Ayyaana Guyyaa Shantaffaa (Phenxeqosxee), Ayyaana Sillaasee",
       },
       {
-        name: "Bara Sillaasee (Trinity Season)",
+        name: "Sadan Tokkummaa (Trinity Season)",
         purpose: "Amantaa fi bartummaadhaan guddachuuf, barumsa Kiristoos irratti xiyyeeffachuu.",
         theme: "Jireenya waldaa, bartummaa fi mootummaa Kiristoos",
         duration: "Bara dheeraa Shantaffaa irraa hanga Advent-tti dhihaatu",
+        sundays: "STB (Sadan Tokkummaa Booda) Sanbata Guddaa 1ffaa hanga 26ffaa",
+      },
+      {
+        name: "Dhuma Waggaa Waldaa (Guyyaa Firdii)",
+        purpose: "Waa'ee firdii dhumaa fi dhufaatii Kiristoos lammataa yaadachuu.",
+        theme: "Firdii isa dhumaa, qophaa'anii eeguu",
+        duration: "Sanbatoota Guddaa dhumaa lamaan",
+        sundays: "SG Guyyaa Firdii Dursu, SG Guyyaa Firdii",
       },
     ],
   },

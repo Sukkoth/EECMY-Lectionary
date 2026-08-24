@@ -42,55 +42,81 @@ export default function ChurchYearScreen() {
           {content.churchYear.intro}
         </Text>
 
-        {content.churchYear.seasons.map((season, index) => (
-          <View key={index} className="bg-surface dark:bg-surface-dark mb-4 mx-6 rounded-2xl px-5 py-4">
-            <Text
-              className="text-[#2D2A24] dark:text-[#E8E4DC] mb-3 text-xl"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-            >
-              {season.name}
-            </Text>
+        {content.churchYear.seasons.map((season, index) => {
+          const labels = content.churchYear.labels ?? {
+            purpose: "Purpose",
+            theme: "Theme",
+            duration: "Duration",
+            sundays: "Sundays & Feasts",
+          };
 
-            <Text
-              className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-            >
-              Purpose
-            </Text>
-            <Text
-              className="text-[#2D2A24] dark:text-[#E8E4DC] mb-3 text-xl leading-relaxed"
-              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-            >
-              {season.purpose}
-            </Text>
+          return (
+            <View key={index} className="bg-surface dark:bg-surface-dark mb-4 mx-6 rounded-2xl px-5 py-4">
+              <Text
+                className="text-[#2D2A24] dark:text-[#E8E4DC] mb-3 text-xl"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {season.name}
+              </Text>
 
-            <Text
-              className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-            >
-              Theme
-            </Text>
-            <Text
-              className="text-[#2D2A24] dark:text-[#E8E4DC] mb-3 text-xl leading-relaxed"
-              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-            >
-              {season.theme}
-            </Text>
+              <Text
+                className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {labels.purpose}
+              </Text>
+              <Text
+                className="text-[#2D2A24] dark:text-[#E8E4DC] mb-3 text-xl leading-relaxed"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {season.purpose}
+              </Text>
 
-            <Text
-              className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-            >
-              Duration
-            </Text>
-            <Text
-              className="text-[#2D2A24] dark:text-[#E8E4DC] mb-3 text-xl leading-relaxed"
-              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-            >
-              {season.duration}
-            </Text>
-          </View>
-        ))}
+              <Text
+                className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {labels.theme}
+              </Text>
+              <Text
+                className="text-[#2D2A24] dark:text-[#E8E4DC] mb-3 text-xl leading-relaxed"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {season.theme}
+              </Text>
+
+              <Text
+                className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {labels.duration}
+              </Text>
+              <Text
+                className="text-[#2D2A24] dark:text-[#E8E4DC] mb-3 text-xl leading-relaxed"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {season.duration}
+              </Text>
+
+              {season.sundays ? (
+                <>
+                  <Text
+                    className="text-muted dark:text-muted-dark text-sm uppercase tracking-wider mb-1"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                  >
+                    {labels.sundays}
+                  </Text>
+                  <Text
+                    className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl leading-relaxed"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                  >
+                    {season.sundays}
+                  </Text>
+                </>
+              ) : null}
+            </View>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
