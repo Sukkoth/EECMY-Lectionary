@@ -38,13 +38,13 @@ export default function LectionaryScreen() {
         {content.lectionary.sections.map((section, index) => (
           <View key={index} className="px-6">
             <Text
-              className="text-primary mb-2.5 text-xl font-semibold leading-snug"
+              className="text-primary mb-2 text-lg font-semibold leading-snug"
               style={{ fontFamily: "ReadingFont" }}
             >
               {section.heading}
             </Text>
             <Text
-              className="text-[#2D2A24] dark:text-[#E8E4DC] mb-6 text-2xl leading-relaxed"
+              className="text-[#2D2A24] dark:text-[#E8E4DC] mb-6 text-base leading-relaxed"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
               {section.body}

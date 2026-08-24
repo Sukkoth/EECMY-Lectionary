@@ -55,7 +55,7 @@ export default function CreedsScreen() {
           >
             <View className="flex-row items-center justify-between">
               <Text
-                className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl"
+                className="text-[#2D2A24] dark:text-[#E8E4DC] text-lg"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
                 {creed.name}
@@ -68,7 +68,7 @@ export default function CreedsScreen() {
             </View>
 
             <Text
-              className="text-muted dark:text-muted-dark mt-2 text-xl"
+              className="text-muted dark:text-muted-dark mt-2 text-sm leading-relaxed"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
               {creed.introduction}
@@ -78,7 +78,7 @@ export default function CreedsScreen() {
               <>
                 <View className="border-b border-stone-200 dark:border-stone-800 my-4" />
                 <Text
-                  className="text-[#2D2A24] dark:text-[#E8E4DC] text-2xl leading-relaxed whitespace-pre-line"
+                  className="text-[#2D2A24] dark:text-[#E8E4DC] text-base leading-relaxed whitespace-pre-line"
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                 >
                   {creed.text}
