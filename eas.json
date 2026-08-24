@@ -10,7 +10,7 @@
     },
     "preview": {
       "env": {
-        "EXPO_PUBLIC_DB_FILE_NAME": "lectionary.db"
+        "EXPO_PUBLIC_DB_FILE_NAME": "lectionary-pre1.db"
       },
       "distribution": "internal",
       "android": {
