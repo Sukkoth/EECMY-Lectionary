@@ -26,8 +26,12 @@ import { Lora_400Regular } from "@expo-google-fonts/lora";
 import { Merriweather_400Regular } from "@expo-google-fonts/merriweather";
 import { NotoSerifEthiopic_400Regular } from "@expo-google-fonts/noto-serif-ethiopic";
 import { Bitter_400Regular } from "@expo-google-fonts/bitter";
-import { CormorantGaramond_400Regular } from "@expo-google-fonts/cormorant-garamond";
-import { Inter_400Regular } from "@expo-google-fonts/inter";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -145,16 +149,19 @@ export default function RootLayout() {
   const isDark = systemColorScheme === "dark";
 
   const [loaded, error] = useFonts({
-    // Playfair Display (variable font — all weights via fontWeight)
-    ReadingFont: require("../assets/fonts/PlayfairDisplay/PlayfairDisplay-Variable.ttf"),
+    // Inter for clean, formal UI typography
+    ReadingFont: Inter_400Regular,
+    Inter: Inter_400Regular,
+    Inter_Medium: Inter_500Medium,
+    Inter_SemiBold: Inter_600SemiBold,
+    Inter_Bold: Inter_700Bold,
+    Playfair: require("../assets/fonts/PlayfairDisplay/PlayfairDisplay-Variable.ttf"),
     Benaiah: require("../assets/fonts/Benaiah/Benaiah.otf"),
     AbyssinicaSIL: require("../assets/fonts/Abyssinica Sil/AbyssinicaSIL-Regular.ttf"),
     Lora: Lora_400Regular,
     Merriweather: Merriweather_400Regular,
     NotoSerifEthiopic: NotoSerifEthiopic_400Regular,
     Bitter: Bitter_400Regular,
-    CormorantGaramond: CormorantGaramond_400Regular,
-    Inter: Inter_400Regular,
   });
 
   useEffect(() => {
