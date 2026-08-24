@@ -58,13 +58,13 @@ export default function AboutSettingsScreen() {
         {/* Purpose & Mission Section */}
         <View className="mb-8 px-6">
           <Text
-            className="text-primary mb-3 ml-0.5 text-sm uppercase tracking-widest"
+            className="text-primary mb-3 ml-0.5 text-xs uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {t("missionTitle")}
           </Text>
           <Text
-            className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl leading-relaxed"
+            className="text-[#2D2A24] dark:text-[#E8E4DC] text-base leading-relaxed"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
             {t("missionDesc")}
@@ -74,22 +74,22 @@ export default function AboutSettingsScreen() {
         {/* Key Features Section */}
         <View className="mb-8 px-6">
           <Text
-            className="text-primary mb-4 ml-0.5 text-sm uppercase tracking-widest"
+            className="text-primary mb-4 ml-0.5 text-xs uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {t("keyFeaturesTitle")}
           </Text>
-          <View className="gap-4">
+          <View className="gap-3">
             {featureKeys.map((key) => (
-              <View key={key} className="flex-row items-start gap-3">
+              <View key={key} className="flex-row items-start gap-2.5">
                 <Text
-                  className="text-primary text-xl leading-relaxed"
+                  className="text-primary text-base leading-relaxed"
                   style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
                 >
                   •
                 </Text>
                 <Text
-                  className="flex-1 text-xl leading-relaxed text-[#2D2A24] dark:text-[#E8E4DC]"
+                  className="flex-1 text-base leading-relaxed text-[#2D2A24] dark:text-[#E8E4DC]"
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                 >
                   {t(key as any)}
@@ -102,13 +102,13 @@ export default function AboutSettingsScreen() {
         {/* Acknowledgements Section */}
         <View className="mb-8 px-6">
           <Text
-            className="text-primary mb-3 ml-0.5 text-sm uppercase tracking-widest"
+            className="text-primary mb-3 ml-0.5 text-xs uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {t("acknowledgements")}
           </Text>
           <Text
-            className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl leading-relaxed"
+            className="text-[#2D2A24] dark:text-[#E8E4DC] text-base leading-relaxed"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
             {t("acknowledgementsDesc")}
@@ -118,13 +118,13 @@ export default function AboutSettingsScreen() {
         {/* In Loving Memory Section */}
         <View className="mb-8 px-6">
           <Text
-            className="text-primary mb-3 ml-0.5 text-sm uppercase tracking-widest"
+            className="text-primary mb-3 ml-0.5 text-xs uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {t("memorialTitle")}
           </Text>
           <Text
-            className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl leading-relaxed mb-4"
+            className="text-[#2D2A24] dark:text-[#E8E4DC] text-base leading-relaxed mb-4"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
             {t("memorialDesc")}
@@ -134,13 +134,13 @@ export default function AboutSettingsScreen() {
             {/* Yohannes Ejigu */}
             <View className="border-l-2 border-primary/40 pl-4 py-1">
               <Text
-                className="text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                className="text-lg font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont" }}
               >
                 {t("memorialYohannesTitle")}
               </Text>
               <Text
-                className="text-base text-muted dark:text-muted-dark leading-relaxed mt-1"
+                className="text-sm text-muted dark:text-muted-dark leading-relaxed mt-1"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
                 {t("memorialYohannesDesc")}
@@ -150,13 +150,13 @@ export default function AboutSettingsScreen() {
             {/* Takele Fekadu */}
             <View className="border-l-2 border-primary/40 pl-4 py-1">
               <Text
-                className="text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                className="text-lg font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont" }}
               >
                 {t("memorialTakeleTitle")}
               </Text>
               <Text
-                className="text-base text-muted dark:text-muted-dark leading-relaxed mt-1"
+                className="text-sm text-muted dark:text-muted-dark leading-relaxed mt-1"
                 style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               >
                 {t("memorialTakeleDesc")}
@@ -168,13 +168,13 @@ export default function AboutSettingsScreen() {
         {/* Contact & Feedback Section */}
         <View className="mb-8 px-6">
           <Text
-            className="text-primary mb-3 ml-0.5 text-sm uppercase tracking-widest"
+            className="text-primary mb-3 ml-0.5 text-xs uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
             {t("contactAndFeedback")}
           </Text>
           <Text
-            className="text-[#2D2A24] dark:text-[#E8E4DC] text-xl leading-relaxed mb-4"
+            className="text-[#2D2A24] dark:text-[#E8E4DC] text-base leading-relaxed mb-4"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
             {t("contactDesc")}
@@ -187,9 +187,9 @@ export default function AboutSettingsScreen() {
               activeOpacity={0.7}
               className="flex-row items-center gap-3 py-1"
             >
-              <Ionicons name="paper-plane-outline" size={22} color="#3b82f6" />
+              <Ionicons name="paper-plane-outline" size={20} color="#3b82f6" />
               <Text
-                className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
                 {t("telegramContact")}
@@ -202,9 +202,9 @@ export default function AboutSettingsScreen() {
               activeOpacity={0.7}
               className="flex-row items-center gap-3 py-1"
             >
-              <Ionicons name="mail-outline" size={22} color="#3b82f6" />
+              <Ionicons name="mail-outline" size={20} color="#3b82f6" />
               <Text
-                className="text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
                 {t("emailContact")}
