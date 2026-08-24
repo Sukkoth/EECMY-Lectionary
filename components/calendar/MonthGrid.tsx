@@ -124,48 +124,51 @@ export default function MonthGrid({
                   >
                     {/* Day number container */}
                     <View
-                      style={[{ width: cellWidth - 4, height: 42 }, cell.seasonStyle]}
+                      style={[{ width: cellWidth - 4, height: 44, position: "relative" }, cell.seasonStyle]}
                       className={`items-center justify-center rounded-2xl ${
                         cell.today ? "bg-primary" : ""
                       }`}
                     >
-                      <View className="flex-row items-baseline justify-center">
+                      {/* Secondary reference micro-date in top right corner */}
+                      {cell.subLabel ? (
                         <Text
                           style={{ fontFamily: "ReadingFont" }}
-                          className={`text-xl ${
+                          className={`absolute top-1 right-1.5 text-[9px] ${
                             cell.today
-                              ? "text-white font-semibold"
+                              ? "text-white/80 font-medium"
                               : cell.seasonColor
-                                ? "text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
+                                ? "text-muted dark:text-muted-dark font-medium"
                                 : cell.isSunday
-                                  ? "text-primary dark:text-blue-400 font-semibold"
-                                  : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
-                          }`}
-                        >
-                          {cell.day}
-                        </Text>
-                        <Text
-                          style={{ fontFamily: "ReadingFont" }}
-                          className={`ml-0.5 text-[10px] ${
-                            cell.today
-                              ? "text-white/90 font-semibold"
-                              : cell.seasonColor
-                                ? "text-muted dark:text-muted-dark font-semibold"
-                                : cell.isSunday
-                                  ? "text-primary/80 dark:text-blue-300 font-semibold"
+                                  ? "text-primary/70 dark:text-blue-300 font-medium"
                                   : cell.showSubMonthLabel
                                     ? "text-primary dark:text-blue-400 font-semibold"
-                                    : "text-muted dark:text-muted-dark opacity-75 font-medium"
+                                    : "text-muted dark:text-muted-dark opacity-60 font-normal"
                           }`}
                           numberOfLines={1}
                         >
                           {cell.subLabel}
                         </Text>
-                      </View>
+                      ) : null}
+
+                      {/* Main Primary Day Number Centered */}
+                      <Text
+                        style={{ fontFamily: "ReadingFont" }}
+                        className={`text-lg ${
+                          cell.today
+                            ? "text-white font-semibold"
+                            : cell.seasonColor
+                              ? "text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
+                              : cell.isSunday
+                                ? "text-primary dark:text-blue-400 font-semibold"
+                                : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+                        }`}
+                      >
+                        {cell.day}
+                      </Text>
 
                       {/* Event Indicator Dots */}
                       {cell.types.length > 0 && (
-                        <View className="mt-0.5 flex-row items-center justify-center gap-1">
+                        <View className="absolute bottom-1 flex-row items-center justify-center gap-1">
                           {cell.types.map((type, i) => (
                             <View
                               key={i}
