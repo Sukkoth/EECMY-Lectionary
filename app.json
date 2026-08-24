@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "EECMY Lectionary",
-    "slug": "YeiLet",
+    "slug": "eecmy-lectionary",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

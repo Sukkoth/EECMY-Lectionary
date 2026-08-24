@@ -11,12 +11,17 @@ const JSDELIVR_HEADERS = {
   Accept: "application/json",
 };
 
-async function fetchJSON<T>(url: string): Promise<T> {
+async function fetchJSON<T>(url: string, force = false): Promise<T> {
   if (!CONTENT_BASE_URL) {
     throw new Error("Content update server is not configured.");
   }
   try {
-    const res = await fetch(`${url}?t=${Date.now()}`, { headers: JSDELIVR_HEADERS });
+    const finalUrl = force ? `${url}?t=${Date.now()}` : url;
+    const headers = force
+      ? { ...JSDELIVR_HEADERS, "Cache-Control": "no-cache" }
+      : JSDELIVR_HEADERS;
+    console.log(`[ContentUpdateService] 🌐 Fetching from network (force: ${force}): ${finalUrl}`);
+    const res = await fetch(finalUrl, { headers });
     if (!res.ok) {
       throw new Error(`Server returned HTTP ${res.status}`);
     }
@@ -29,8 +34,8 @@ async function fetchJSON<T>(url: string): Promise<T> {
   }
 }
 
-export async function fetchManifest(): Promise<Manifest> {
-  const manifest = await fetchJSON<Manifest>(`${CONTENT_BASE_URL}/manifest.json`);
+export async function fetchManifest(force = false): Promise<Manifest> {
+  const manifest = await fetchJSON<Manifest>(`${CONTENT_BASE_URL}/manifest.json`, force);
   if (!manifest || !Array.isArray(manifest.years)) {
     return manifest;
   }

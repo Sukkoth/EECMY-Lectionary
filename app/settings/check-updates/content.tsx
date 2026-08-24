@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { useSQLiteContext } from "expo-sqlite";
 import { useQueryClient } from "@tanstack/react-query";
+import * as SecureStore from "expo-secure-store";
 import { router, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "../../../lib/SettingsContext";
@@ -275,8 +276,14 @@ export default function ContentUpdateScreen() {
     abortRef.current = false;
 
     try {
-      const data = await fetchManifest();
+      const data = await fetchManifest(true);
       if (abortRef.current) return;
+      try {
+        await Promise.all([
+          SecureStore.setItemAsync("yeilet_last_content_update_check_time", String(Date.now())),
+          SecureStore.deleteItemAsync("yeilet_last_content_update_error_retry_time"),
+        ]);
+      } catch {}
       setManifest(data);
       const synced = await loadSyncedData();
 

@@ -10,6 +10,8 @@ export {
   commitStatements,
 } from "./ContentUpdateService";
 
+export { CONTENT_BASE_URL, DISABLE_UPDATE_THROTTLE } from "./config";
+
 export {
   getSyncedYears,
   getSyncedReadingCounts,

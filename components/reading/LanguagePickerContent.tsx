@@ -77,9 +77,9 @@ export default function LanguagePickerContent({
 
   const { data: manifest = null } = useQuery<Manifest>({
     queryKey: ["remoteManifest"],
-    queryFn: fetchManifest,
-    staleTime: 1000 * 60 * 15,
-    gcTime: 1000 * 60 * 60,
+    queryFn: () => fetchManifest(false),
+    staleTime: 1000 * 60 * 60 * 12,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   const { data: syncedReadings = [] } = useQuery({
