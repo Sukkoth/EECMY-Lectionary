@@ -11,42 +11,119 @@ import {
   gregorianToEthiopian,
 } from "../ethiopianCalendar";
 
-export const HOLIDAY_KEYS = {
+const HOLIDAY_KEYS = {
   all: ["holidays"] as const,
-  language: (language: string) => ["holidays", language] as const,
+  language: (language: string, readingLanguage?: string) =>
+    ["holidays", language, readingLanguage ?? ""] as const,
 };
 
-export function useHolidays(language: string) {
+type HolidayIndexEntry = {
+  row: HolidayRow;
+  /** Gregorian date components parsed once */
+  gcYear: number;
+  gcMonth: number; // 0-indexed
+  gcDay: number;
+  /** Ethiopian date components converted once */
+  ethYear: number;
+  ethMonth: number; // 0-indexed
+  ethDay: number;
+};
+
+export type HolidayIndex = {
+  /** Key: "YYYY-M" (GC, 0-indexed month) → entries that fall in that GC month */
+  byGcMonth: Map<string, HolidayIndexEntry[]>;
+  /** Key: "YYYY-M" (ETH, 0-indexed month) → entries that fall in that ETH month */
+  byEthMonth: Map<string, HolidayIndexEntry[]>;
+};
+
+function buildHolidayIndex(rows: HolidayRow[]): HolidayIndex {
+  const byGcMonth = new Map<string, HolidayIndexEntry[]>();
+  const byEthMonth = new Map<string, HolidayIndexEntry[]>();
+
+  for (const row of rows) {
+    const startDate = new Date(`${row.date}T12:00:00Z`);
+    const endDate = row.endDate ? new Date(`${row.endDate}T12:00:00Z`) : startDate;
+
+    const curr = new Date(startDate.getTime());
+    while (curr.getTime() <= endDate.getTime()) {
+      const y = curr.getUTCFullYear();
+      const m = curr.getUTCMonth();
+      const d = curr.getUTCDate();
+
+      const eth = gregorianToEthiopian(curr);
+
+      const entry: HolidayIndexEntry = {
+        row,
+        gcYear: y,
+        gcMonth: m,
+        gcDay: d,
+        ethYear: eth.year,
+        ethMonth: eth.month,
+        ethDay: eth.day,
+      };
+
+      const gcKey = `${y}-${m}`;
+      let gcBucket = byGcMonth.get(gcKey);
+      if (!gcBucket) {
+        gcBucket = [];
+        byGcMonth.set(gcKey, gcBucket);
+      }
+      gcBucket.push(entry);
+
+      const ethKey = `${eth.year}-${eth.month}`;
+      let ethBucket = byEthMonth.get(ethKey);
+      if (!ethBucket) {
+        ethBucket = [];
+        byEthMonth.set(ethKey, ethBucket);
+      }
+      ethBucket.push(entry);
+
+      curr.setTime(curr.getTime() + 86400000);
+    }
+  }
+
+  return { byGcMonth, byEthMonth };
+}
+
+export function useHolidays(language: string, readingLanguage?: string) {
   const db = useSQLiteContext();
 
   return useQuery({
-    queryKey: HOLIDAY_KEYS.language(language),
+    queryKey: HOLIDAY_KEYS.language(language, readingLanguage),
     queryFn: async (): Promise<HolidayRow[]> => {
-      let rows = await db.getAllAsync<HolidayRow>(
-        "SELECT * FROM Holiday WHERE language = ? ORDER BY date",
-        [language],
+      // 3-tier cascade: 1. UI Language, 2. Reading Language, 3. Amharic (stops at 3)
+      const candidates = Array.from(
+        new Set([language, readingLanguage, "am"].filter(Boolean) as string[]),
       );
-      if (rows.length === 0 && language !== "am") {
-        // Fall back to Amharic if requested language holidays are not available in SQLite DB
-        rows = await db.getAllAsync<HolidayRow>(
-          "SELECT * FROM Holiday WHERE language = 'am' ORDER BY date",
+
+      for (const cand of candidates) {
+        const rows = await db.getAllAsync<HolidayRow>(
+          "SELECT * FROM Holiday WHERE language = ? ORDER BY date",
+          [cand],
         );
+        if (rows.length > 0) {
+          return rows.map((row) => ({
+            ...row,
+            type: row.type.toLowerCase() as HolidayRow["type"],
+          }));
+        }
       }
-      return rows.map((row) => ({
-        ...row,
-        type: row.type.toLowerCase() as HolidayRow["type"],
-      }));
+      return [];
     },
+    // Build the index once when query data settles — O(n) only on load/language change
+    select: buildHolidayIndex,
   });
 }
 
 export type DisplayHoliday = HolidayRow & {
   displayDay: number;
   displayMonthName: string;
+  displayEndDay?: number;
+  displayEndMonthName?: string;
 };
 
 export function getHolidaysForActiveMonth(
-  holidays: HolidayRow[] | undefined,
+  index: HolidayIndex | undefined,
   activeYear: number,
   activeMonth: number,
   isEth: boolean,
@@ -54,46 +131,69 @@ export function getHolidaysForActiveMonth(
 ): { map: Map<number, HolidayRow[]>; list: DisplayHoliday[] } {
   const map = new Map<number, HolidayRow[]>();
   const list: DisplayHoliday[] = [];
+  const processedIds = new Set<string>();
 
-  if (!holidays) return { map, list };
+  if (!index) return { map, list };
 
-  const ethShorts = lang === "om" ? ETHIOPIAN_MONTH_NAMES_SHORT_OM : lang === "en" ? ETHIOPIAN_MONTH_NAMES_SHORT_EN : ETHIOPIAN_MONTH_NAMES_SHORT_AM;
-  const gcShorts = lang === "om" ? GREGORIAN_MONTH_NAMES_SHORT_OM : lang === "am" ? GREGORIAN_MONTH_NAMES_SHORT_AM : GREGORIAN_MONTH_NAMES_SHORT_EN;
+  const ethShorts =
+    lang === "om"
+      ? ETHIOPIAN_MONTH_NAMES_SHORT_OM
+      : lang === "en"
+        ? ETHIOPIAN_MONTH_NAMES_SHORT_EN
+        : ETHIOPIAN_MONTH_NAMES_SHORT_AM;
+  const gcShorts =
+    lang === "om"
+      ? GREGORIAN_MONTH_NAMES_SHORT_OM
+      : lang === "am"
+        ? GREGORIAN_MONTH_NAMES_SHORT_AM
+        : GREGORIAN_MONTH_NAMES_SHORT_EN;
 
-  for (const h of holidays) {
-    const [yStr, mStr, dStr] = h.date.split("-");
-    const gcYear = parseInt(yStr, 10);
-    const gcMonth = parseInt(mStr, 10) - 1;
-    const gcDay = parseInt(dStr, 10);
+  const key = `${activeYear}-${activeMonth}`;
+  const entries = isEth
+    ? (index.byEthMonth.get(key) ?? [])
+    : (index.byGcMonth.get(key) ?? []);
 
-    if (isEth) {
-      // Convert Gregorian date from DB to Ethiopian date (using noon UTC to prevent timezone shifts)
-      const eth = gregorianToEthiopian(new Date(`${h.date}T12:00:00Z`));
-      if (eth.year === activeYear && eth.month === activeMonth) {
-        const ethMonthName = ethShorts[eth.month] ?? "";
+  for (const entry of entries) {
+    const dayNum = isEth ? entry.ethDay : entry.gcDay;
+    const existing = map.get(dayNum) ?? [];
+    existing.push(entry.row);
+    map.set(dayNum, existing);
 
-        const existing = map.get(eth.day) ?? [];
-        existing.push(h);
-        map.set(eth.day, existing);
+    // Deduplicate in event list so multi-day events appear once as a range banner
+    if (!processedIds.has(entry.row.id)) {
+      processedIds.add(entry.row.id);
 
+      if (entry.row.endDate && entry.row.endDate !== entry.row.date) {
+        const startDate = new Date(`${entry.row.date}T12:00:00Z`);
+        const endDate = new Date(`${entry.row.endDate}T12:00:00Z`);
+
+        if (isEth) {
+          const ethStart = gregorianToEthiopian(startDate);
+          const ethEnd = gregorianToEthiopian(endDate);
+          list.push({
+            ...entry.row,
+            displayDay: ethStart.day,
+            displayMonthName: ethShorts[ethStart.month] ?? "",
+            displayEndDay: ethEnd.day,
+            displayEndMonthName: ethShorts[ethEnd.month] ?? "",
+          });
+        } else {
+          list.push({
+            ...entry.row,
+            displayDay: startDate.getUTCDate(),
+            displayMonthName: gcShorts[startDate.getUTCMonth()] ?? "",
+            displayEndDay: endDate.getUTCDate(),
+            displayEndMonthName: gcShorts[endDate.getUTCMonth()] ?? "",
+          });
+        }
+      } else {
+        const monthName = isEth
+          ? ethShorts[entry.ethMonth] ?? ""
+          : gcShorts[entry.gcMonth] ?? "";
         list.push({
-          ...h,
-          displayDay: eth.day,
-          displayMonthName: ethMonthName,
-        });
-      }
-    } else {
-      if (gcYear === activeYear && gcMonth === activeMonth) {
-        const gcMonthName = gcShorts[gcMonth] ?? "";
-
-        const existing = map.get(gcDay) ?? [];
-        existing.push(h);
-        map.set(gcDay, existing);
-
-        list.push({
-          ...h,
-          displayDay: gcDay,
-          displayMonthName: gcMonthName,
+          ...entry.row,
+          displayDay: dayNum,
+          displayMonthName: monthName,
         });
       }
     }

@@ -1,6 +1,6 @@
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "@/lib/SettingsContext";
 import { GLOSSARY_CONTENT, type GlossaryLanguage } from "@/lib/glossary-content";
 
@@ -38,13 +38,13 @@ export default function LectionaryScreen() {
         {content.lectionary.sections.map((section, index) => (
           <View key={index} className="px-6">
             <Text
-              className="text-primary mb-2 ml-1 text-xs uppercase tracking-widest"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              className="text-primary mb-2 text-lg font-semibold leading-snug"
+              style={{ fontFamily: "ReadingFont" }}
             >
               {section.heading}
             </Text>
             <Text
-              className="text-[#2D2A24] dark:text-[#E8E4DC] mb-6 text-2xl leading-relaxed"
+              className="text-[#2D2A24] dark:text-[#E8E4DC] mb-6 text-base leading-relaxed"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
               {section.body}

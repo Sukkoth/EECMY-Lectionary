@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
-export const DEFAULT_LANG = "en";
-export const DEFAULT_VERSION = "niv";
+const DEFAULT_LANG = "am";
+const DEFAULT_VERSION = "am54";
 
 export type ReadingRow = {
   order: number;
@@ -14,7 +14,7 @@ export type ReadingRow = {
 export type DayData = {
   date: Date;
   readings: ReadingRow[];
-  dayInfo: { title: string | null; description: string | null } | null;
+  dayInfo: { title: string | null; description: string | null; seasonColor?: string | null } | null;
 };
 
 /** Format a Date to YYYY-MM-DD using local timezone */
@@ -38,7 +38,7 @@ export class ReadingsDB {
    * Retrieves readings within a date range and groups them by date.
    *
    * Each date contains its associated readings and optional day information
-   * such as title and description.
+   * such as title, description, and season color.
    */
   async getReadingsForDateRange(
     startDate: Date,
@@ -58,11 +58,15 @@ export class ReadingsDB {
       version: string;
       title: string | null;
       description: string | null;
+      seasonColor: string | null;
     }>(
       `SELECT r.date, r."order", r.section, r.reference, r.text, r."version",
-              d.title, d.description
+              COALESCE(d.title, dam.title) AS title,
+              COALESCE(d.description, dam.description) AS description,
+              COALESCE(d.seasonColor, dam.seasonColor) AS seasonColor
        FROM Reading r
        LEFT JOIN DayInfo d ON d.language = r.language AND d.date = r.date
+       LEFT JOIN DayInfo dam ON dam.language = 'am' AND dam.date = r.date
        WHERE r.language = ? AND r.version = ? AND r.date >= ? AND r.date <= ?
        ORDER BY r.date, r."order" ASC`,
       [language, version, startStr, endStr],
@@ -76,7 +80,10 @@ export class ReadingsDB {
         grouped.set(dateKey, {
           date: fromDateString(dateKey),
           readings: [],
-          dayInfo: row.title != null ? { title: row.title, description: row.description } : null,
+          dayInfo:
+            row.title != null || row.seasonColor != null
+              ? { title: row.title, description: row.description, seasonColor: row.seasonColor }
+              : null,
         });
       }
 

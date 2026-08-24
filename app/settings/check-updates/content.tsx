@@ -8,11 +8,12 @@ import {
 } from "react-native";
 import { useSQLiteContext } from "expo-sqlite";
 import { useQueryClient } from "@tanstack/react-query";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import * as SecureStore from "expo-secure-store";
+import { router, useLocalSearchParams } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "../../../lib/SettingsContext";
 import { useTranslation } from "../../../lib/i18n";
-import type { Manifest, YearOption, WizardStep } from "../../../types/check-update";
+import type { Manifest, YearOption, WizardStep } from "@/lib/types/checkUpdates";
 import {
   fetchManifest,
   downloadDayInfo,
@@ -28,6 +29,7 @@ import {
   getSyncedReadingVersions,
   getSyncedLangPackVersions,
   getDownloadedVersionsForYearLang,
+  getInstalledVersionsWithContentVersion,
   isContentDownloaded,
 } from "../../../lib/content";
 import {
@@ -46,6 +48,12 @@ export default function ContentUpdateScreen() {
   const queryClient = useQueryClient();
   const { settings, refreshAvailableLanguages } = useSettings();
   const { t } = useTranslation();
+  const params = useLocalSearchParams<{
+    preselectYear?: string;
+    preselectLang?: string;
+    preselectVersion?: string;
+    autoCheck?: string;
+  }>();
 
   const [step, setStep] = useState<WizardStep>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +87,7 @@ export default function ContentUpdateScreen() {
     setSyncedReadingCounts(readingMap);
     setSyncedLangPackVersions(langPackVersions);
     setSyncedReadingVersions(readingVersions);
+    return { years, readingCounts, langPackVersions, readingVersions };
   }, [db]);
 
   const loadDownloadedVersions = useCallback(async (year: number, languages: { code: string }[]) => {
@@ -104,6 +113,90 @@ export default function ContentUpdateScreen() {
     setDownloadedLangPacks(result);
   }, [db]);
 
+  const getAvailableUpdatesForYear = useCallback(
+    async (
+      targetYearOpt: YearOption,
+      currentSyncedLangPacks: { year: number; language: string; type: string; contentVersion: number }[],
+    ) => {
+      const preselected: Record<string, string[]> = {};
+      const expanded: Record<string, boolean> = {};
+
+      const globalInstalled = await getInstalledVersionsWithContentVersion(db);
+
+      for (const lang of targetYearOpt.languages) {
+        const lCode = lang.code.toLowerCase();
+        const items: string[] = [];
+
+        // Check reading updates for installed versions
+        const downloadedForLang = await getDownloadedVersionsForYearLang(db, targetYearOpt.year, lang.code);
+        const hasAnyDownloadedThisYear = downloadedForLang.length > 0;
+
+        for (const ver of lang.versions) {
+          const match = downloadedForLang.find(
+            (d) => d.version.toLowerCase() === ver.code.toLowerCase(),
+          );
+          if (match && match.contentVersion < ver.contentVersion) {
+            items.push(ver.code);
+          } else if (!hasAnyDownloadedThisYear) {
+            // If this year has not been downloaded at all, preselect versions that are installed globally on device
+            const isInstalledGlobally = globalInstalled.some(
+              (i) =>
+                i.language.toLowerCase() === lCode &&
+                i.version.toLowerCase() === ver.code.toLowerCase(),
+            );
+            if (isInstalledGlobally) {
+              items.push(ver.code);
+            }
+          }
+        }
+
+        // Check Liturgical pack updates
+        const holidaysRecord = currentSyncedLangPacks.find(
+          (r) =>
+            r.year === targetYearOpt.year &&
+            r.language.toLowerCase() === lCode &&
+            r.type === "holidays",
+        );
+        const dayInfoRecord = currentSyncedLangPacks.find(
+          (r) =>
+            r.year === targetYearOpt.year &&
+            r.language.toLowerCase() === lCode &&
+            r.type === "day-info",
+        );
+
+        if (
+          holidaysRecord &&
+          lang.holidays &&
+          lang.holidays.version > 0 &&
+          holidaysRecord.contentVersion < lang.holidays.version
+        ) {
+          items.push("__holidays__");
+        } else if (!hasAnyDownloadedThisYear && items.length > 0 && lang.holidays && lang.holidays.version > 0) {
+          items.push("__holidays__");
+        }
+
+        if (
+          dayInfoRecord &&
+          lang.dayInfo &&
+          lang.dayInfo.version > 0 &&
+          dayInfoRecord.contentVersion < lang.dayInfo.version
+        ) {
+          items.push("__dayinfo__");
+        } else if (!hasAnyDownloadedThisYear && items.length > 0 && lang.dayInfo && lang.dayInfo.version > 0) {
+          items.push("__dayinfo__");
+        }
+
+        if (items.length > 0) {
+          preselected[lang.code] = items;
+          expanded[lang.code] = true;
+        }
+      }
+
+      return { preselected, expanded };
+    },
+    [db],
+  );
+
   const [progress, setProgress] = useState(0);
   const abortRef = useRef(false);
 
@@ -118,7 +211,8 @@ export default function ContentUpdateScreen() {
       const readingCount = items.filter((v) => !v.startsWith("__")).length;
       const hasLiturgicalPack =
         items.includes("__holidays__") || items.includes("__dayinfo__");
-      return sum + readingCount + (hasLiturgicalPack ? 1 : 0);
+      if (readingCount > 0) return sum + readingCount;
+      return sum + (hasLiturgicalPack ? 1 : 0);
     },
     0,
   );
@@ -182,10 +276,53 @@ export default function ContentUpdateScreen() {
     abortRef.current = false;
 
     try {
-      const data = await fetchManifest();
+      const data = await fetchManifest(true);
       if (abortRef.current) return;
+      try {
+        await Promise.all([
+          SecureStore.setItemAsync("yeilet_last_content_update_check_time", String(Date.now())),
+          SecureStore.deleteItemAsync("yeilet_last_content_update_error_retry_time"),
+        ]);
+      } catch {}
       setManifest(data);
-      await loadSyncedData();
+      const synced = await loadSyncedData();
+
+      if (params.preselectYear) {
+        const targetYearNum = parseInt(params.preselectYear, 10);
+        const targetYearOpt = data.years.find((y) => y.year === targetYearNum);
+        if (targetYearOpt) {
+          setSelectedYear(targetYearOpt);
+          setIsYearLoading(true);
+          await Promise.all([
+            loadDownloadedVersions(targetYearOpt.year, targetYearOpt.languages),
+            loadLangPackStatus(targetYearOpt.year, targetYearOpt.languages),
+          ]);
+          setIsYearLoading(false);
+
+          const { preselected, expanded } = await getAvailableUpdatesForYear(
+            targetYearOpt,
+            synced.langPackVersions,
+          );
+
+          if (Object.keys(preselected).length > 0) {
+            setSelectedLangs(preselected);
+            setExpandedLangs(expanded);
+          } else if (params.preselectLang) {
+            const itemsToSelect: string[] = [];
+            if (params.preselectVersion) {
+              itemsToSelect.push(params.preselectVersion);
+            }
+            setSelectedLangs({
+              [params.preselectLang]: itemsToSelect,
+            });
+            setExpandedLangs({ [params.preselectLang]: true });
+          }
+
+          setStep("selectLang");
+          return;
+        }
+      }
+
       setStep("selectYear");
     } catch (err) {
       if (abortRef.current) return;
@@ -194,26 +331,44 @@ export default function ContentUpdateScreen() {
       setError(msg);
       setStep("idle");
     }
-  }, [loadSyncedData]);
+  }, [
+    loadSyncedData,
+    params.preselectYear,
+    params.preselectLang,
+    params.preselectVersion,
+    loadDownloadedVersions,
+    loadLangPackStatus,
+    getAvailableUpdatesForYear,
+  ]);
+
+  useEffect(() => {
+    if (params.preselectYear || params.autoCheck === "true") {
+      handleCheck();
+    }
+  }, [params.preselectYear, params.autoCheck, handleCheck]);
 
   const handleYearSelect = useCallback(
     async (year: YearOption) => {
       if (isYearLoading) return;
       setIsYearLoading(true);
       setSelectedYear(year);
-      setSelectedLangs({});
-      setExpandedLangs({});
       try {
         await Promise.all([
           loadDownloadedVersions(year.year, year.languages),
           loadLangPackStatus(year.year, year.languages),
         ]);
+        const { preselected, expanded } = await getAvailableUpdatesForYear(
+          year,
+          syncedLangPackVersions,
+        );
+        setSelectedLangs(preselected);
+        setExpandedLangs(expanded);
         setStep("selectLang");
       } finally {
         setIsYearLoading(false);
       }
     },
-    [isYearLoading, loadDownloadedVersions, loadLangPackStatus],
+    [isYearLoading, loadDownloadedVersions, loadLangPackStatus, getAvailableUpdatesForYear, syncedLangPackVersions],
   );
 
   const isSentinel = (v: string) => v.startsWith("__");
@@ -234,7 +389,12 @@ export default function ContentUpdateScreen() {
           }
           return { ...prev, [langCode]: [...sentinels] };
         }
-        return { ...prev, [langCode]: [...allVersionCodes, ...sentinels] };
+        return {
+          ...prev,
+          [langCode]: Array.from(
+            new Set([...allVersionCodes, ...sentinels, "__holidays__", "__dayinfo__"]),
+          ),
+        };
       });
     },
     [],
@@ -244,9 +404,18 @@ export default function ContentUpdateScreen() {
     setSelectedLangs((prev) => {
       const current = prev[langCode] ?? [];
       const isSelected = current.includes(version);
-      const nextVersions = isSelected
-        ? current.filter((v) => v !== version)
-        : [...current, version];
+      let nextVersions: string[];
+
+      if (isSelected) {
+        nextVersions = current.filter((v) => v !== version);
+      } else {
+        // Automatically select liturgical data alongside the version
+        const additions = [version];
+        if (!current.includes("__holidays__")) additions.push("__holidays__");
+        if (!current.includes("__dayinfo__")) additions.push("__dayinfo__");
+        nextVersions = [...current, ...additions];
+      }
+
       if (nextVersions.length === 0) {
         const next = { ...prev };
         delete next[langCode];
@@ -298,11 +467,15 @@ export default function ContentUpdateScreen() {
     abortRef.current = false;
 
     const year = selectedYear.year;
-    let completed = 0;
+    const safeTotalTasks = Math.max(1, totalDownloadTasks);
+    let completedTasks = 0;
 
-    const updateProgress = () => {
-      completed++;
-      setProgress(Math.round((completed / totalDownloadTasks) * 100));
+    const updateProgress = (fraction: number = 1.0) => {
+      const currentProgress = ((completedTasks + fraction) / safeTotalTasks) * 100;
+      setProgress(Math.min(100, Math.max(0, Math.round(currentProgress))));
+      if (fraction >= 1.0) {
+        completedTasks += 1;
+      }
     };
 
     try {
@@ -310,43 +483,50 @@ export default function ContentUpdateScreen() {
         const items = selectedLangs[lang.code];
         if (!items?.length) continue;
 
-        if (items.includes("__holidays__")) {
+        if (items.includes("__holidays__") && lang.holidays?.path) {
           if (abortRef.current) return;
           const pkg = await downloadHolidays(lang.holidays.path);
-          const prepared = prepareHolidays(pkg, lang.code);
+          updateProgress(0.5);
+          const prepared = prepareHolidays(pkg, lang.code, lang.holidays.version);
           const sync = prepareSyncRecord(year, lang.code, lang.name, null, null, "holidays", "", lang.holidays.version);
           await commitStatements(db, [...prepared.statements, sync]);
-          updateProgress();
+          updateProgress(1.0);
         }
 
-        if (items.includes("__dayinfo__")) {
+        if (items.includes("__dayinfo__") && lang.dayInfo?.path) {
           if (abortRef.current) return;
           const pkg = await downloadDayInfo(lang.dayInfo.path);
-          const prepared = prepareDayInfo(pkg, lang.code);
+          updateProgress(0.5);
+          const prepared = prepareDayInfo(pkg, lang.code, lang.dayInfo.version);
           const sync = prepareSyncRecord(year, lang.code, lang.name, null, null, "day-info", "", lang.dayInfo.version);
           await commitStatements(db, [...prepared.statements, sync]);
-          updateProgress();
+          updateProgress(1.0);
         }
 
         const readingVersions = items.filter((v) => v !== "__holidays__" && v !== "__dayinfo__");
         for (const versionCode of readingVersions) {
           if (abortRef.current) return;
 
-          const versionMeta = lang.versions.find((v) => v.code === versionCode);
-          const readingsPkg = await downloadReadings(versionMeta!.path);
-          const readingsPrepared = prepareReadings(readingsPkg, lang.code, versionCode);
+          const versionMeta = lang.versions.find(
+            (v) => v.code.toLowerCase() === versionCode.toLowerCase(),
+          );
+          if (!versionMeta || !versionMeta.path) continue;
+
+          const readingsPkg = await downloadReadings(versionMeta.path);
+          updateProgress(0.5);
+          const readingsPrepared = prepareReadings(readingsPkg, lang.code, versionCode, versionMeta.contentVersion);
           const readingsSync = prepareSyncRecord(
             year,
             lang.code,
             lang.name,
             versionCode,
-            versionMeta!.name,
+            versionMeta.name,
             "readings",
             "",
-            versionMeta!.contentVersion,
+            versionMeta.contentVersion,
           );
           await commitStatements(db, [...readingsPrepared.statements, readingsSync]);
-          updateProgress();
+          updateProgress(1.0);
         }
       }
 
@@ -403,7 +583,15 @@ export default function ContentUpdateScreen() {
       <View className="flex-1 px-6 pt-12">
         <View className="mb-6 flex-row items-center gap-4">
           <TouchableOpacity
-            onPress={() => (step === "idle" ? router.back() : goBack())}
+            onPress={() => {
+              if (step !== "idle") {
+                goBack();
+              } else if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)");
+              }
+            }}
             activeOpacity={0.7}
             className="bg-surface dark:bg-surface-dark rounded-full p-2.5"
           >

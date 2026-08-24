@@ -3,7 +3,7 @@ import type {
   ManifestYear,
   ManifestLanguage,
   ManifestVersion,
-} from "../../../lib/content";
+} from "../content";
 
 export type WizardStep =
   | "idle"
@@ -13,16 +13,15 @@ export type WizardStep =
   | "downloading"
   | "success";
 
-export type VersionOption = ManifestVersion;
-export type LanguageOption = ManifestLanguage;
+type VersionOption = ManifestVersion;
+type LanguageOption = ManifestLanguage;
 export type YearOption = ManifestYear;
 export type Manifest = ContentManifest;
 
-export const STEP_LABELS = ["Year", "Content", "Progress", "Done"] as const;
+const STEP_LABELS = ["Year", "Content", "Progress", "Done"] as const;
 export const STEP_ICONS = [
   "calendar-outline",
   "list-outline",
   "cloud-download-outline",
   "checkmark-circle-outline",
 ] as const;
-

@@ -11,20 +11,48 @@ const JSDELIVR_HEADERS = {
   Accept: "application/json",
 };
 
-async function fetchJSON<T>(url: string): Promise<T> {
-  /**
-   * Add query param `t` to bypass caching
-   */
-  const res = await fetch(`${url}?t=${Date.now()}`, { headers: JSDELIVR_HEADERS });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+async function fetchJSON<T>(url: string, force = false): Promise<T> {
+  if (!CONTENT_BASE_URL) {
+    throw new Error("Content update server is not configured.");
   }
-
-  return res.json() as Promise<T>;
+  try {
+    const finalUrl = force ? `${url}?t=${Date.now()}` : url;
+    const headers = force
+      ? { ...JSDELIVR_HEADERS, "Cache-Control": "no-cache" }
+      : JSDELIVR_HEADERS;
+    console.log(`[ContentUpdateService] 🌐 Fetching from network (force: ${force}): ${finalUrl}`);
+    const res = await fetch(finalUrl, { headers });
+    if (!res.ok) {
+      throw new Error(`Server returned HTTP ${res.status}`);
+    }
+    return (await res.json()) as T;
+  } catch (err) {
+    if (err instanceof Error && (err.message.startsWith("Server returned HTTP") || err.message.startsWith("Content update server"))) {
+      throw err;
+    }
+    throw new Error("Unable to connect to update server. Please check your internet connection.");
+  }
 }
 
-export async function fetchManifest(): Promise<Manifest> {
-  return fetchJSON<Manifest>(`${CONTENT_BASE_URL}/manifest.json`);
+export async function fetchManifest(force = false): Promise<Manifest> {
+  const manifest = await fetchJSON<Manifest>(`${CONTENT_BASE_URL}/manifest.json`, force);
+  if (!manifest || !Array.isArray(manifest.years)) {
+    return manifest;
+  }
+  return {
+    ...manifest,
+    years: manifest.years.map((year) => ({
+      ...year,
+      languages: (year.languages || []).map((lang) => ({
+        ...lang,
+        code: lang.code.toLowerCase(),
+        versions: (lang.versions || []).map((ver) => ({
+          ...ver,
+          code: ver.code.toLowerCase(),
+        })),
+      })),
+    })),
+  };
 }
 
 export async function downloadDayInfo(path: string): Promise<DayInfoPackage> {
@@ -40,11 +68,11 @@ export async function downloadReadings(path: string): Promise<ReadingsPackage> {
 }
 
 function generateDayInfoId(lang: string, date: string): string {
-  return `dayinfo:${lang}:${date}`;
+  return `dayinfo:${lang.toLowerCase()}:${date}`;
 }
 
 function generateHolidayId(lang: string, date: string, index: number): string {
-  return `holiday:${lang}:${date}:${index}`;
+  return `holiday:${lang.toLowerCase()}:${date}:${index}`;
 }
 
 function generateReadingId(
@@ -53,7 +81,7 @@ function generateReadingId(
   date: string,
   order: number,
 ): string {
-  return `reading:${lang}:${version}:${date}:${order}`;
+  return `reading:${lang.toLowerCase()}:${version.toLowerCase()}:${date}:${order}`;
 }
 
 function generateSyncId(
@@ -62,7 +90,7 @@ function generateSyncId(
   lang: string,
   version: string,
 ): string {
-  return `sync:${type}:${year}:${lang}:${version}`;
+  return `sync:${type}:${year}:${lang.toLowerCase()}:${version.toLowerCase()}`;
 }
 
 export type PreparedStatement = {
@@ -85,19 +113,27 @@ export type PreparedReadings = {
 export function prepareDayInfo(
   pkg: DayInfoPackage,
   lang: string,
+  expectedVersion?: number,
 ): PreparedDayInfo {
+  if (expectedVersion != null && pkg.version != null && pkg.version !== expectedVersion) {
+    throw new Error(
+      `DayInfo version mismatch for ${lang.toUpperCase()}: manifest requested v${expectedVersion}, but downloaded package contains v${pkg.version}.`
+    );
+  }
+
   const statements: PreparedStatement[] = [];
 
   for (const row of pkg.dayInfo) {
     statements.push({
-      sql: `INSERT OR REPLACE INTO DayInfo (id, language, date, title, description)
-            VALUES (?, ?, ?, ?, ?)`,
+      sql: `INSERT OR REPLACE INTO DayInfo (id, language, date, title, description, seasonColor)
+            VALUES (?, ?, ?, ?, ?, ?)`,
       params: [
         generateDayInfoId(lang, row.date),
-        lang,
+        lang.toLowerCase(),
         row.date,
-        row.title,
-        row.description,
+        row.title ?? null,
+        row.description ?? null,
+        row.seasonColor ?? null,
       ],
     });
   }
@@ -108,7 +144,14 @@ export function prepareDayInfo(
 export function prepareHolidays(
   pkg: HolidayPackage,
   lang: string,
+  expectedVersion?: number,
 ): PreparedHolidays {
+  if (expectedVersion != null && pkg.version != null && pkg.version !== expectedVersion) {
+    throw new Error(
+      `Holidays version mismatch for ${lang.toUpperCase()}: manifest requested v${expectedVersion}, but downloaded package contains v${pkg.version}.`
+    );
+  }
+
   const statements: PreparedStatement[] = [];
   const dateCounts: Record<string, number> = {};
 
@@ -117,12 +160,13 @@ export function prepareHolidays(
     dateCounts[row.date] = index + 1;
 
     statements.push({
-      sql: `INSERT OR REPLACE INTO Holiday (id, language, date, type, name)
-            VALUES (?, ?, ?, ?, ?)`,
+      sql: `INSERT OR REPLACE INTO Holiday (id, language, date, endDate, type, name)
+            VALUES (?, ?, ?, ?, ?, ?)`,
       params: [
         generateHolidayId(lang, row.date, index),
-        lang,
+        lang.toLowerCase(),
         row.date,
+        row.endDate ?? null,
         row.type,
         row.name,
       ],
@@ -136,22 +180,44 @@ export function prepareReadings(
   pkg: ReadingsPackage,
   lang: string,
   version: string,
+  expectedVersion?: number,
 ): PreparedReadings {
+  if (!pkg || !Array.isArray(pkg.readings) || pkg.readings.length === 0) {
+    throw new Error(`The content package for ${version.toUpperCase()} is empty or invalid.`);
+  }
+
+  if (expectedVersion != null && pkg.version != null && pkg.version !== expectedVersion) {
+    throw new Error(
+      `Content version mismatch for ${version.toUpperCase()}: manifest requested v${expectedVersion}, but downloaded file contains v${pkg.version}.`
+    );
+  }
+
   const statements: PreparedStatement[] = [];
 
-  for (const row of pkg.readings) {
+  for (let i = 0; i < pkg.readings.length; i++) {
+    const row = pkg.readings[i];
+    if (!row.date || typeof row.date !== "string") {
+      throw new Error(`Invalid data item #${i + 1} for ${version.toUpperCase()}: missing date.`);
+    }
+    if (!row.reference || typeof row.reference !== "string" || !row.reference.trim()) {
+      throw new Error(`Invalid data for ${row.date} (${version.toUpperCase()}): missing scripture reference.`);
+    }
+    if (!row.text || typeof row.text !== "string" || !row.text.trim()) {
+      throw new Error(`Invalid data for ${row.date} (${row.reference}): missing scripture text.`);
+    }
+
     statements.push({
       sql: `INSERT OR REPLACE INTO Reading (id, language, version, date, "order", section, reference, text)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       params: [
-        generateReadingId(lang, version, row.date, row.order),
-        lang,
-        version,
+        generateReadingId(lang, version, row.date, row.order ?? 0),
+        lang.toLowerCase(),
+        version.toLowerCase(),
         row.date,
-        row.order,
-        row.section,
-        row.reference,
-        row.text,
+        row.order ?? 0,
+        row.section ?? "READING",
+        row.reference.trim(),
+        row.text.trim(),
       ],
     });
   }
@@ -177,9 +243,9 @@ export function prepareSyncRecord(
     params: [
       generateSyncId(type, year, lang, version ?? "none"),
       type,
-      lang,
+      lang.toLowerCase(),
       langFullName,
-      version ?? "",
+      (version ?? "").toLowerCase(),
       versionFullName ?? "",
       year,
       checksum,
@@ -188,14 +254,36 @@ export function prepareSyncRecord(
   };
 }
 
+let dbTransactionMutex: Promise<void> = Promise.resolve();
+
 export async function commitStatements(
   db: SQLiteDatabase,
   stmts: PreparedStatement[],
 ): Promise<void> {
-  // TODO: uncomment when DB writes are enabled
-  await db.withTransactionAsync(async () => {
-    for (const stmt of stmts) {
-      await db.runAsync(stmt.sql, ...stmt.params);
-    }
+  // Chain transaction onto the mutex queue so only 1 SQLite transaction executes at a time
+  const nextLock = dbTransactionMutex.then(async () => {
+    await db.withTransactionAsync(async () => {
+      const statementCache = new Map<string, any>();
+      try {
+        for (const stmt of stmts) {
+          let prep = statementCache.get(stmt.sql);
+          if (!prep) {
+            prep = await db.prepareAsync(stmt.sql);
+            statementCache.set(stmt.sql, prep);
+          }
+          await prep.executeAsync(stmt.params);
+        }
+      } finally {
+        for (const prep of statementCache.values()) {
+          await prep.finalizeAsync().catch(() => {});
+        }
+      }
+    });
   });
+
+  // Keep mutex chain intact even if a transaction fails
+  dbTransactionMutex = nextLock.catch(() => {});
+
+  // Await the current transaction completion
+  return nextLock;
 }

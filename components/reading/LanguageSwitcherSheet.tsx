@@ -10,9 +10,10 @@ import { useSettings, SettingsContext } from "@/lib/SettingsContext";
 type LanguageSwitcherSheetProps = {
   onChange?: (index: number) => void;
   viewType: "simple" | "expanded";
+  activeDate?: Date;
 };
 
-const LanguageSwitcherSheet = forwardRef<BottomSheetModal, LanguageSwitcherSheetProps>(({ onChange, viewType }, ref) => {
+const LanguageSwitcherSheet = forwardRef<BottomSheetModal, LanguageSwitcherSheetProps>(({ onChange, viewType, activeDate }, ref) => {
   const isDark = useColorScheme() === "dark";
   const ctx = useSettings();
 
@@ -33,7 +34,13 @@ const LanguageSwitcherSheet = forwardRef<BottomSheetModal, LanguageSwitcherSheet
         showsVerticalScrollIndicator={false}
       >
         <SettingsContext.Provider value={ctx}>
-          <ReadingSettingsContent viewType={viewType} />
+          <ReadingSettingsContent
+            viewType={viewType}
+            activeDate={activeDate}
+            onVersionSelect={() => {
+              (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
+            }}
+          />
         </SettingsContext.Provider>
       </BottomSheetScrollView>
     </BottomSheetModal>

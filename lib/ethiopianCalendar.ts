@@ -17,8 +17,6 @@ export const ETHIOPIAN_MONTH_NAMES_EN = [
   "Pagume",
 ] as const;
 
-export const ETHIOPIAN_MONTH_NAMES = ETHIOPIAN_MONTH_NAMES_EN;
-
 export const ETHIOPIAN_MONTH_NAMES_AM = [
   "መስከረም",
   "ጥቅምት",
@@ -32,7 +30,7 @@ export const ETHIOPIAN_MONTH_NAMES_AM = [
   "ሰኔ",
   "ሐምሌ",
   "ነሐሴ",
-  "ጳጉሜን",
+  "ጳጉሜ",
 ] as const;
 
 export const ETHIOPIAN_MONTH_NAMES_OM = [
@@ -122,8 +120,6 @@ export const GREGORIAN_MONTH_NAMES_SHORT_OM = [
   "Jaan", "Feeb", "Maar", "Eep", "Mee", "Juun", "Juul", "Oog", "Seep", "Okto", "Noov", "Diss",
 ] as const;
 
-export const GREGORIAN_MONTH_NAMES_SHORT = GREGORIAN_MONTH_NAMES_SHORT_EN;
-
 /** Formats month name according to active calendar system and language */
 export function formatMonth(month: number, isEth: boolean, lang: string = "am"): string {
   if (isEth) {
@@ -180,8 +176,28 @@ export function gregorianToEthiopian(date: Date): { year: number; month: number;
   };
 }
 
+/**
+ * Converts numeric Gregorian date components (year, month 0-indexed, day)
+ * directly to Ethiopian date components (year, month 0-indexed, day).
+ *
+ * Avoids intermediate Date object instantiations during calendar grid rendering.
+ */
+export function gregorianYmdToEthiopian(
+  year: number,
+  month: number,
+  day: number,
+): { year: number; month: number; day: number } {
+  const utcDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+  const eth = EthDateTime.fromEuropeanDate(utcDate);
+  return {
+    year: eth.year,
+    month: eth.month - 1,
+    day: eth.date,
+  };
+}
+
 /** Compute Evangelist of the Year (ባሕረ ሐሳብ) */
-export function getEvangelistYear(ethYear: number): { name: string; nameAmharic: string; nameOromoo: string } {
+function getEvangelistYear(ethYear: number): { name: string; nameAmharic: string; nameOromoo: string } {
   const ameteAlem = ethYear + 5500;
   const remainder = ameteAlem % 4;
   switch (remainder) {
@@ -203,12 +219,6 @@ export function formatEvangelistYear(ethYear: number, lang: string = "am"): stri
   if (lang === "om") return `Bara ${ev.nameOromoo}`;
   if (lang === "en") return `Year of ${ev.name}`;
   return `ዘመነ ${ev.nameAmharic}`;
-}
-
-/** Calculate Ethiopian Calendar Week Number (1..53) for a given Ethiopian date (0-indexed month: 0..12) */
-export function getEcWeekNumber(monthIndex: number, ethDay: number): number {
-  const totalDays = monthIndex * 30 + (ethDay - 1);
-  return Math.floor(totalDays / 7) + 1;
 }
 
 /** Generates week grid rows for Ethiopian month (0-indexed month: 0..12) */
@@ -237,8 +247,8 @@ export function getEthiopianWeeks(ethYear: number, monthIndex: number): (number 
   return weeks;
 }
 
-export const WEEKDAY_NAMES_AM = ["እሑድ", "ሰኞ", "ማክሰኞ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ"] as const;
-export const WEEKDAY_NAMES_OM = ["Dilbata", "Wiixata", "Qibxata", "Roobii", "Kamiisa", "Jimaata", "Sanbata"] as const;
+const WEEKDAY_NAMES_AM = ["እሑድ", "ሰኞ", "ማክሰኞ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ"] as const;
+const WEEKDAY_NAMES_OM = ["Dilbata", "Wiixata", "Qibxata", "Roobii", "Kamiisa", "Jimaata", "Sanbata"] as const;
 
 /** Formats a Date object into a readable date string according to the selected calendar style */
 export function formatDisplayDate(
@@ -299,7 +309,7 @@ export function getSubMonthSpanString(year: number, month: number, isEth: boolea
   const ethShorts = lang === "om" ? ETHIOPIAN_MONTH_NAMES_OM : lang === "en" ? ETHIOPIAN_MONTH_NAMES_EN : ETHIOPIAN_MONTH_NAMES_AM;
   const e1 = ethShorts[firstEth.month];
   const e2 = ethShorts[lastEth.month];
-  const pagumeLabel = lang === "om" ? "Qaammee" : lang === "en" ? "Pagume" : "ጳጉሜን";
+  const pagumeLabel = lang === "om" ? "Qaammee" : lang === "en" ? "Pagume" : "ጳጉሜ";
 
   if (hasPagume) {
     return `${e1} ${firstEth.day} – ${pagumeLabel} – ${e2} ${lastEth.day}`;

@@ -1,6 +1,6 @@
 import { ActivityIndicator, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import type { YearOption } from "../../app/settings/check-updates/types";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import type { YearOption } from "@/lib/types/checkUpdates";
 import InfoRow from "./InfoRow";
 import { useTranslation } from "@/lib/i18n";
 
@@ -18,7 +18,7 @@ function DownloadProgressStep({
   isDark,
 }: Props) {
   const { t } = useTranslation();
-  const progressPercent = Math.round(progress);
+  const progressPercent = Math.min(100, Math.max(0, isNaN(progress) ? 0 : Math.round(progress)));
   const statusText =
     progress < 10
       ? t("preparingDownload")

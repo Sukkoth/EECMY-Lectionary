@@ -1,12 +1,28 @@
 export type GlossaryLanguage = "en" | "am" | "om";
 
 type ContentSection = { heading: string; body: string };
-type ChurchSeason = { name: string; purpose: string; theme: string; duration: string };
+type ChurchSeason = {
+  name: string;
+  purpose: string;
+  theme: string;
+  duration: string;
+  sundays?: string;
+};
 type Creed = { name: string; introduction: string; text: string };
 
 export type GlossaryContent = {
   lectionary: { title: string; sections: ContentSection[] };
-  churchYear: { title: string; intro: string; seasons: ChurchSeason[] };
+  churchYear: {
+    title: string;
+    intro: string;
+    labels?: {
+      purpose: string;
+      theme: string;
+      duration: string;
+      sundays: string;
+    };
+    seasons: ChurchSeason[];
+  };
   creeds: { title: string; creeds: Creed[] };
   lordsPrayer: { title: string; introduction: string; text: string };
 };
@@ -54,54 +70,75 @@ On normal days, only one reading is assigned — typically just one of the three
   churchYear: {
     title: "The Church Year",
     intro: `The Church Year (also called the liturgical calendar) is a cycle of seasons and holy days that structures the Christian's journey through the year. Each season has a distinct spiritual focus, guiding worshippers through the story of salvation — from anticipation and incarnation to resurrection and the life of the Church.`,
+    labels: {
+      purpose: "Purpose",
+      theme: "Theme",
+      duration: "Duration",
+      sundays: "Sundays & Feasts",
+    },
     seasons: [
       {
         name: "Advent",
         purpose: "A season of waiting and preparation for the celebration of Christ's birth at Christmas.",
         theme: "Hope, expectation, and the coming of the Messiah",
         duration: "4 weeks (beginning the Sunday closest to November 30)",
+        sundays: "1st, 2nd, 3rd, and 4th Sunday of Advent",
       },
       {
         name: "Christmas",
         purpose: "Celebrating the incarnation of God in the birth of Jesus Christ.",
         theme: "The Word became flesh — God enters human history",
-        duration: "12 days (December 25 through January 5)",
+        duration: "12 days (December 25 through January 5 / Tahsas 29)",
+        sundays: "Christmas Day, 1st Sunday after Christmas",
       },
       {
         name: "Epiphany",
-        purpose: "Marking the revelation of Christ to the world, beginning with the visit of the Magi.",
-        theme: "Christ is revealed as the Savior of all nations",
-        duration: "Variable (January 6 through the Sunday before Ash Wednesday)",
+        purpose: "Marking the revelation of Christ to the world, beginning with the visit of the Magi and His baptism.",
+        theme: "Christ is revealed as the Light and Savior of all nations",
+        duration: "Variable (January 19 / Tir 11 through the Sunday before Ash Wednesday)",
+        sundays: "Epiphany, 1st through 6th Sunday after Epiphany",
       },
       {
         name: "Lent",
         purpose: "A season of repentance, self-examination, and spiritual discipline in preparation for Easter.",
         theme: "Repentance, sacrifice, and the journey to the cross",
-        duration: "40 days (excluding Sundays, beginning Ash Wednesday)",
+        duration: "55 days (7 weeks leading up to Easter)",
+        sundays: "1st through 6th Sunday in Lent",
       },
       {
         name: "Holy Week",
-        purpose: "The most sacred week of the Church Year, commemorating the final days of Christ's earthly life.",
+        purpose: "The most sacred week of the Church Year, commemorating the final days and passion of Christ.",
         theme: "The Passion, death, and victory of Christ",
         duration: "1 week (Palm Sunday through Holy Saturday)",
+        sundays: "Palm Sunday, Maundy Thursday, Good Friday, Holy Saturday",
       },
       {
         name: "Easter",
         purpose: "The joyful celebration of Christ's resurrection from the dead — the foundation of Christian faith.",
         theme: "Resurrection, new life, and victory over sin and death",
         duration: "50 days (Easter Sunday through Pentecost)",
+        sundays: "Easter Day, 1st through 6th Sunday after Easter, Ascension Day",
       },
       {
         name: "Pentecost",
-        purpose: "Remembering the descent of the Holy Spirit upon the disciples, empowering the Church for mission.",
+        purpose: "Remembering the descent of the Holy Spirit upon the disciples and the birth of the Church.",
         theme: "The Holy Spirit, the birth of the Church, and the power of God's Word",
-        duration: "1 day (celebrated 50 days after Easter), often followed by Trinity Sunday",
+        duration: "1 day (celebrated 50 days after Easter), followed by Trinity Sunday",
+        sundays: "Pentecost Day, Trinity Sunday",
       },
       {
         name: "Trinity Season (Ordinary Time)",
         purpose: "A time of growth in faith and discipleship, focusing on the teachings and works of Christ.",
         theme: "The life of the Church, discipleship, and the reign of Christ",
         duration: "Variable (the Sundays after Pentecost until Advent; the longest season of the Church Year)",
+        sundays: "1st through 26th Sunday after Trinity",
+      },
+      {
+        name: "End of the Church Year (Judgment Sunday)",
+        purpose: "Remembering the end of times, watchfulness, and the return of Christ.",
+        theme: "Watchful preparation, eternal life, and the final judgment",
+        duration: "The final two Sundays before Advent",
+        sundays: "Sunday Preceding Judgment Sunday, Judgment Sunday",
       },
     ],
   },
@@ -229,23 +266,23 @@ Amen.`,
 
 const amharicContent: GlossaryContent = {
   lectionary: {
-    title: "ሥርዓተ ንባብ (ሌክቲዮናሪ)",
+    title: "የመካነ ኢየሱስ የዕለት ንባብ (ሌክሽነሪ)",
     sections: [
       {
-        heading: "«ሌክቲዮናሪ» ማለት ምን ማለት ነው?",
-        body: `«ሌክቲዮናሪ» የሚለው ቃል «lectionarium» ከተባለው የላቲን ቃል የተገኘ ሲሆን ትርጉሙም «የንባብ መጽሐፍ» ማለት ነው። ሌክቲዮናሪ በክርስቲያናዊ የአምልኮ ሥርዓት ውስጥ ጥቅም ላይ እንዲውል በልዩ ተစဉ်ኖ የተዘጋጀ የመጽሐፍ ቅዱስ ንባቦች ስብስብ ነው። ክፍሎችን በዘፈቀደ ከመምረጥ ይልቅ፥ ሌክቲዮናሪ ዓመቱን ሙሉ የእግዚአብሔርን ቃል በሥርዓትና በቅደም ተከተል እንድናጠና ይረዳናል።`,
+        heading: "«ሌክሽነሪ» ማለት ምን ማለት ነው?",
+        body: `«ሌክሽነሪ» የሚለው ቃል «lectionarium» ከተባለው የላቲን ቃል የተገኘ ሲሆን ትርጉሙም «የንባብ መጽሐፍ» ማለት ነው። ሌክሽነሪ በክርስቲያናዊ የአምልኮ ሥርዓት ውስጥ ጥቅም ላይ እንዲውል የተዘጋጀ የመጽሐፍ ቅዱስ ንባቦች ስብስብ ነው። ክፍሎችን በዘፈቀደ ከመምረጥ ይልቅ፥ ሌክሽነሪ ዓመቱን ሙሉ የእግዚአብሔርን ቃል በሥርዓትና በቅደም ተከተል እንድናጠና ይረዳናል።`,
       },
       {
-        heading: "አብያተ ክርስቲያናት ሌክቲዮናሪን ለምን ይጠቀማሉ?",
-        body: `አብያተ ክርስቲያናት ሌክቲዮናሪን የሚጠቀሙት ምእመናን በጊዜ ሂደት የተለያዩ የመጽሐፍ ቅዱስ ክፍሎችን እንዲሰሙ ለማድረግ ነው። በጥንቃቄ የተዘጋጀ ሌክቲዮናሪ አምላኪዎችን ከፍጥረት እስከ ራእይ ካሉት ዋና ዋና የመጽሐፍ ቅዱስ ርዕሶች ጋር ያስተዋውቃቸዋል። በተጨማሪም አገልጋዮች በዓለም ዙሪያ ካሉ ክርስቲያኖች ጋር በተመሳሳይ ቀን የሚነበቡትን መልእክቶች እንዲያስተምሩ ይረዳቸዋል።`,
+        heading: "አብያተ ክርስቲያናት ሌክሽነሪን ለምን ይጠቀማሉ?",
+        body: `አብያተ ክርስቲያናት ሌክሽነሪን የሚጠቀሙት ምእመናን በጊዜ ሂደት የተለያዩ የመጽሐፍ ቅዱስ ክፍሎችን እንዲሰሙ ለማድረግ ነው። በጥንቃቄ የተዘጋጀ ሌክሽነሪ አምላኪዎችን ከፍጥረት እስከ ራእይ ካሉት ዋና ዋና የመጽሐፍ ቅዱስ ርዕሶች ጋር ያስተዋውቃቸዋል። በተጨማሪም አገልጋዮች በዓለም ዙሪያ ካሉ ክርስቲያኖች ጋር በተመሳሳይ ቀን የሚነበቡትን መልእክቶች እንዲያስተምሩ ይረዳቸዋል።`,
       },
       {
-        heading: "ሌክቲዮናሪ የቤተ ክርስቲያንን ዓመት እንዴት ይከተላል?",
-        body: `ሌክቲዮናሪ የቤተ ክርስቲያን ዘመን (የሥርዓተ አምልኮ ካሌንደር) ጋር በጥብቅ የተያያዘ ነው። ይህም ካሌንደር የክርስቶስን ምድራዊ ሕይወትና የቤተ ክርስቲያንን ሁነቶች መሠረት ያደርጋል። ለምሳሌ በአድቬንት (ጾመ ነቢያት) ወቅት ንባቦቹ በጽኑ ተስፋና በመጠባበቅ ላይ ያተኩራሉ። በዐብይ ጾም ወቅት ደግሞ ወደ ንስሐና ወደ መስቀሉ ጉዞ ያደላሉ።`,
+        heading: "ሌክሽነሪ የቤተ ክርስቲያንን ዓመት እንዴት ይከተላል?",
+        body: `ሌክሽነሪ የቤተ ክርስቲያን ዘመን (የሥርዓተ አምልኮ ካሌንደር) ጋር በጥብቅ የተያያዘ ነው። ይህም ካሌንደር የክርስቶስን ምድራዊ ሕይወትና የቤተ ክርስቲያንን ሁነቶች መሠረት ያደርጋል። ለምሳሌ በአድቬንት (ጾመ ነቢያት) ወቅት ንባቦቹ በጽኑ ተስፋና በመጠባበቅ ላይ ያተኩራሉ። በዐብይ ጾም ወቅት ደግሞ ወደ ንስሐና ወደ መስቀሉ ጉዞ ያደላሉ።`,
       },
       {
         heading: "ንባቦች እንዴት ተደራጅተዋል?",
-        body: `በዚህ መተግበሪያ ውስጥ ያለው ሌክቲዮናሪ በየዕለቱ ሦስት የንባብ ክፍሎችን ያቀርባል፦
+        body: `በዚህ መተግበሪያ ውስጥ ያለው ሌክሽነሪ በየዕለቱ ሦስት የንባብ ክፍሎችን ያቀርባል፦
 
 • ብሉይ ኪዳን — ለወንጌል ጥላና ምስክር የሆኑ ከብሉይ ኪዳን የተወሰዱ ክፍሎች።
 • መልእክት — ከሐዋርያት መልእክታት (እንደ ሮሜ፥ ኤፌሶን፥ ያዕቆብ) የተወሰዱ የመመሪያና የምክር ንባቦች።
@@ -258,7 +295,7 @@ const amharicContent: GlossaryContent = {
         body: `የዕለት ንባቦች የግል መንፈሳዊ ሕይወትን ያጠናክራሉ፥ ለማሰላሰልና ለጸሎት ግብዓት ይሆናሉ፥ እንዲሁም ምእመናንን ከዓለም አቀፍ ቤተ ክርስቲያን ጋር ያገናኛሉ። በዓለም ዙሪያ ያሉ ክርስቲያኖች በተመሳሳይ ቀን አንድ ዓይነት ጥቅስ ሲያነቡ፥ በልዩ ልዩ ቋንቋና ባህል ውስጥ ቢሆኑም በእግዚአብሔር ቃል አንድ ይሆናሉ።`,
       },
       {
-        heading: "በዚህ መተግበሪያ ውስጥ ሌክቲዮናሪን እንዴት መጠቀም ይቻላል?",
+        heading: "በዚህ መተግበሪያ ውስጥ ሌክሽነሪን እንዴት መጠቀም ይቻላል?",
         body: `ይህ መተግበሪያ በተመረጠው ቋንቋና የመጽሐፍ ቅዱስ ትርጉም መሠረት የዕለት ንባቦችን ያቀርባል። በመደበኛ ቀናት የዕለቱን ንባብ ያገኛሉ። በእሁድና በበዓላት ደግሞ ብሉይ ኪዳን፥ መልእክት እና ወንጌል ተዘጋጅተው ይቀርባሉ። የካሌንደር ገጽን በመጠቀም የማንኛውንም ቀን ንባብ መመልከት እና የተወደዱ ጥቅሶችን ማስቀመጥ ይችላሉ።`,
       },
     ],
@@ -266,54 +303,75 @@ const amharicContent: GlossaryContent = {
   churchYear: {
     title: "የቤተ ክርስቲያን ዓመት",
     intro: `የቤተ ክርስቲያን ዓመት (የሥርዓተ አምልኮ ካሌንደር) የክርስቲያኖችን ዓመታዊ የመንፈሳዊ ሕይወት ጉዞ የሚያደራጅ የዘመናትና የበዓላት አውድ ነው። እያንዳንዱ ዘመን ምእመናንን ከክርስቶስ ልደት እስከ ትንሣኤና እስከ ቤተ ክርስቲያን ሕይወት የሚያመላክት ልዩ መንፈሳዊ ዓላማ አለው።`,
+    labels: {
+      purpose: "ዓላማ",
+      theme: "ጭብጥ",
+      duration: "የቆይታ ጊዜ",
+      sundays: "የእሑድ ስሞችና በዓላት",
+    },
     seasons: [
       {
-        name: "አድቬንት (ጾመ ነቢያት)",
+        name: "የመምጣቱ ሰሞን (አድቬንት)",
         purpose: "የክርስቶስን ልደት ለማክበር የሚደረግ የዝግጅትና የጽኑ ተስፋ ዘመን።",
         theme: "ተስፋ፥ መጠባበቅ እና የመሲሑ ምጽአት",
-        duration: "4 ሳምንታት (ከኖቬምበር 30 አቅራቢያ ካለው እሑድ ጀምሮ)",
+        duration: "4 ሳምንታት (ከታኅሣሥ ወር መጀመሪያ ጀምሮ)",
+        sundays: "የመምጣቱ 1ኛ፥ 2ኛ፥ 3ኛ እና 4ኛ እሑድ",
       },
       {
-        name: "ክሪስማስ (ልደት)",
+        name: "የልደት በዓል (ዘመነ ልደት / ገና)",
         purpose: "የእግዚአብሔር ሰው መሆንና የኢየሱስ ክርስቶስ ልደት የሚከበርበት ታላቅ በዓል።",
         theme: "ቃሉም ሥጋ ሆነ — አምላክ ወደ ሰው ታሪክ ገባ",
-        duration: "12 ቀናት (ከዲሴምበር 25 እስከ ጃንዋሪ 5)",
+        duration: "12 ቀናት (ከታኅሣሥ 29/ጥር 7 ጀምሮ)",
+        sundays: "የልደት በዓል (ገና)፥ ከልደት በኋላ 1ኛ እሑድ",
       },
       {
-        name: "ኤፒፋኒ (ከተራ/ጥምቀት)",
-        purpose: "ክርስቶስ ለዓለም ሁሉ መድኃኒት ሆኖ መገለጡ የሚታሰብበት ዘመን።",
+        name: "ጥምቀት (ኤጲፋኒ)",
+        purpose: "ክርስቶስ ለዓለም ሁሉ መድኃኒት ሆኖ መገለጡና መጠመቁ የሚታሰብበት ዘመን።",
         theme: "ክርስቶስ የአሕዛብ ሁሉ ብርሃን ሆኖ ተገለጠ",
-        duration: "ከጃንዋሪ 6 እስከ ዐብይ ጾም ዋዜማ",
+        duration: "ከጥር 11 (ጥምቀት) እስከ ዐብይ ጾም ዋዜማ",
+        sundays: "የጥምቀት በዓል፥ ከአስተርእዮ/ጥምቀት በኋላ 1ኛ እስከ 6ኛ እሑድ",
       },
       {
-        name: "ዐብይ ጾም (ሌንት)",
+        name: "ዐብይ ጾም",
         purpose: "ለፋሲካ በዓል ለመዘጋጀት የሚደረግ የንስሐ፥ የጸሎትና የራስን የመመርመር ዘመን።",
         theme: "ንስሐ፥ መስዋዕትነት እና ወደ መስቀሉ የሚደረግ ጉዞ",
-        duration: "40 ቀናት (እሑዶችን ሳይጨምር)",
+        duration: "55 ቀናት (ከዘወረደ እስከ ትንሣኤ)",
+        sundays: "የዐብይ ጾም 1ኛ እስከ 6ኛ እሑዶች",
       },
       {
-        name: "ቅዱስ ሳምንት (ሕማማት)",
-        purpose: "የክርስቶስን ምድራዊ ሕይወት የመጨረሻ ቀናት የምናስብበት እጅግ ቅዱስ ሳምንት።",
-        theme: "የክርስቶስ ሕማማት፥ ሞት እና ድል አድራጊነት",
+        name: "ሰሙነ ሕማማት (ቅዱስ ሳምንት)",
+        purpose: "የክርስቶስን ምድራዊ ሕይወት የመጨረሻ ቀናትና መከራ የምናስብበት እጅግ ቅዱስ ሳምንት።",
+        theme: "የክርስቶስ ሕማማት፥ ስቅለትና ሞት",
         duration: "1 ሳምንት (ከሆሣዕና እስከ ቅዳሜ ሥዑር)",
+        sundays: "የሆሣዕና እሑድ፥ ጸሎተ ሐሙስ፥ ስቅለት፥ ቅዳሜ ሥዑር",
       },
       {
-        name: "ፋሲካ (ኤስተር/ትንሣኤ)",
+        name: "ትንሣኤ (ፋሲካ)",
         purpose: "የክርስቲያን እምነት መሠረት የሆነውን የክርስቶስን ከሙታን መነሣት የምናከብርበት የደስታ ዘመን።",
         theme: "ትንሣኤ፥ አዲስ ሕይወት እና በሞት ላይ የተገኘ ድል",
         duration: "50 ቀናት (ከትንሣኤ እሑድ እስከ ጴንጠቆስጤ)",
+        sundays: "የትንሣኤ በዓል፥ ከትንሣኤ በኋላ 1ኛ እስከ 6ኛ እሑድ፥ የዕርገት በዓል",
       },
       {
-        name: "ጴንጠቆስጤ",
+        name: "በዓለ ኀምሳ (ጴንጠቆስጤ)",
         purpose: "መንፈስ ቅዱስ በደቀ መዛሙርቱ ላይ የወረደበት እና ቤተ ክርስቲያን የተመሠረተችበት ቀን።",
         theme: "መንፈስ ቅዱስ፥ የቤተ ክርስቲያን ልደት እና የእግዚአብሔር ቃል ኃይል",
-        duration: "1 ቀን (ከትንሣኤ በኋላ በ50ኛው ቀን)",
+        duration: "ከትንሣኤ በኋላ በ50ኛው ቀን",
+        sundays: "በዓለ ኀምሳ (ጴንጠቆስጤ)፥ የሥላሴ በዓል",
       },
       {
-        name: "የሥላሴ ዘመን (መደበኛ ዘመን)",
+        name: "ሥላሴ (መደበኛ ዘመን)",
         purpose: "በእምነትና በደቀ መዝሙርነት የማደግ፥ በክርስቶስ ትምህርትና ሥራ ላይ የማተኮር ዘመን።",
         theme: "የቤተ ክርስቲያን ሕይወት፥ ደቀ መዝሙርነት እና የክርስቶስ መንግሥት",
-        duration: "ከጴንጠቆስጤ በኋላ እስከ አድቬንት ድረስ ያለው ረጅሙ ዘመን",
+        duration: "ከሥላሴ በዓል በኋላ እስከ አድቬንት ድረስ ያለው ረጅሙ ዘመን",
+        sundays: "ከሥላሴ በኋላ 1ኛ እስከ 26ኛ እሑድ",
+      },
+      {
+        name: "የቤተ ክርስቲያን ዓመት ፍጻሜ (የፍርድ እሑድ)",
+        purpose: "የዘመናት ፍጻሜና የክርስቶስ ዳግም ምጽአት የሚታሰብበት ዘመን።",
+        theme: "ስለ መጨረሻው ፍርድ፥ ንቃት እና ተዘጋጅቶ መጠበቅ",
+        duration: "ከመምጣቱ ሰሞን በፊት ያሉት የመጨረሻዎቹ ሁለት እሑዶች",
+        sundays: "ከፍርድ እሑድ የሚቀድም እሑድ፥ የፍርድ እሑድ",
       },
     ],
   },
@@ -324,58 +382,103 @@ const amharicContent: GlossaryContent = {
         name: "የሐዋርያት እምነት (Apostles' Creed)",
         introduction:
           "የሐዋርያት እምነት መግለጫ እጅግ ጥንታዊና በስፋት የሚታወቅ የክርስቲያናዊ እምነት ማጠቃለያ ነው። በአምልኮ፥ በጥምቀት እና በዕለት ጸሎት ውስጥ ይደገማል።",
-        text: `ሁሉን በሚችል ሰማይንና ምድርን በፈጠረ በእግዚአብሔር አብ አመናለሁ።
+        text: `እኔ ሁሉን በሚችል፤
+ሰማይንና ምድርን በፈጠረ፤
+በእግዚአብሔር አብ አምናለሁ።
 
-በአንድ ልጁም በጌታችን በኢየሱስ ክርስቶስ አመናለሁ፤
-እርሱ ከመንፈስ ቅዱስ ተፀንሶ ከድንግል ማርያም ተወለደ፤
-በጴንጤናዊው ጲላጦስ ዘመን መከራን ተቀበለ፤
-ተሰቀለ፤ ሞተ፤ ተቀበረ፤ ወደ ሲኦል ወረደ፤
-በሦስተኛውም ቀን ከሙታን ተለይቶ ተነሣ፤
-ወደ ሰማይ አረገ፤
-ሁሉን በሚችል በእግዚአብሔር አብ ቀኝ ተቀመጠ፤
-ከዚያም በሕያዋንና በሙታን ላይ ሊፈርድ ይመጣል።
+ደግሞም በአንድ ልጁ፤
+በመንፈስ ቅዱስ በተፀነሰ፤
+ከድንግል ማርያም በተወለደ፤
+በጴንጤናዊው በጲላጦስ ዘመን መከራ የተቀበለ፤
+በተሰቀለ፤
+በሞተ፤
+ተቀበረ፤
+ወደ ሲኦል በወረደ፤
+በሦስተኛውም ቀን ከሙታን በተነሣ፤
+ወደ ሰማይ በወጣ፤
+ሁሉን በሚችል በእግዚአብሔር አብ ቀኝ የተቀመጠ፤
+በሕያዋንና በሙታን ሊፈርድ ከዚያ በሚመለስ፤
+በጌታችን በኢየሱስ ክርስቶስ አምናለሁ።
 
-ከመንፈስ ቅዱስ፥
-ከቅድስት አጽናፋዊት ቤተ ክርስቲያን፥
-ከቅዱሳን ኅብረት፥
-ከኃጢአት ይቅርታ፥
-ከሥጋ ትንሣኤና ከዘላለም ሕይወት አመናለሁ።
-አሜን።`,
+ደግሞም በመንፈስ ቅዱስ፤
+በአንዲት ቅድስት የሐዋርያት ቤተ ክርስቲያን፤
+በቅዱሳን አንድነት፤
+በኃጢአት ሥርየት፤
+በሥጋ ትንሣኤ፤
+በዘላለም ሕይወት አምናለሁ። አሜን።`,
       },
       {
-        name: "ጸሎተ ሃይማኖት (Nicene Creed)",
+        name: "የኒቅያ ሃይማኖት መግለጫ (Nicene Creed)",
         introduction:
-          "ጸሎተ ሃይማኖት በኒቂያ (325 ዓ.ም) እና በቁስጥንጥንያ (381 ዓ.ም) ጉባኤዎች የተደነገገ የሃይማኖት መግለጫ ሲሆን በብዙ አብያተ ክርስቲያናት በአምልኮ ጊዜ ይጸለያል።",
-        text: `ሁሉን በያዘ ሰማይንና ምድርን የሚታየውንና የማይታየውን በፈጠረ በአንድ አምላክ በእግዚአብሔር አብ አመናለሁ።
+          "ማህበሩ እንደቆመ በበዓላት ጊዜና በልዩ ሥነ ሥርዓት ጊዜ የሚነበብ። በኒቂያ (325 ዓ.ም) እና በቁስጥንጥንያ (381 ዓ.ም) ጉባኤዎች የተደነገገ የሃይማኖት መግለጫ።",
+        text: `ሁሉን በሚችል፤
+ሰማይንና ምድርን፤
+የሚታየውንና የማይታየውን በፈጠረ፤
+አንድ አምላክ በሚሆን፤
+በእግዚአብሔር አብ እናምናለን።
 
-ዓለም ሳይፈጠር ከእርሱ ጋር በነበረ በአንድ ጌታ በኢየሱስ ክርስቶስ አመናለሁ፤
-ከአምላክ የተገኘ አምላክ፥ ከብርሃን የተገኘ ብርሃን፥ እውነተኛ አምላክ የተገኘ እውነተኛ አምላክ፥ የተወለደ እንጂ ያልተፈጠረ፥ በባሕርዩ ከአብ ጋር የሚስተካከል፤
-ሁሉ በእርሱ ሆነ፥ ያለ እርሱ ግን ምንም የሆነ የለም።
-ስለ እኛ ስለ ሰዎች ስለ መዳናችን ከሰማይ ወረደ፤
-ከመንፈስ ቅዱስና ከድንግል ማርያም ሰው ሆነ፤
-ስለ እኛ በጴንጤናዊው ጲላጦስ ዘመን ተሰቀለ፤ መከራን ተቀበለ፤ ሞተ፤ ተቀበረ፤
-በቅዱሳት መጻሕፍት እንደተጻፈ በሦስተኛው ቀን ከሙታን ተለይቶ ተነሣ፤
-ወደ ሰማይ አረገ፥ በአባቱም ቀኝ ተቀመጠ፤
-በሕያዋንና በሙታን ላይ ሊፈርድ በጌትነት እንደገና ይመጣል፤
-ለመንግሥቱም ፍጻሜ የለውም።
+እርሱ ብቻ የአብ ልጅ በሚሆን፤
+ዓለም ሳይፈጠር ከአብ በተወለደ፤
+ከአምላክ በተገኘ አምላክ፤
+ከብርሃን በተገኘ ብርሃን፤
+እውነተኛ አምላክ በተገኘ እውነተኛ አምላክ፤
+በህልውናው ከአብ ጋር አንድ በሆነ፤
+በተፈጠረ ሳይሆን በተወለደ፤
+ሁሉ በእርሱ ሆነ፤
+ስለ እኛ ስለ ሰዎች ስለ ድኅንነታችንም ከሰማይ በወረደ፤
+በመንፈስ ቅዱስ ከድንግል ማርያም ሥጋ ነሥቶ ሰው በሆነ፤
+በጴንጤናዊው በጲላጦስ ዘመንም ስለ እኛ በተሰቀለ፤
+መከራ የተቀበለ፤
+በሞተ፤
+በተቀበረም።
+በቅዱሳት መጻሕፍትም እንደ ተጻፈ፤
+በሦስተኛው ቀን ከሙታን ተለይቶ በተነሣ፤
+ወደ ሰማይም በወጣ፤
+በአብ ቀኝ በተቀመጠ፤
+በሕያዋንና በሙታን ሊፈርድ ዳግመኛ በክብር በሚመጣ፤
+ለመንግሥቱ ፍጻሜ በሌለው፤
+በአንድ ጌታ በኢየሱስ ክርስቶስ እናምናለን።
 
-ከአብ በሚወጣ ከአብና ከወልድ ጋር አብሮ በሚሰገድለትና በሚመሰገንበት፥ በነቢያትም ሲናገር በነበረ ጌታና ሕይወትን በሚሰጥ በመንፈስ ቅዱስ አመናለሁ።
-በሁሉ በምትሆን በአንዲት ቅድስት አጽናፋዊትና ሐዋርያዊት ቤተ ክርስቲያን አመናለሁ።
-ለኃጢአት ይቅርታ በአንዲት ጥምቀት አመናለሁ፤
-የሙታንንም ትንሣኤና የሚመጣውን የዘላለም ሕይወት ተስፋ አደርጋለሁ።
-አሜን።`,
+ከአብና ከወልድ ጋር በሚሰገድለትና በሚከበር፤
+ከአብና ከወልድ በሚወርድ፤
+በነቢያት በተናገረ፤
+የሕይወት ጌታና ሰጪ በሚሆን፤
+በመንፈስ ቅዱስም እናምናለን።
+
+የሁሉም በሆነች፤
+በአንዲት ቅድስት የሐዋርያት ቤተ ክርስቲያንም እናምናለን።
+ለኃጢአት ማስተስረያ በተደረገች፤
+በአንዲት ጥምቀትም እናምናለን።
+የሙታንንም ትንሣኤ፤
+ገና የሚመጣውን ዓለም ሕይወትም እንጠብቃለን። አሜን።`,
       },
       {
         name: "የአትናቴዎስ ሃይማኖት (Athanasian Creed)",
         introduction:
           "የአትናቴዎስ የሃይማኖት መግለጫ በቅዱስ አትናቴዎስ ስም የሚጠራ ጥንታዊ መግለጫ ሲሆን ስለ ሥላሴ ምስጢርና ስለ ክርስቶስ ሰው መሆን በስፋት ያብራራል።",
-        text: `የሚድን ዘንድ የሚወድ ሁሉ ከሁሉ በፊት አጽናፋዊቷን ሃይማኖት ሊጠብቅ ይገባዋል። እርሷንም ሙሉና ንጹሕ አድርጎ የማይጠብቅ ሁሉ ያለ መጠራጠር ለዘላለም ይጠፋል።
+        text: `ለመዳን የሚፈልግ ሰው ሁሉ ከሁሉም ነገር አስቀድሞ የሁሉ የሆነች የቤተ ክርስቲያንን ሃይማኖት እውነተኛ አድርጎ ሊቀበል ያስፈልገዋል። ንጽሕና ሙሉ አድርጎ ያልጠበቀው ሰው ሁሉ ያለ ጥርጥር የዘላለም ጥፋት ይደርስበታል።
 
-አጽናፋዊቷም ሃይማኖት ይህች ናት፦ በአንድ አምላክ በሥላሴ፥ በሥላሴም በአንድነት እንሰግዳለን፤ አካላትን ሳንቀላቅል፥ ባሕርይንም ሳንከፍል፤ አብ አንድ አካል ነውና፥ ወልድም ሌላ አካል ነው፥ መንፈስ ቅዱስም ሌላ አካል ነው። ነገር ግን የአብና የወልድ የመንፈስ ቅዱስም አምላክነት አንድ ነው፤ ክብራቸው እኩል ነው፥ ጌትነታቸውም አብሮ የሚኖር ነው።
+በሦስትነቱ አንድነቱን፤ በአንድነቱም ሦስትነቱን አምነን አንድ አምላክን እናመልካለን። ይህም እውነተኛ የክርስቲያን ሃይማኖት ነው። ይህንም የምናደርገው አካላትን ሳንደባልቅ መለኮታዊ ህልውናንም ሳንክፈል ነው። ምክንያቱም የአብ አካል ለብቻው፤ የወልድ ለብቻው፤ የመንፈስ ቅዱስም ለብቻው ስለሆነ ነው።
 
-አብ እንደሆነ ወልድም እንዲሁ ነው፥ መንፈስ ቅዱስም እንዲሁ ነው። አብ ያልተፈጠረ ነው፥ ወልድ ያልተፈጠረ ነው፥ መንፈስ ቅዱስም ያልተፈጠረ ነው። አብ ወሰን የሌለው ነው፥ ወልድ ወሰን የሌለው ነው፥ መንፈስ ቅዱስም ወሰን የሌለው ነው። አብ ዘለዓለማዊ ነው፥ ወልድ ዘለዓለማዊ ነው፥ መንፈስ ቅዱስም ዘለዓለማዊ ነው። ነገር ግን አንድ ዘለዓለማዊ እንጂ ሦስት ዘለዓለማውያን አይደሉም።
+ሆኖም የአብ፤ የወልድና የመንፈስ ቅዱስ መለኮት አንድ ነው፤ ክብሩና ሥልጣኑም አካል ሆኖ ይኖራል። ወልድ በህልውናው እንደ አብ ነው፤ መንፈስ ቅዱስም እንዲሁ ነው።
 
-እንዲሁም ሦስት ያልተፈጠሩ ወይም ሦስት ወሰን የሌላቸው አይደሉም፤ አንድ ያልተፈጠረና አንድ ወሰን የሌለው ነው እንጂ። አሜን።`,
+አብ አልተፈጠረም፤ ወልድ አልተፈጠረም፤ መንፈስ ቅዱስም አልተፈጠረም። አብ ወሰን የለውም፤ ወልድ ወሰን የለውም፤ መንፈስ ቅዱስም ወሰን የለውም። አብ ዘላለማዊ ነው፤ ወልድ ዘላለማዊ ነው፤ መንፈስ ቅዱስም ዘላለማዊ ነው። ቢሆንም፤ ዘላለማዊ የሚሆን አንድ እንጂ ሦስት አይደለም። ያልተፈጠረና ወሰን የሌለው ሦስት እንዳይሆን፤ እንዲሁም ያልተፈጠረና ወሰን የሌለውም አንድ ነው።
+
+እንዲሁም አብ ሁሉን ማድረግ የሚችል ነው፤ ወልድ ሁሉን ማድረግ የሚችል ነው፤ መንፈስ ቅዱስም ሁሉን ማድረግ የሚችል ነው። ቢሆንም፤ ሁሉን ማድረግ የሚችል አንድ እንጂ ሦስት አይደለም። ስለዚህ አብ አምላክ ነው፤ ወልድ አምላክ ነው፤ መንፈስ ቅዱስም አምላክ ነው። ሆኖም፤ አንድ አምላክ እንጂ ሦስት አማልክት አይደለም። ስለዚህ አብ ጌታ ነው፤ ወልድ ጌታ ነው፤ መንፈስ ቅዱስም ጌታ ነው። ሆኖም፤ አንድ ጌታ እንጂ ሦስት ጌቶች አይደለም።
+
+ምክንያቱም የክርስቲያን እምነት እውነተኝነት እያንዳንዱ አካል አምላክና ጌታ መሆኑን እንድናምን እንደሚያስገድደን ሁሉ፤ የክርስቲያን ሃይማኖት ሦስት አማልክት ወይም ሦስት ጌቶች እንዳንል ይከለክለናል።
+
+አብ በማንም አልተሠራም፤ አልተፈጠረም፤ አልተወለደምም። ወልድ ከአብ ተወለደ እንጂ፤ አልተሠራም፤ አልተፈጠረምም። መንፈስ ቅዱስ አልተሠራም፤ አልተፈጠረም፤ አልተወለደምም፤ ነገር ግን ከአብና ከወልድ የሚወርድ ነው።
+
+ስለዚህ አብ አንድ ስለሆነ ሦስት አብ አይደለም፤ ወልድም አንድ እንጂ ሦስት ወልድ አይደለም፤ መንፈስ ቅዱስም አንድ እንጂ ሦስት አይደለም። ከሦስቱ አካላት አንዱ ከሌላው ቀዳሚነት ወይም ደኃሪነት የለውም፤ አንዱም ሌላውን የሚበልጥ ወይም የሚያንስ አይደለም። ስለሆነም፤ ሦስቱ አካላት በእኩልነትና በዘላለማዊነት አንድ ናቸው። ከዚህ የተነሣም ቀደም ብሎ እንደ ተጠቀሰው ሦስቱ አካላት በአንድ መለኮት፤ አንድ አምላክም በሦስት አካላት ይመለካል። ለመዳን የሚፈልግ ሁሉ ስለ ሥላሴ እንዲሁ ማሰብ ይገባዋል።
+
+ከዚህም ሌላ የዘላለም ድኅነት ለማግኘት የጌታችንን የኢየሱስ ክርስቶስን በሥጋ መገለጥ በእውነት ማመን አስፈላጊ ነው። ምክንያቱም ትክክለኛው እምነት ጌታችን ኢየሱስ ክርስቶስ የእግዚአብሔር ልጅ፤ አምላክም ሰውም መሆኑን አምነን ማስታወቅ ነው። እርሱም ከዘመናት አስቀድሞ ከአብ የተወለደ አምላክ፤ ከእናቱ በሥጋ በዓለም የተወለደ ሰው ነው።
+
+የሚያስብ ነፍስ ያላትውና የሰውን ሥጋ የለበሰ ፍጹም አምላክ ፍጹም ሰው ነው። በአምላክነቱ ከአብ ጋር የተስተካከለ፤ በሰውነቱም ከአብ ያነሰ ነው። አምላክም ሰውም ቢሆንም፤ አንድ ክርስቶስ እንጂ ሁለት ክርስቶስ አይደለም። አንድ ነው ስንል ግን የሰውን ሥጋ ለበሰ እንጂ፤ መለኮትን ወደ ሥጋ አለወጠም። በእርግጥ አንድ የሆነውም በባሕርያት መደባለቅ ሳይሆን፤ በአካል አንድ በመሆኑ ነው። ምክንያቱም የሚያስብ ነፍስና ሥጋ አንድ ሰው እንደሆኑ ሁሉ፤ አምላክና ሰው በክርስቶስ አንድ ናቸው።
+
+እርሱም ለድኅነታችን ሲል መከራ የተቀበለ፤ ወደ ሲኦል የወረደ፤ ከሙታን የተነሣ፤ ወደ ሰማይ የወጣ፤ በአብ ቀኝ የተቀመጠ፤ በሕያዋንና በሙታንም ሊፈርድ ከዚያ በሚመለስ፤ በመጣበት ጊዜም ሰዎች ሁሉ በሥጋ ተነሥተው ስለ ሥራቸው መልስ ይሰጣሉ። መልካም የሠሩ ወደ ዘላለም ሕይወት፤ ክፉ የሠሩ ወደ ዘላለም እሳት ይገባሉ።
+
+ይህ እውነተኛው የክርስቲያን እምነት ነው፤ ይህን የማያምንና አጥብቆ የማይይዝ ሊድን አይችልም።`,
       },
     ],
   },
@@ -438,54 +541,75 @@ Guyyoota hojii keessa dubbisni tokko qofti kan kennamu yoo ta'u, Dilbata fi Ayya
   churchYear: {
     title: "Waggaa Waldaa Kiristaanaa",
     intro: `Waggaa Waldaa Kiristaanaa (kalendarii lektiyonaarii) jireenya hafuuraa amantootaa waggaa guutuu qajeelcha. Barri kutaawwan adda addaa qabaachuun fayyina Kiristoos irraa jalqabee hanga jireenya waldaatti amantoota ni leenjisa.`,
+    labels: {
+      purpose: "Kaayyoo",
+      theme: "Dhaamsa",
+      duration: "Turtii",
+      sundays: "Sanbatoota Guddaa fi Ayyaanota",
+    },
     seasons: [
       {
-        name: "Advent (Eeggannoo)",
+        name: "Bara Dhufaatii (Advent)",
         purpose: "Dhaloota Kiristoos kabajuuf qophii fi abdiidhaan eeggachuuf bara dhihaatu.",
-        theme: "Abdiu, eeggannoo fi dhufaatii Masiihichaati",
+        theme: "Abdii, eeggannoo fi dhufaatii Masiihichaati",
         duration: "Torban 4 (Mudde dura torban Dilbata irraa jalqaba)",
+        sundays: "Kan Dhufaatii Isaatii SG 1ffaa, 2ffaa, 3ffaa fi 4ffaa",
       },
       {
         name: "Ayyaana Dhalootaa (Kristmas)",
         purpose: "Waaqayyo nama ta'ee dhalachuu Yesuus Kiristoos kabajuu.",
         theme: "Dubbiin foon ta'e — Waaqayyo seenaa namaa keessa gale",
-        duration: "Guyyoota 12 (Mudde 25 hanga Ammajjii 5)",
+        duration: "Guyyoota 12",
+        sundays: "Ayyaana Dhalootaa, Dhaloota Booda Sanbata Guddaa",
       },
       {
-        name: "Epiphany (Muldhina/Cuuphaa)",
-        purpose: "Kiristoos addunyaa hundaaf fayyisaa ta'ee mul'achuu isaa yaadachuu.",
+        name: "Cuuphaa (Epiphany)",
+        purpose: "Kiristoos addunyaa hundaaf fayyisaa ta'ee mul'achuu fi cuuphamuu isaa yaadachuu.",
         theme: "Kiristoos ifa saba hundaaf ta'ee mul'ate",
-        duration: "Ammajjii 6 irraa hanga Sooma Guddaa ዋዜማቲ",
+        duration: "Cuuphaa irraa hanga Sooma Guddaatti",
+        sundays: "Ayyaana Cuuphaa, Cuuphaa Booda SG 1ffaa hanga 6ffaa",
       },
       {
         name: "Sooma Guddaa (Lent)",
-        purpose: "Ayyaana Fannoo fi Du'a Ka'uuf qopha'uuf gaabbii fi kadhannaaf bara dhihaatu.",
+        purpose: "Ayyaana Du'aa Ka'uuf qopha'uuf gaabbii fi kadhannaaf bara dhihaatu.",
         theme: "Gaabbii, aarsaa fi gara fannoo deemuun",
-        duration: "Guyyoota 40 (Dilbata osoo hin dabalamin)",
+        duration: "Guyyoota 55 (Torban 7)",
+        sundays: "Sooma Guddaa SG 1ffaa hanga 6ffaa",
       },
       {
-        name: "Torban Qulqulluu (Holy Week)",
-        purpose: "Guyyoota dhumaa jireenya Kiristoos lafa irraa yaadachuuf torban qulqulluu.",
-        theme: "Rakkina, du'a fi mo'icha Kiristoos",
+        name: "Torban Dhiphinaa (Holy Week)",
+        purpose: "Guyyoota dhumaa jireenya Kiristoos lafa irraa fi fannoo yaadachuuf torban qulqulluu.",
+        theme: "Rakkina, fannoo, du'a fi mo'icha Kiristoos",
         duration: "Torban 1 (Dilbata Hoosaa'inaa irraa hanga Sanbata Guddaatti)",
+        sundays: "Dilbata Hoosaa'inaa, Kamisa Qulqulluu, Guyyaa Fannoo, Sanbata Guddaa",
       },
       {
-        name: "Fannoo fi Du'a Ka'uu (Easter)",
+        name: "Du'aa Ka'uu (Easter)",
         purpose: "Kiristoos du'a mo'ee ka'uu isaa gammachuudhaan kabajuu — hundee amantaa kiristaanaa.",
-        theme: "Du'a ka'uu, jireenya haarawa fi mo'icha du'a irratti",
-        duration: "Guyyoota 50 (Dilbata Easter irraa hanga Shantaffaatti)",
+        theme: "Du'aa ka'uu, jireenya haarawa fi mo'icha du'a irratti",
+        duration: "Guyyoota 50 (Easter irraa hanga Shantaffatti)",
+        sundays: "Ayyaana Du'aa Ka'uu, Du'aa Ka'uu Booda SG 1ffaa hanga 6ffaa, Guyyaa Ol Ba'uu",
       },
       {
-        name: "Pentecost (Shantaffaa)",
+        name: "Ayyaana Guyyaa Shantammaffaa (Pentecost)",
         purpose: "Hafuurni Qulqulluun bartoota irratti bu'uu fi waldaan dhalachuu ishee yaadachuu.",
         theme: "Hafuura Qulqulluu, dhaloota waldaa fi humna Dubbii Waaqayyoo",
-        duration: "Guyyaa 1 (Guyyaa 50ffaa Easter irrah)",
+        duration: "Guyyaa 50ffaa Easter irratti",
+        sundays: "Ayyaana Guyyaa Shantaffaa (Phenxeqosxee), Ayyaana Sillaasee",
       },
       {
-        name: "Bara Sillaasee (Trinity Season)",
+        name: "Sadan Tokkummaa (Trinity Season)",
         purpose: "Amantaa fi bartummaadhaan guddachuuf, barumsa Kiristoos irratti xiyyeeffachuu.",
         theme: "Jireenya waldaa, bartummaa fi mootummaa Kiristoos",
         duration: "Bara dheeraa Shantaffaa irraa hanga Advent-tti dhihaatu",
+        sundays: "STB (Sadan Tokkummaa Booda) Sanbata Guddaa 1ffaa hanga 26ffaa",
+      },
+      {
+        name: "Dhuma Waggaa Waldaa (Guyyaa Firdii)",
+        purpose: "Waa'ee firdii dhumaa fi dhufaatii Kiristoos lammataa yaadachuu.",
+        theme: "Firdii isa dhumaa, qophaa'anii eeguu",
+        duration: "Sanbatoota Guddaa dhumaa lamaan",
+        sundays: "SG Guyyaa Firdii Dursu, SG Guyyaa Firdii",
       },
     ],
   },
@@ -493,71 +617,103 @@ Guyyoota hojii keessa dubbisni tokko qofti kan kennamu yoo ta'u, Dilbata fi Ayya
     title: "Ibsa ejjennaa Amantaa",
     creeds: [
       {
-        name: "Amanaa Apostoloota (Apostles' Creed)",
+        name: "Dhugaa Ba'uu Amantii Kiristaanaa Kan Ergamoota",
         introduction:
           "Amanaa Apostoloota ibsa amantaa kiristaanaa isa antique fi bal'inaan fayyadamaa dha. Tajaajila sagadaa, cuuphaa fi kadhanna keessatti deebi'ee dubbatama.",
-        text: `Waaqayyo Abbaa danda'aa hundumaa,
-isa waaqaa fi lafa uumetti nan amana.
+        text: `Nan amana
+Hundumaa kan danda'u, Waaqayyo Abbaatti,
+Uumaa Waaqaa fi Lafaatti,
+Tokkicha Ilma Isaa Yesus Kiristoos Gooftaa Keenyatti,
+Kan ulfeefame Hafuura Qulqulluudhaan,
+Kan dhalate Maariyaam durba irraa,
+Kan dhiphates bara philaaxos pheenxinichaatti,
+Kan fannifames, kan du'es, kan awwalames,
+Sii'olittis kan gadi bu'e,
+Guyyaa sadaffaattis du'aa kan ka'ee
+Gara waaqaattis kan ol ba'e,
+Hundumaa kan danda'u, gara mirga Waaqayyo Abbaas kan taa'e;
+Achiiyis Kan deebi'u,
+Warra jiranii fi warra du'anitti faraduudhaaf
 
-Ilma isaa tokkicha Gooftaa keenya Yesuus Kiristoosittis nan amana.
-Inni Hafuura Qulqulluudhaan ulfaa'ee,
-Durboo Maariyaam irraa dhalate.
-Phonxos Philaaxos jalattis rakkina arge,
-fannifame, du'e, awwaalames;
-gara iddoo du'aattis gad bu'e.
-Guyyaa sadaffaatti du'a ka'e,
-gara waaqatti ol ba'e.
-Waaqayyo Abbaa danda'aa hundumaa mirga taa'e.
-Achillasaas warra jiraatotaa fi warra du'an irratti murteessuuf ni dhufa.
-
-Hafuura Qulqulluutti,
-Waldaa Qulqulluu,
-tokkummaa qulqullootaatti,
-dhiifama cubbuutti,
-du'a ka'uu fooniitiifi jireenya bara baraatti nan amana.
-Ameen.`,
+Nan amana
+Hafuura qulqulluutti
+Tokkicha Qulqullaa'aa Waldaa Kiristaanaa,
+Tokkummaa Qulqullootaas,
+Dhiifamuu cubbus,
+Du'aa ka'uu fooniis,
+Jireenya bara-baraas,
+Ameen`,
       },
       {
         name: "Amanaa Nikiya (Nicene Creed)",
         introduction:
           "Amanaa Nikiya ibsa amantaa Kora Nikiya (325 AD) fi Kora Kaanstaantiinoopil (381 AD) irratti murtaa'ee dha.",
-        text: `Waaqayyo Abbaa tokkicha isa danda'aa hundumaa,
-isa waaqaa fi lafa, waan mul'atuufi waan hin mul'anne hundumaa uumetti ni amanna.
-
-Gooftaa tokkicha Yesuus Kiristoos, Ilma Waaqayyoo tokkicha,
-barri osoo hin jalqabin Abbaa irraa dhalatetti ni amanna.
-Waaqa irraa Waaqa, Ifa irraa Ifa,
-Waaqa dhugaa irraa Waaqa dhugaa,
-kan dhalate malee kan hin uumamne,
-Abbaa waliin amala tokko kan qabu,
-inni waan hundumaa uume.
-Nuuf jedhee nu fayyisuuf waaqarraa gad bu'e.
-Hafuura Qulqulluu fi Durboo Maariyaam irraa foon uffate,
-nama dhugaas ta'e.
-Nuuf jedhee Phalaaxos jalatti fannifame, du'e, awwaalame.
-Akka Kitaabni Qulqulluun jedhutti guyyaa sadaffaatti du'a ka'e.
-Gara waaqatti ol ba'e, mirga Abbaa taa'e.
-Warra jiraatotaa fi du'an irratti murteessuuf ulfinaan deebi'ee ni dhufa;
-mootummaan isaas dhuma hin qabu.
-
-Hafuura Qulqulluu, Gooftaa fi Arjoomaa jireenyaa,
-isa Abbaa irraa ba'u,
-isa Abbaa fi Ilma waliin sagadamuufi ulfeeffamu,
-isa raajotaan dubbatetti ni amanna.
-Waldaa Qulqulluu tokkitti, hunda galeessa fi kan apostolootaatti ni amanna.
-Dhiifama cubbuutiif cuuphaa tokkitti ni beekna.
-Du'a ka'uu warra du'anii fi jireenya bara dhufuuf eegganna.
-Ameen.`,
+        text: `In amanna hundumaa kan danda'u Waaqayyo Isa tokkicha
+Abbaatti,
+Uumaa waaqaatii fi lafaa,
+Uumaa wanta argamuu fi wanta hin argamne hundumaa.
+In amanna kan dhalate tokkicha Ilma Waaqayyoo,
+Yesus Kristos Gooftaa tokkichatti;
+Biyyi lafaa utuu hin uumamin bara hundumaa dura
+Abbaattii kan dhalate,
+Waaqayyo Waaqayyottii argame, Ifa Ifatti argame,
+Waaqayyo Isa dhugaa Waaqayyo Isa dhugaattii argame;
+Jiraachuun Isaa Abbaadhaa wajjin tokko kan ta'e;
+Inni kan uumame utuu hin ta'in kan dhalatee dha;
+Wanti hundinuu Isaan kan ta'e;
+Waa'ee keenyaaf, waa'ee fayyina namootaatiif waaqa irraa
+kan gadi bu'e;
+Hafuura Qulqulluudhaan Maariyaam durba irraa
+foon uffatee nama kan ta'e;
+Bara Philaaxos Phenxenichaattis nuuf jedhee kan fannifame;
+Kan dhiphate, kan du'e, kan awwaalames;
+Macaafa Qulqulluu keessatti barreeffamee akka jiru,
+Guyyaa sadaffaatti warra du'an keessaa kan ka'e;
+Gara waaqaattis kan ol ba'e; gara mirga Abbaa kan taa'u;
+Warra jiranii fi warra du'anitti faraduudhaaf lammaffaa
+deebi'ee ulfinaan kan dhufu;
+Mootummaan Isaas dhuma kan hin qabnetti.
+In amanna Hafuura Qulqulluutti;
+Goofticha Isa jireenya kennu;
+Isa Abbaa fi Ilma biraa ba'u;
+Abbaa fi Ilmaa wajjin kan waaqeffamu,
+Ulfina argachuun kan Isaaf ta'u,
+Isa karaa raajotaa dubbatetti.
+In amanna kan nama hundumaa kan taate tokkittii
+qulqullooftuu Waldaa Kristaanaa Ergamootaa;
+Dhiifamuu cubbuu kan argachiisu cuuphaa tokkicha,
+Du'aa ka'uu warra du'aniitii fi jireenya bara baraa
+isa dhufuuf jiruus in eegganna. Ameen!`,
       },
       {
         name: "Amanaa Atanaatewos (Athanasian Creed)",
         introduction:
           "Amanaa Atanaatewos ibsa amantaa qulqulluu Atanaatewosiin kenname yoo ta'u, Sillaasee fi qulqullummaa Kiristoos bal'inaan ibsa.",
-        text: `Namni fayyuu fedhu kamiyyuu, waan hundumaa dura amantaa qulqulluu sanas qabachuu qaba. Isas osoo hin hir'isin qulqullummaadhaan kan hin eegne, dhabama malee bara baraaf ni bada.
+        text: `Namni fayyuu barbaadu hundinuu waan hundumaa dura amantiin Waldaa Kristaanaa kan nama hundumaa taate kun amantii dhuga-qabeessa ta'uu isaa amanee fudhachuun in barbaachisaaf. Namni guutummaatti, qulqullinattis isa hin eegne hundinuu, mamii tokko malee badiisni bara baraa isa irra in ga'a.
 
-Amantaan qulqulluun isaniis kana: Waaqa tokko Sillaaseedhaan, Sillaasees tokkummaadhaan sagadna. Qaamota osoo hin walitti makin, amalas osoo hin qoodin. Abbaan qaama tokko, Ilmis qaama biraa, Hafuurri Qulqulluuns qaama biraa dha. Garuu Waaqayyummaan Abbaa, Ilmaa fi Hafuura Qulqulluu tokko, ulfinni isaanii qixxee, surraan isaaniis bara baraaf tokko.
+Nuyi sadanummaa Isaatti tokkummaa Isaa, tokkummaa Isaattis sadanummaa Isaa amannee, Waaqayyo tokkicha in waaqeffanna; kun Amantii Kristaanaa isa dhugaa dha. Kanas eenyummaa Isaa utuu waliin hin makin, jiraachuu Waaqayyummaa Isaatii utuu gargar hin baasin in amanna. Sababiin isaa immoo, qaamni Abbaa addaan, kan Ilmaa addaan, kan Hafuura Qulqulluus addaan.
 
-Abbaan akkuma ta'e, Ilmis akkasuma, Hafuurri Qulqulluuns akkasuma. Abbaan kan hin uumamne, Ilmis kan hin uumamne, Hafuurri Qulqulluuns kan hin uumamne. Abbaan daangaa kan hin qabne, Ilmis daangaa kan hin qabne, Hafuurri Qulqulluuns daangaa kan hin qabne. Abbaan bara baraa, Ilmis bara baraa, Hafuurri Qulqulluuns bara baraa. Garuu bara baraa tokko malee bara baraa sadii miti. Ameen.`,
+Haa ta'u iyyuu malee, Waaqayyummaan Abbaa, kan Ilmaa, kan Hafuura Qulqulluus tokko; ulfinatti, gooftummaatti, wal-qixxee ta'ee in jiraata. Ilmi jiraachuu Isaatti akka Abbaa ti, Hafuurri Qulqulluunis jiraachuu Isaatti akkasuma.
+
+Abbaan hin uumamne, Ilmi hin uumamne, Hafuurri Qulqulluunis hin uumamne. Abbaan iddoo hundumaa jira, Ilmi iddoo hundumaa jira, Hafuurri Qulqulluunis iddoo hundumaa jira. Abbaan bara baraan jiraata, Ilmi bara baraan jiraata, Hafuurri Qulqulluunis bara baraan jiraata. Akkas yoo ta'e iyyuu bara baraan jiraataa kan ta'u kun tokko malee sadii miti. Kan hin uumamnee fi kan iddoo hundumaa jiru tokko akka ta'e, akkanuma immoo kan hin uumamnee fi kan iddoo hundumaa jiru sadii miti.
+
+Akkuma kanatti Abbaan hundumaa kan danda'uu dha, Ilmi hundumaa kan danda'uu dha, Hafuurri Qulqulluunis hundumaa kan danda'uu dha. Haa ta'u iyyuu malee, hundumaa kan danda'u kun tokko malee sadii miti. Kanaafis Abbaan Waaqayyoo dha, Ilmi Waaqayyoo dha, Hafuurri Qulqulluunis Waaqayyoo dha. Akkas ta'u iyyuu Waaqayyo tokko malee, waaqayyoolii sadii miti. Kanaafis Abbaan Gooftaa dha, Ilmi Gooftaa dha, Hafuurri Qulqulluunis Gooftaa dha. Akkas ta'u iyyuu Gooftaa tokko malee, gooftota sadii miti.
+
+Sababiin isaas dhugummaan Amantii Kristaanaa tokkoon tokkoon qaamichaa, Waaqayyo ta'uu Isaa fi Gooftaa ta'uu Isaa akka amannuuf akkuma nu dirqisiisutti, Amantiin Kristaanaa kun akka nuyi waaqayyoolii sadii yookiis gooftota sadii hin jenneefis nu dhowwa.
+
+Abbaan eenyuun iyyuu hin hojjetamne, eenyuun iyyuu hin uumamne, eenyuttii iyyuu hin dhalanne. Ilmi Abbaattii dhalate malee, hin hojjetamne, hin uumamnes. Hafuurri Qulqulluun Abbaadhaa fi Ilma biraa kan ba'uudha malee, hin hojjetamne, hin uumamne, hin dhalannes.
+
+Akkuma kanatti Abbaa tokkichatu jira malee, abbootii sadii miti; Ilma tokkichatu jira malee, ilmaan sadii miti; Hafuura Qulqulluu tokkichatu jira malee, hafuurota qulqulloota sadiitu jira miti. Qaama sadan kana keessaa inni tokko isa kaan dura yookiis isa kaan booddee miti; akkuma kanatti inni tokko isa kaan kan caalu yookiis isa kaanii gadi miti. Kanaafis qaamni sadan kun wal-qixxee ta'uu isaaniitii fi bara barummaatti tokko; kana irraa kan ka'e, akkuma kana duratti mul'ifamee dubbatametti, qaamni sadan kun Waaqayyummaatti tokko; Waaqayyo tokkos; qaamni sadan tokkummaa Waaqayyootti in waaqeffama. Namni fayyuu barbaadu hundinuu, waa'ee sadan tokkummaatiif akkuma kana yaaduun isaaf in ta'a.
+
+Kana malees immoo fayyina bara baraa argachuudhaaf, nama ta'ee mul'achuu Gooftaa keenya Yesus Kristos garaa guutuudhaan amanuun barbaachisaa dha. Sababiin isaas Gooftaan keenya Yesus Kristos Ilmi Waaqayyoo, Waaqayyo ta'uu Isaa, nama ta'uu Isaas amanuunii fi dhugaa ba'uun amantii isa sirrii dha.
+
+Inni baroota dura Abbaattii kan dhalate Waaqayyoo dha. Inni nama haadha Isaattii fooniin biyya lafaa irratti dhalatee dha. Inni nama lubbuu yaaduu danda'u qabuu fi foon namaa kan uffate, Waaqayyo mudaa hin qabnee fi nama mudaa hin qabnee dha. Waaqayyummaa Isaatiin Abbaadhaa wajjin waluma qixxee dha; namummaa Isaatiin immoo Abbaadhaa gadi.
+
+Inni utuma Waaqayyoo fi nama dhugaa ta'ee jiruu iyyuu, Inni Kristos tokkicha malee, Kristos lama miti. Tokko yommuu jennu, foon namaa uffate jechuu keenya malee, Waaqayyummaa gara fooniitti geddare jechuu keenya miti. Dhugumaan tokko; tokko ta'uun Isaa qaama tokkotti tokko ta'udhaan malee, Waaqayyummaa Isaa fi namummaa Isaa walitti makuudhaan miti. Sababiin isaas foonii fi lubbuun yaaduu danda'u nama tokkicha akkuma ta'an, Waaqayyoo fi namni Kristos tokkicha ta'an.
+
+Inni egaa fayyina keenyaaf jedhee kan dhiphate, Si'olitti kan gadi bu'e, du'aas kan ka'e; Gara waaqaattis kan ol ba'e, gara mirga Abbaa kan taa'u, warra jiranii fi warra du'anitti faraduudhaaf achii kan deebi'u; Yeroo dhufa Isaatti namoonni hundinuu fooniin du'aa ka'anii, waa'ee waan hojjetaniif deebii deebisuuf jiru. Wanta gaarii warri hojjetan, jireenya bara baraatti in galu; wanta hamaa warri hojjetan immoo gara ibidda bara baraatti in naqamu.
+
+Kun Amantii Kristaanaa isa dhugaa dha; namni kana hin amannee fi jabeessee hin qabanne fayyuu hin danda'u.`,
       },
     ],
   },
@@ -565,18 +721,18 @@ Abbaan akkuma ta'e, Ilmis akkasuma, Hafuurri Qulqulluuns akkasuma. Abbaan kan hi
     title: "Kadhannaa Gooftaa",
     introduction:
       "Kadhannaa Gooftaa kadhannaa Yesuus bartoota isaa yeroo isaan kadhachuu nu barsiisi jedhanii isa gaafatan barsiisee dha. Kadhannaa kiristaanummaa keessatti beekamaa fi bal'inaan fayyadamaa dha.",
-    text: `Yaa Abbaa keenya isa waaqa irra jirtuu,
-Maqaan kee qulqulluu ta'ee haa eebbifamu.
-Mootummaan kee haa dhufu,
-Feeteen kee akkuma waaqa irratti ta'u,
-akkasuma lafa irratti haa ta'u.
-Buddeena keenya kan guyyaa har'aa nuu kenni.
-Akkuma nuti warra nu yakkaniif dhiisnu,
-yakka keenyas nuu dhiisi.
-Qormaata keessattis nu hin galchin,
-hamaa irraa nu oolchi malee.
-Mootummaan, humni, ulfinnis bara baraaf kan keeti.
-Ameen.`,
+    text: `Yaa Abbaa keenyaa, waaqa irra kan jiraattu,
+Maqaan Kee haa qulqullaa'u,
+Mootummaan Kee haa dhufu,
+Jaalalli Kee waaqa irratti akka ta'u,
+Akkasuma lafa irratti haa ta'u;
+Kan nu ga'u buddeena keenya har'aa nuuf kenni,
+Yakka keenya nuuf dhiisi;
+Nuyis kan nu yakkaniif akkuma dhiifnu,
+Qoramatti nu hin galchin;
+Hamaa nu oolchi malee,
+Mootummaan kan Kee ti'oo,
+Humnis, galannis, baruma baraan. Ameen!`,
   },
 };
 

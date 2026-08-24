@@ -2,46 +2,33 @@ import {
   Text,
   View,
   TouchableOpacity,
-  useColorScheme,
   SafeAreaView,
   Switch,
   Platform,
   Modal,
   ScrollView,
   Pressable,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState, useEffect } from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
+import { useIsDark } from "@/lib/useIsDark";
+import { formatTimeString } from "@/lib/settings";
 import {
   scheduleDailyReminder,
-  cancelAllReminders,
-  requestNotificationPermissions,
+  cancelDailyReminder,
+  ensurePermissions,
+  openNotificationSettings,
 } from "@/lib/NotificationService";
 import { ReadingsDB, type DayData } from "@/lib/database";
 
-function formatTimeString(timeStr: string, format: "12h" | "24h" = "12h"): string {
-  const [hStr, mStr] = timeStr.split(":");
-  const h = parseInt(hStr, 10) || 7;
-  const m = parseInt(mStr, 10) || 0;
-  if (format === "24h") {
-    const hh = String(h).padStart(2, "0");
-    const mm = String(m).padStart(2, "0");
-    return `${hh}:${mm}`;
-  }
-  const period = h >= 12 ? "PM" : "AM";
-  const displayHour = h % 12 === 0 ? 12 : h % 12;
-  const displayMin = String(m).padStart(2, "0");
-  return `${displayHour}:${displayMin} ${period}`;
-}
-
 export default function DailyReminderScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useIsDark();
   const { settings, updateSetting } = useSettings();
   const { t } = useTranslation();
   const db = useSQLiteContext();
@@ -52,7 +39,7 @@ export default function DailyReminderScreen() {
   // Load preview body for today's reading
   useEffect(() => {
     async function loadPreview() {
-      const verUpper = (settings.version || "niv").toUpperCase();
+      const verUpper = (settings.version || "am54").toUpperCase();
       try {
         const readingsDB = new ReadingsDB(db);
         const dayData: DayData | null = await readingsDB.getReadingsForDate(
@@ -88,9 +75,9 @@ export default function DailyReminderScreen() {
   }, [db, settings.language, settings.version]);
 
   const getReminderDate = (): Date => {
-    const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
+    const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
     const d = new Date();
-    d.setHours(parseInt(hStr, 10) || 7, parseInt(mStr, 10) || 0, 0, 0);
+    d.setHours(parseInt(hStr, 10) || 8, parseInt(mStr, 10) || 30, 0, 0);
     return d;
   };
 
@@ -110,16 +97,37 @@ export default function DailyReminderScreen() {
       await updateSetting("reminderTime", newTime);
 
       if (settings.reminderEnabled) {
-        await scheduleDailyReminder(
+        void scheduleDailyReminder(
           hour,
           minute,
           db,
           settings.language,
           settings.version,
           t("appTitle"),
-          30,
         );
       }
+    }
+  };
+
+  const handleSaveModalTime = async (selectedDate: Date) => {
+    setShowTimePicker(false);
+    const hour = selectedDate.getHours();
+    const minute = selectedDate.getMinutes();
+    const hStr = String(hour).padStart(2, "0");
+    const mStr = String(minute).padStart(2, "0");
+    const newTime = `${hStr}:${mStr}`;
+
+    await updateSetting("reminderTime", newTime);
+
+    if (settings.reminderEnabled) {
+      void scheduleDailyReminder(
+        hour,
+        minute,
+        db,
+        settings.language,
+        settings.version,
+        t("appTitle"),
+      );
     }
   };
 
@@ -178,25 +186,36 @@ export default function DailyReminderScreen() {
               value={settings.reminderEnabled}
               onValueChange={async (value) => {
                 if (value) {
-                  const granted = await requestNotificationPermissions();
-                  if (!granted) return;
+                  const { granted, canAskAgain } = await ensurePermissions();
+                  if (!granted) {
+                    if (!canAskAgain) {
+                      Alert.alert(
+                        "Notifications Disabled",
+                        "Please enable notifications in system settings to receive daily reminders.",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { text: "Open Settings", onPress: () => void openNotificationSettings() },
+                        ]
+                      );
+                    }
+                    return;
+                  }
 
                   await updateSetting("reminderEnabled", true);
-                  const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
-                  const hour = parseInt(hStr, 10) || 7;
-                  const minute = parseInt(mStr, 10) || 0;
-                  scheduleDailyReminder(
+                  const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
+                  const hour = parseInt(hStr, 10) || 8;
+                  const minute = parseInt(mStr, 10) || 30;
+                  void scheduleDailyReminder(
                     hour,
                     minute,
                     db,
                     settings.language,
                     settings.version,
                     t("appTitle"),
-                    30,
-                  ).catch(() => {});
+                  );
                 } else {
                   await updateSetting("reminderEnabled", false);
-                  cancelAllReminders().catch(() => {});
+                  void cancelDailyReminder();
                 }
               }}
               trackColor={{ false: isDark ? "#3f3f46" : "#e4e4e7", true: "#3b82f6" }}

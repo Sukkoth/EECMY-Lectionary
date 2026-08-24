@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import type { YearOption } from "../../app/settings/check-updates/types";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import type { YearOption } from "@/lib/types/checkUpdates";
 import { useTranslation } from "@/lib/i18n";
 
 type DownloadedVersion = {
@@ -76,7 +76,7 @@ function LangSelectionStep({
       const record = syncedLangPackVersions.find(
         (r) =>
           r.year === yearNum &&
-          r.language === langCode &&
+          r.language.toLowerCase() === langCode.toLowerCase() &&
           r.type === (type === "holidays" ? "holidays" : "day-info"),
       );
       return !!record && record.contentVersion >= manifestVersion;
@@ -86,8 +86,11 @@ function LangSelectionStep({
 
   const isVersionSynced = useCallback(
     (langCode: string, version: { code: string; contentVersion: number }) => {
-      const downloaded = downloadedVersions[langCode]?.find(
-        (d) => d.version === version.code,
+      const langVersions = Object.entries(downloadedVersions).find(
+        ([lCode]) => lCode.toLowerCase() === langCode.toLowerCase()
+      )?.[1] ?? [];
+      const downloaded = langVersions.find(
+        (d) => d.version.toLowerCase() === version.code.toLowerCase(),
       );
       return !!downloaded && downloaded.contentVersion >= version.contentVersion;
     },
@@ -183,6 +186,44 @@ function LangSelectionStep({
         const langAllSynced =
           unsyncedVersionCodes.length === 0 && !hasUnsyncedLiturgical;
 
+        let langUpdateCount = 0;
+        let langAvailableCount = 0;
+
+        const langVersions = Object.entries(downloadedVersions).find(
+          ([lCode]) => lCode.toLowerCase() === lang.code.toLowerCase()
+        )?.[1] ?? [];
+
+        lang.versions.forEach((v) => {
+          const downloaded = langVersions.find(
+            (d) => d.version.toLowerCase() === v.code.toLowerCase(),
+          );
+          if (!downloaded) {
+            langAvailableCount++;
+          } else if (downloaded.contentVersion < v.contentVersion) {
+            langUpdateCount++;
+          }
+        });
+
+        if (hasUnsyncedLiturgical) {
+          const holidaysRecord = syncedLangPackVersions.find(
+            (r) =>
+              r.year === year.year &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
+              r.type === "holidays",
+          );
+          const dayInfoRecord = syncedLangPackVersions.find(
+            (r) =>
+              r.year === year.year &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
+              r.type === "day-info",
+          );
+          if (holidaysRecord || dayInfoRecord) {
+            langUpdateCount++;
+          } else {
+            langAvailableCount++;
+          }
+        }
+
         const unsyncedSelectedCount =
           selectedVersions.filter((v) => unsyncedVersionCodes.includes(v))
             .length +
@@ -277,7 +318,11 @@ function LangSelectionStep({
                   >
                     {langAllSynced
                       ? t("allContentSynced")
-                      : `${totalUnsyncedCount} ${t("updateAvailable")}`}
+                      : langUpdateCount > 0 && langAvailableCount > 0
+                      ? `${langUpdateCount} ${t("updateAvailable")}, ${langAvailableCount} ${t("available")}`
+                      : langUpdateCount > 0
+                      ? `${langUpdateCount} ${t("updateAvailable")}`
+                      : `${langAvailableCount} ${t("available")}`}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -326,7 +371,12 @@ function LangSelectionStep({
                 </Text>
 
                 {lang.versions.map((version) => {
-                  const synced = isVersionSynced(lang.code, version);
+                  const downloaded = langVersions.find(
+                    (d) => d.version.toLowerCase() === version.code.toLowerCase(),
+                  );
+                  const isInstalled = !!downloaded;
+                  const synced = isInstalled && downloaded.contentVersion >= version.contentVersion;
+                  const isUpdate = isInstalled && downloaded.contentVersion < version.contentVersion;
                   const isSelected = selectedVersions.includes(version.code);
 
                   if (synced) {
@@ -408,48 +458,95 @@ function LangSelectionStep({
                           className="text-xs text-muted dark:text-muted-dark mt-0.5"
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          {version.contentVersion > 0
+                          {isUpdate
+                            ? `v${downloaded.contentVersion} → v${version.contentVersion}`
+                            : version.contentVersion > 0
                             ? `v${version.contentVersion}`
                             : t("available")}
                         </Text>
                       </View>
-                      <View className="rounded-full bg-primary/10 px-2 py-0.5">
+                      <View
+                        className={`rounded-full px-2 py-0.5 ${
+                          isUpdate ? "bg-amber-500/15" : "bg-primary/10"
+                        }`}
+                      >
                         <Text
-                          className="text-[10px] text-primary font-semibold"
+                          className={`text-[10px] font-semibold ${
+                            isUpdate
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-primary"
+                          }`}
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          {t("available")}
+                          {isUpdate ? t("updateAvailable") : t("available")}
                         </Text>
                       </View>
                     </TouchableOpacity>
                   );
                 })}
 
-                {/* Liturgical Data Pack Header */}
-                <Text
-                  className="mb-1 mt-3 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
-                  style={{ fontFamily: "ReadingFont" }}
-                >
-                  {t("liturgicalDataPack")}
-                </Text>
-
                 {(() => {
+                  const holidaysRecord = syncedLangPackVersions.find(
+                    (r) =>
+                      r.year === year.year &&
+                      r.language.toLowerCase() === lang.code.toLowerCase() &&
+                      r.type === "holidays",
+                  );
+                  const dayInfoRecord = syncedLangPackVersions.find(
+                    (r) =>
+                      r.year === year.year &&
+                      r.language.toLowerCase() === lang.code.toLowerCase() &&
+                      r.type === "day-info",
+                  );
+                  const isInstalled = !!holidaysRecord || !!dayInfoRecord;
                   const synced = liturgicalSynced;
+                  const isUpdate = isInstalled && !synced;
                   const isSelected =
                     selectedVersions.includes("__holidays__") ||
                     selectedVersions.includes("__dayinfo__");
 
-                  if (synced) {
-                    return (
-                      <View className="my-1 flex-row items-center gap-3 rounded-xl bg-surface/30 dark:bg-surface-dark/30 px-3.5 py-3 opacity-90">
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={20}
-                          color="#16a34a"
-                        />
+                  // Auto-downloaded behind the scenes when available/synced; only show row if there is a newer update
+                  if (!isUpdate) return null;
+
+                  return (
+                    <>
+                      {/* Liturgical Data Pack Header */}
+                      <Text
+                        className="mb-1 mt-3 text-[11px] font-semibold tracking-wider text-muted dark:text-muted-dark uppercase"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {t("liturgicalDataPack")}
+                      </Text>
+
+                      <TouchableOpacity
+                        onPress={() => onToggleLangPack(lang.code, "liturgical")}
+                        activeOpacity={0.7}
+                        className={`my-1 flex-row items-center gap-3 rounded-xl px-3.5 py-3 ${
+                          isSelected
+                            ? "bg-primary/10"
+                            : "bg-surface/50 dark:bg-surface-dark/50"
+                        }`}
+                      >
+                        {isSelected ? (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color="#3b82f6"
+                          />
+                        ) : (
+                          <Ionicons
+                            name="ellipse-outline"
+                            size={20}
+                            color={isDark ? "#8a8480" : "#6b6560"}
+                          />
+                        )}
                         <View className="flex-1">
                           <Text
-                            className="text-sm text-[#2D2A24]/80 dark:text-[#E8E4DC]/80 font-normal"
+                            className={`text-sm ${
+                              isSelected
+                                ? "text-primary font-semibold"
+                                : "text-[#2D2A24] dark:text-[#E8E4DC] font-normal"
+                            }`}
                             style={{ fontFamily: "ReadingFont" }}
                           >
                             {t("liturgicalDataPack")}
@@ -461,68 +558,16 @@ function LangSelectionStep({
                             {t("holidaysFeastsDailyInfo")}
                           </Text>
                         </View>
-                        <View className="rounded-full bg-green-500/15 px-2 py-0.5">
+                        <View className="rounded-full px-2 py-0.5 bg-amber-500/15">
                           <Text
-                            className="text-[10px] text-green-600 dark:text-green-400 font-semibold"
+                            className="text-[10px] font-semibold text-amber-600 dark:text-amber-400"
                             style={{ fontFamily: "ReadingFont" }}
                           >
-                            {t("synced")}
+                            {t("updateAvailable")}
                           </Text>
                         </View>
-                      </View>
-                    );
-                  }
-
-                  return (
-                    <TouchableOpacity
-                      onPress={() => onToggleLangPack(lang.code, "liturgical")}
-                      activeOpacity={0.7}
-                      className={`my-1 flex-row items-center gap-3 rounded-xl px-3.5 py-3 ${
-                        isSelected
-                          ? "bg-primary/10"
-                          : "bg-surface/50 dark:bg-surface-dark/50"
-                      }`}
-                    >
-                      {isSelected ? (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={20}
-                          color="#3b82f6"
-                        />
-                      ) : (
-                        <Ionicons
-                          name="ellipse-outline"
-                          size={20}
-                          color={isDark ? "#8a8480" : "#6b6560"}
-                        />
-                      )}
-                      <View className="flex-1">
-                        <Text
-                          className={`text-sm ${
-                            isSelected
-                              ? "text-primary font-semibold"
-                              : "text-[#2D2A24] dark:text-[#E8E4DC] font-normal"
-                          }`}
-                          style={{ fontFamily: "ReadingFont" }}
-                        >
-                          {t("liturgicalDataPack")}
-                        </Text>
-                        <Text
-                          className="text-xs text-muted dark:text-muted-dark mt-0.5"
-                          style={{ fontFamily: "ReadingFont" }}
-                        >
-                          {t("holidaysFeastsDailyInfo")}
-                        </Text>
-                      </View>
-                      <View className="rounded-full bg-amber-500/10 px-2 py-0.5">
-                        <Text
-                          className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold"
-                          style={{ fontFamily: "ReadingFont" }}
-                        >
-                          {t("updateAvailable")}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
+                      </TouchableOpacity>
+                    </>
                   );
                 })()}
               </View>

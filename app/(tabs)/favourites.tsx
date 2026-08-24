@@ -5,12 +5,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
-  useColorScheme,
   Share,
   ActivityIndicator,
   SafeAreaView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { router, useFocusEffect } from "expo-router";
 import { useSettings } from "@/lib/SettingsContext";
@@ -25,6 +24,7 @@ import { type HydratedFavourite } from "@/lib/FavouriteRepository";
 import { stripFormattedTags } from "@/lib/formatText";
 
 import { useTranslation } from "@/lib/i18n";
+import { useIsDark } from "@/lib/useIsDark";
 import { formatDisplayDate } from "@/lib/ethiopianCalendar";
 import type { CalendarStyle } from "@/lib/settings";
 
@@ -34,7 +34,7 @@ function formatDate(iso: string, calendarStyle: CalendarStyle, lang: string): st
 }
 
 export default function FavouritesScreen() {
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const { settings } = useSettings();
   const { t, lang } = useTranslation();
   const { data: favourites = [], isLoading } = useHydratedFavourites(

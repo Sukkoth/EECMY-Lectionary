@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { loadStreak } from "../StreakService";
 
-export const STREAK_KEYS = {
+const STREAK_KEYS = {
   all: ["streak"] as const,
 };
 

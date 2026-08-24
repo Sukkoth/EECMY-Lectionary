@@ -10,6 +10,10 @@ web-build/
 expo-env.d.ts
 *.apk
 *.apks
+*.aab
+# assets/db
+# assets/db/*
+# !assets/db/readings.db
 
 # Native
 .kotlin/

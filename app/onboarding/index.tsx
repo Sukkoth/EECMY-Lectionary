@@ -9,7 +9,7 @@ import Animated, {
   withDelay,
 } from "react-native-reanimated";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -55,10 +55,10 @@ export default function WelcomeScreen() {
         {/* App Name */}
         <Animated.Text
           entering={FadeInDown.delay(200).springify().damping(18)}
-          className="mb-3 text-5xl text-[#2D2A24] dark:text-[#E8E4DC]"
+          className="mb-3 text-center text-5xl text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
         >
-          YeiLet
+          EECMY Lectionary
         </Animated.Text>
 
         {/* Tagline */}

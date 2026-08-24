@@ -1,6 +1,6 @@
 import { SafeAreaView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { router, type Href } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "@/lib/i18n";
 
 export default function GlossaryScreen() {

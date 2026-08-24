@@ -1,6 +1,6 @@
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import type { Manifest, YearOption } from "../../app/settings/check-updates/types";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import type { Manifest, YearOption } from "@/lib/types/checkUpdates";
 import { useTranslation } from "@/lib/i18n";
 
 type LangPackVersion = {
@@ -56,22 +56,36 @@ function YearSelectionStep({
       </View>
 
       {manifest.years.map((yearOption) => {
-        const totalVersions = yearOption.languages.reduce(
-          (sum: number, l) => sum + l.versions.length,
-          0,
-        );
-        const syncedCount = syncedReadingCounts[yearOption.year] ?? 0;
-        const availableCount = totalVersions - syncedCount;
+        let syncedVersionCount = 0;
+        let updateVersionCount = 0;
+        let newAvailableCount = 0;
+
+        yearOption.languages.forEach((lang) => {
+          lang.versions.forEach((ver) => {
+            const record = syncedReadingVersions.find(
+              (r) =>
+                r.year === yearOption.year &&
+                r.language.toLowerCase() === lang.code.toLowerCase() &&
+                r.version.toLowerCase() === ver.code.toLowerCase(),
+            );
+            if (!record) {
+              newAvailableCount++;
+            } else if (record.contentVersion < ver.contentVersion) {
+              updateVersionCount++;
+            } else {
+              syncedVersionCount++;
+            }
+          });
+        });
 
         const allReadingsSynced =
-          totalVersions > 0 &&
           yearOption.languages.every((lang) =>
             lang.versions.every((ver) => {
               const record = syncedReadingVersions.find(
                 (r) =>
                   r.year === yearOption.year &&
-                  r.language === lang.code &&
-                  r.version === ver.code,
+                  r.language.toLowerCase() === lang.code.toLowerCase() &&
+                  r.version.toLowerCase() === ver.code.toLowerCase(),
               );
               return !!record && record.contentVersion >= ver.contentVersion;
             }),
@@ -82,7 +96,7 @@ function YearSelectionStep({
           const record = syncedLangPackVersions.find(
             (r) =>
               r.year === yearOption.year &&
-              r.language === lang.code &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
               r.type === "holidays",
           );
           return !!record && record.contentVersion >= lang.holidays.version;
@@ -93,10 +107,38 @@ function YearSelectionStep({
           const record = syncedLangPackVersions.find(
             (r) =>
               r.year === yearOption.year &&
-              r.language === lang.code &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
               r.type === "day-info",
           );
           return !!record && record.contentVersion >= lang.dayInfo.version;
+        });
+
+        const hasLiturgicalUpdate = yearOption.languages.some((lang) => {
+          const holidaysRecord = syncedLangPackVersions.find(
+            (r) =>
+              r.year === yearOption.year &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
+              r.type === "holidays",
+          );
+          const isHolidaysUpdate =
+            !!holidaysRecord &&
+            lang.holidays &&
+            lang.holidays.version > 0 &&
+            holidaysRecord.contentVersion < lang.holidays.version;
+
+          const dayInfoRecord = syncedLangPackVersions.find(
+            (r) =>
+              r.year === yearOption.year &&
+              r.language.toLowerCase() === lang.code.toLowerCase() &&
+              r.type === "day-info",
+          );
+          const isDayInfoUpdate =
+            !!dayInfoRecord &&
+            lang.dayInfo &&
+            lang.dayInfo.version > 0 &&
+            dayInfoRecord.contentVersion < lang.dayInfo.version;
+
+          return isHolidaysUpdate || isDayInfoUpdate;
         });
 
         const allSynced =
@@ -148,29 +190,40 @@ function YearSelectionStep({
             </View>
 
             <View className="mt-4 flex-row flex-wrap items-center gap-2 border-t border-stone-200/60 pt-3 dark:border-stone-800/60">
-              {syncedCount > 0 && (
+              {syncedVersionCount > 0 && (
                 <View className="flex-row items-center gap-1.5 rounded-lg bg-green-500/10 px-2.5 py-1">
                   <Ionicons name="checkmark-circle" size={13} color="#16a34a" />
                   <Text
                     className="text-xs text-green-600 dark:text-green-400"
                     style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
-                    {syncedCount} {t("synced")}
+                    {syncedVersionCount} {t("synced")}
                   </Text>
                 </View>
               )}
-              {availableCount > 0 && (
+              {updateVersionCount > 0 && (
+                <View className="flex-row items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1">
+                  <Ionicons name="arrow-up-circle" size={13} color="#d97706" />
+                  <Text
+                    className="text-xs text-amber-600 dark:text-amber-400"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
+                  >
+                    {updateVersionCount} {t("updateAvailable")}
+                  </Text>
+                </View>
+              )}
+              {newAvailableCount > 0 && (
                 <View className="flex-row items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1">
                   <Ionicons name="arrow-down-circle" size={13} color="#3b82f6" />
                   <Text
                     className="text-primary text-xs"
                     style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
-                    {availableCount} {t("available")}
+                    {newAvailableCount} {t("available")}
                   </Text>
                 </View>
               )}
-              {(!allHolidaysSynced || !allDayInfoSynced) && yearOption.languages.length > 0 && (
+              {hasLiturgicalUpdate && (
                 <View className="flex-row items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1">
                   <Ionicons name="calendar-outline" size={13} color="#d97706" />
                   <Text
@@ -181,7 +234,7 @@ function YearSelectionStep({
                   </Text>
                 </View>
               )}
-              {totalVersions === 0 && !allHolidaysSynced && !allDayInfoSynced && (
+              {syncedVersionCount === 0 && updateVersionCount === 0 && newAvailableCount === 0 && (
                 <Text
                   className="text-muted dark:text-muted-dark text-xs"
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}

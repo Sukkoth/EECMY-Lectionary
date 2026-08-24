@@ -10,33 +10,23 @@ export {
   commitStatements,
 } from "./ContentUpdateService";
 
-export type {
-  PreparedStatement,
-  PreparedDayInfo,
-  PreparedHolidays,
-  PreparedReadings,
-} from "./ContentUpdateService";
+export { CONTENT_BASE_URL, DISABLE_UPDATE_THROTTLE } from "./config";
 
 export {
   getSyncedYears,
   getSyncedReadingCounts,
   getSyncedReadingVersions,
+  getInstalledVersionsWithContentVersion,
+  getInstalledLangPacksWithContentVersion,
   getSyncedLangPackVersions,
-  getDownloadedLangsForYear,
   getDownloadedVersionsForYearLang,
   isContentDownloaded,
 } from "./ContentUpdateRepository";
-
-export type { SyncRecordRow } from "./ContentUpdateRepository";
 
 export type {
   Manifest,
   ManifestYear,
   ManifestLanguage,
   ManifestVersion,
-  DayInfoPackage,
-  HolidayPackage,
-  ReadingsPackage,
 } from "./types";
 
-export { CONTENT_BASE_URL } from "./config";

@@ -31,6 +31,7 @@ export type DayInfoPackage = {
     date: string;
     title: string;
     description: string;
+    seasonColor?: string;
   }[];
 };
 
@@ -38,6 +39,7 @@ export type HolidayPackage = {
   version: number;
   holidays: {
     date: string;
+    endDate?: string;
     name: string;
     description: string;
     type: string;

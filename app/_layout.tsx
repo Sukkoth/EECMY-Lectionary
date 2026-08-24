@@ -1,5 +1,5 @@
 import { Stack, useSegments, useRouter } from "expo-router";
-import { StatusBar, setStatusBarBackgroundColor } from "expo-status-bar";
+import { StatusBar, setStatusBarStyle, setStatusBarBackgroundColor } from "expo-status-bar";
 import { useColorScheme, ActivityIndicator, View, Platform } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -9,39 +9,82 @@ import { SQLiteProvider } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Notifications from "expo-notifications";
+import {
+  ThemeProvider,
+  DarkTheme as NavigationDarkTheme,
+  DefaultTheme as NavigationDefaultTheme,
+} from "@react-navigation/native";
+import { useColorScheme as useNativeWindColorScheme } from "nativewind";
 import { SettingsProvider } from "@/lib/SettingsContext";
 import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { useIsDark } from "@/lib/useIsDark";
 import "./global.css";
+
+import { Lora_400Regular } from "@expo-google-fonts/lora";
+import { Merriweather_400Regular } from "@expo-google-fonts/merriweather";
+import { NotoSerifEthiopic_400Regular } from "@expo-google-fonts/noto-serif-ethiopic";
+import { Bitter_400Regular } from "@expo-google-fonts/bitter";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
 
 SplashScreen.preventAutoHideAsync();
 
-
-async function setupNotifications() {
-  /** This is required to use notification, especially on android v8+ */
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-      showBadge: true,
-      enableLights: true,
-      enableVibrate: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
-  }
+const customDarkTheme = {
+  ...NavigationDarkTheme,
+  colors: {
+    ...NavigationDarkTheme.colors,
+    background: "#11100E",
+    card: "#181614",
+    text: "#E8E4DC",
+    border: "#2A2723",
+  },
 };
 
-setupNotifications()
+const customLightTheme = {
+  ...NavigationDefaultTheme,
+  colors: {
+    ...NavigationDefaultTheme.colors,
+    background: "#F8F6F3",
+    card: "#FFFFFF",
+    text: "#2D2A24",
+    border: "#E8E4DC",
+  },
+};
+
+import { setupNotificationChannels } from "@/lib/NotificationService";
+
+async function setupNotifications() {
+  if (Platform.OS === "android") {
+    await setupNotificationChannels().catch(() => {});
+  }
+}
+
+setupNotifications();
 
 function AppContent() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useIsDark();
+  const { setColorScheme } = useNativeWindColorScheme();
   const { isOnboardingComplete, loading } = useOnboarding();
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    const style = isDark ? "light" : "dark";
+    const bgColor = isDark ? "#11100E" : "#F8F6F3";
+
+    setColorScheme(isDark ? "dark" : "light");
+    setStatusBarStyle(style, false);
+    if (Platform.OS === "android") {
+      setStatusBarBackgroundColor(bgColor, false);
+    }
+    setBackgroundColorAsync(bgColor).catch(() => {});
+  }, [isDark, setColorScheme]);
 
   useEffect(() => {
     if (loading) return;
@@ -50,10 +93,8 @@ function AppContent() {
 
     if (!isOnboardingComplete && !inOnboardingGroup) {
       router.replace("/onboarding");
-    } else if (isOnboardingComplete && inOnboardingGroup) {
-      router.replace("/(tabs)");
     }
-  }, [isOnboardingComplete, loading, segments]);
+  }, [isOnboardingComplete, loading, segments, router]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -76,8 +117,8 @@ function AppContent() {
   }
 
   return (
-    <>
-      <StatusBar style={isDark ? "light" : "dark"} />
+    <ThemeProvider value={isDark ? customDarkTheme : customLightTheme}>
+      <StatusBar style={isDark ? "light" : "dark"} animated={false} />
       <Stack
         initialRouteName={isOnboardingComplete ? "(tabs)" : "onboarding"}
         screenOptions={{
@@ -92,28 +133,35 @@ function AppContent() {
         <Stack.Screen name="settings/language" />
         <Stack.Screen name="settings/font-alignment" />
         <Stack.Screen name="settings/check-updates" />
+        <Stack.Screen name="settings/about" />
         <Stack.Screen name="glossary/lectionary" />
         <Stack.Screen name="glossary/church-year" />
         <Stack.Screen name="glossary/creeds" />
         <Stack.Screen name="glossary/lords-prayer" />
         <Stack.Screen name="onboarding" />
       </Stack>
-    </>
+    </ThemeProvider>
   );
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  useEffect(() => {
-    setBackgroundColorAsync(isDark ? "#11100E" : "#F8F6F3");
-    setStatusBarBackgroundColor(isDark ? "#11100E" : "#F8F6F3");
-  }, [isDark]);
+  const systemColorScheme = useColorScheme();
+  const isDark = systemColorScheme === "dark";
 
   const [loaded, error] = useFonts({
-    // Playfair Display (variable font — all weights via fontWeight)
-    ReadingFont: require("../assets/fonts/PlayfairDisplay/PlayfairDisplay-Variable.ttf"),
+    // Inter for clean, formal UI typography
+    ReadingFont: Inter_400Regular,
+    Inter: Inter_400Regular,
+    Inter_Medium: Inter_500Medium,
+    Inter_SemiBold: Inter_600SemiBold,
+    Inter_Bold: Inter_700Bold,
+    Playfair: require("../assets/fonts/PlayfairDisplay/PlayfairDisplay-Variable.ttf"),
+    Benaiah: require("../assets/fonts/Benaiah/Benaiah.otf"),
+    AbyssinicaSIL: require("../assets/fonts/Abyssinica Sil/AbyssinicaSIL-Regular.ttf"),
+    Lora: Lora_400Regular,
+    Merriweather: Merriweather_400Regular,
+    NotoSerifEthiopic: NotoSerifEthiopic_400Regular,
+    Bitter: Bitter_400Regular,
   });
 
   useEffect(() => {
@@ -123,11 +171,13 @@ export default function RootLayout() {
   }, [loaded, error]);
 
   if (!loaded && !error) {
-    return null;
+    return (
+      <View style={{ flex: 1, backgroundColor: isDark ? "#11100E" : "#F8F6F3" }} />
+    );
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: isDark ? "#11100E" : "#F8F6F3" }}>
       <SQLiteProvider
         databaseName={process.env.EXPO_PUBLIC_DB_FILE_NAME || "lectionary-v1.db"}
         assetSource={{ assetId: require("../assets/db/readings.db") }}

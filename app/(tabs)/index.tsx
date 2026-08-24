@@ -11,7 +11,7 @@ import {
   type DimensionValue,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useEffect, useRef } from "react";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
@@ -20,37 +20,20 @@ import { useSQLiteContext } from "expo-sqlite";
 import { scheduleDailyReminder } from "@/lib/NotificationService";
 import { useCheckContentUpdate } from "@/lib/hooks/useCheckContentUpdate";
 import { FormattedText } from "@/lib/formatText";
+import VersionBadge from "@/components/reading/VersionBadge";
 import {
   formatDisplayDate,
   gregorianToEthiopian,
-  getEvangelistYear,
   formatEvangelistYear,
 } from "@/lib/ethiopianCalendar";
-import * as Notifications from 'expo-notifications';
-
+import { getWeekStart } from "@/lib/StreakService";
 import { useTranslation, getDayLabels } from "@/lib/i18n";
-
-const SECTION_LABELS: Record<string, string> = {
-  OLD_TESTAMENT: "Old Testament",
-  EPISTLE: "Epistle",
-  GOSPEL: "Gospel",
-};
-
-function getWeekStart(date: Date): string {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() - day);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
-}
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
-  const { settings, updateSetting, availableLanguages } = useSettings();
+  const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
-  const { hasUpdate, checkUpdate } = useCheckContentUpdate();
+  const { hasUpdate, checkUpdate, updateInfo } = useCheckContentUpdate();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -76,7 +59,6 @@ export default function HomeScreen() {
 
   const readingDate = new Date();
   const ethDate = gregorianToEthiopian(readingDate);
-  const evangelist = getEvangelistYear(ethDate.year);
 
   const { data: dayData, isLoading, error: queryError } = useTodayReading(
     readingDate,
@@ -91,22 +73,17 @@ export default function HomeScreen() {
       refetchStreak();
       checkUpdate();
       if (settings.reminderEnabled) {
-        const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
-        const hour = parseInt(hStr, 10) || 7;
-        const minute = parseInt(mStr, 10) || 0;
-        Notifications.getAllScheduledNotificationsAsync().then(({ length }) => {
-          if (length < 5) {
-            scheduleDailyReminder(
-              hour,
-              minute,
-              db,
-              settings.language,
-              settings.version,
-              t("appTitle"),
-              21,
-            );
-          }
-        });
+        const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
+        const hour = parseInt(hStr, 10) || 8;
+        const minute = parseInt(mStr, 10) || 30;
+        void scheduleDailyReminder(
+          hour,
+          minute,
+          db,
+          settings.language,
+          settings.version,
+          t("appTitle"),
+        );
       }
     }, [
       refetchStreak,
@@ -157,7 +134,24 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-2">
             {hasUpdate && (
               <TouchableOpacity
-                onPress={() => router.push("/settings/check-updates/content")}
+                onPress={() => {
+                  if (updateInfo) {
+                    router.push({
+                      pathname: "/settings/check-updates/content",
+                      params: {
+                        preselectYear: String(updateInfo.year),
+                        ...(updateInfo.lang ? { preselectLang: updateInfo.lang } : {}),
+                        ...(updateInfo.version ? { preselectVersion: updateInfo.version } : {}),
+                        autoCheck: "true",
+                      },
+                    });
+                  } else {
+                    router.push({
+                      pathname: "/settings/check-updates/content",
+                      params: { autoCheck: "true" },
+                    });
+                  }
+                }}
                 activeOpacity={0.7}
               >
                 <Animated.View
@@ -209,6 +203,47 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
+
+        {/* UPCOMING LITURGICAL YEAR AVAILABLE BANNER */}
+        {hasUpdate && updateInfo?.isUpcomingYear && (
+          <TouchableOpacity
+            onPress={() => {
+              router.push({
+                pathname: "/settings/check-updates/content",
+                params: {
+                  preselectYear: String(updateInfo.year),
+                  autoCheck: "true",
+                },
+              });
+            }}
+            activeOpacity={0.8}
+            className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-7 flex-row items-center justify-between"
+          >
+            <View className="flex-1 flex-row items-center gap-3 pr-2">
+              <View className="h-10 w-10 rounded-full items-center justify-center bg-amber-500/20">
+                <Ionicons name="calendar" size={20} color="#d97706" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-amber-900 dark:text-amber-200 text-sm font-semibold"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("upcomingYearLectionaryReady").replace(
+                    "{year}",
+                    String(updateInfo.year),
+                  )}
+                </Text>
+                <Text
+                  className="text-amber-700/80 dark:text-amber-400/80 text-xs mt-0.5"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("downloadNewYearReadings")}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="arrow-forward-circle" size={24} color="#d97706" />
+          </TouchableOpacity>
+        )}
 
         {/* READING CARD AREA (loading / error / no-data / loaded) */}
         {isLoading ? (
@@ -326,7 +361,7 @@ export default function HomeScreen() {
                       className="text-primary text-center text-xs uppercase tracking-widest"
                       style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                     >
-                      {SECTION_LABELS[reading.section] ?? reading.section}
+                      {reading.section === "OLD_TESTAMENT" ? t("oldTestament") : reading.section === "EPISTLE" ? t("epistle") : reading.section === "GOSPEL" ? t("gospel") : reading.section}
                     </Text>
                     <Text
                       className="text-center text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
@@ -349,12 +384,15 @@ export default function HomeScreen() {
                     className="text-center text-2xl leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
                     style={{ fontFamily: "ReadingFont", fontWeight: "400", textAlign: "center" }}
                   />
-                  <Text
-                    className="text-muted dark:text-muted-dark mt-6 text-center text-xl leading-tight"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                  >
-                    {dayData.readings[0]?.reference} ({dayData.readings[0]?.version.toUpperCase()})
-                  </Text>
+                  <View className="mt-6 items-center">
+                    <Text
+                      className="text-muted dark:text-muted-dark text-center text-xl leading-tight mb-4"
+                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                    >
+                      {dayData.readings[0]?.reference}
+                    </Text>
+                    <VersionBadge version={dayData.readings[0]?.version} />
+                  </View>
                 </ScrollView>
               </>
             )}

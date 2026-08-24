@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { Appearance } from "react-native";
 import { useSQLiteContext } from "expo-sqlite";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import { getAvailableLanguages, getLanguage, type LanguageEntry } from "./languages";
@@ -8,23 +9,31 @@ type SettingsContextValue = {
   availableLanguages: LanguageEntry[];
   languagesError: string | null;
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => Promise<void>;
+  updateMultipleSettings: (partial: Partial<AppSettings>) => Promise<void>;
   setAllSettings: (next: AppSettings) => Promise<void>;
   refreshAvailableLanguages: () => Promise<LanguageEntry[]>;
 };
 
+const getInitialTheme = (): "light" | "dark" =>
+  Appearance.getColorScheme() === "dark" ? "dark" : "light";
+
 const DEFAULT_SETTINGS: AppSettings = {
-  language: "en",
+  language: "am",
   appLanguage: "en",
-  version: "niv",
+  version: "am54",
+  showVersionFullName: false,
   fontSizeSimple: 20,
   fontSizeExpanded: 18,
   alignSimple: "center",
   alignExpanded: "justify",
-  theme: "light",
+  readingFontFamily: "reading",
+  theme: getInitialTheme(),
   calendarStyle: "ethiopian",
+  showSeasonColors: true,
   reminderEnabled: false,
   reminderTime: "07:00",
   timeFormat: "12h",
+  versionUsageCount: {},
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -41,36 +50,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const languages = await getAvailableLanguages(db);
       setAvailableLanguages(languages);
       setLanguagesError(null);
-
-      setSettings((prev) => {
-        let { language, version } = prev;
-        const langEntry = getLanguage(language, languages);
-
-        if (!langEntry) {
-          if (languages.length > 0) {
-            language = languages[0].code;
-            version = languages[0].versions[0]?.code ?? version;
-          }
-        } else {
-          const versionExists = langEntry.versions.some((v) => v.code === version);
-          if (!versionExists) {
-            version = langEntry.versions[0]?.code ?? version;
-          }
-        }
-
-        const normalized: AppSettings = {
-          ...prev,
-          language,
-          version,
-        };
-
-        if (normalized.language !== prev.language || normalized.version !== prev.version) {
-          saveSettings(normalized);
-        }
-
-        return normalized;
-      });
-
       return languages;
     } catch (err: any) {
       const msg = err?.message ?? "Failed to load languages.";
@@ -86,9 +65,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const saved = await loadSettings().catch(() => DEFAULT_SETTINGS);
       if (cancelled) return;
 
-      const languages = await refreshAvailableLanguages();
+      setSettings(saved);
+      const languages = await getAvailableLanguages(db).catch(() => []);
       if (cancelled) return;
 
+      setAvailableLanguages(languages);
       setLoaded(true);
     }
 
@@ -97,12 +78,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [refreshAvailableLanguages]);
+  }, [db]);
 
   const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    const next = { ...settings, [key]: value };
-    setSettings(next);
-    await saveSettings(next);
+    setSettings((prev) => {
+      const next = { ...prev, [key]: value };
+      void saveSettings(next);
+      return next;
+    });
+  };
+
+  const updateMultipleSettings = async (partial: Partial<AppSettings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...partial };
+      void saveSettings(next);
+      return next;
+    });
   };
 
   const setAllSettings = async (next: AppSettings) => {
@@ -121,6 +112,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         availableLanguages,
         languagesError,
         updateSetting,
+        updateMultipleSettings,
         setAllSettings,
         refreshAvailableLanguages,
       }}

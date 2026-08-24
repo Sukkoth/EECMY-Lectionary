@@ -1,22 +1,23 @@
 {
   "expo": {
-    "name": "YeiLet",
-    "slug": "YeiLet",
-    "version": "0.0.1",
+    "name": "EECMY Lectionary",
+    "slug": "eecmy-lectionary",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "yeilet",
+    "scheme": "eecmy-lectionary",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sukkoth.yeilet"
+      "bundleIdentifier": "com.sukkoth.eecmylectionary"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "versionCode": 5,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -24,7 +25,7 @@
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.SCHEDULE_EXACT_ALARM"
       ],
-      "package": "com.sukkoth.yeilet"
+      "package": "com.sukkoth.eecmylectionary"
     },
     "web": {
       "output": "static",
@@ -51,7 +52,7 @@
         {
           "icon": "./assets/images/android-icon-foreground.png",
           "color": "#3b82f6",
-          "defaultChannel": "default",
+          "defaultChannel": "daily",
           "allowExactAlarms": true
         }
       ],
@@ -65,8 +66,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "208d6879-a339-481e-b62e-8a26219f2ede"
+        "projectId": "e8c1868c-8412-4896-bd29-79d3aa2e92b3"
       }
-    }
+    },
+    "owner": "sukkoth"
   }
 }

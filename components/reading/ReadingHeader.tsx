@@ -1,8 +1,9 @@
 import { forwardRef } from "react";
 import { Text, TouchableOpacity, View, useColorScheme, Appearance } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useSettings } from "@/lib/SettingsContext";
+import { getReadingFontFamily } from "@/lib/settings";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 type ReadingHeaderProps = {
@@ -13,7 +14,8 @@ type ReadingHeaderProps = {
 const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
   ({ weekday, formattedDate }, ref) => {
     const isDark = useColorScheme() === "dark";
-    const { updateSetting } = useSettings();
+    const { settings, updateSetting } = useSettings();
+    const fontFamily = getReadingFontFamily(settings.readingFontFamily);
 
     const toggleTheme = () => {
       const newTheme = isDark ? "light" : "dark";
@@ -28,7 +30,7 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
           <View className="flex-1">
             <Text
               className="text-[22px] leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              style={{ fontFamily, fontWeight: "600" }}
             >
               {weekday}, {formattedDate}
             </Text>

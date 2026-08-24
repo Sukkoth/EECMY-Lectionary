@@ -1,6 +1,6 @@
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "@/lib/SettingsContext";
 import { GLOSSARY_CONTENT, type GlossaryLanguage } from "@/lib/glossary-content";
 
@@ -36,7 +36,7 @@ export default function LordsPrayerScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text
-          className="text-[#2D2A24] dark:text-[#E8E4DC] mb-6 px-6 text-2xl leading-relaxed"
+          className="text-[#2D2A24] dark:text-[#E8E4DC] mb-6 px-6 text-base leading-relaxed"
           style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
         >
           {content.lordsPrayer.introduction}
@@ -44,7 +44,7 @@ export default function LordsPrayerScreen() {
 
         <View className="bg-surface dark:bg-surface-dark mx-6 rounded-2xl px-6 py-6">
           <Text
-            className="text-[#2D2A24] dark:text-[#E8E4DC] text-center text-2xl leading-relaxed whitespace-pre-line"
+            className="text-[#2D2A24] dark:text-[#E8E4DC] text-center text-lg leading-loose whitespace-pre-line"
             style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
           >
             {content.lordsPrayer.text}
