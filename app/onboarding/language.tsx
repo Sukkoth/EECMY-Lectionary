@@ -4,7 +4,7 @@ import OnboardingLanguagePicker from "@/components/onboarding/OnboardingLanguage
 
 export default function LanguageSelectionScreen() {
   const handleContinue = () => {
-    router.push("/onboarding/complete");
+    router.push("/onboarding/notifications");
   };
 
   return (

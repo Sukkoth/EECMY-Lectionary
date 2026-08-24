@@ -17,6 +17,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="features" />
       <Stack.Screen name="language" />
+      <Stack.Screen name="notifications" />
       <Stack.Screen name="complete" />
     </Stack>
   );

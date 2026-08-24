@@ -113,6 +113,26 @@ export default function CompletionScreen() {
                 : "Gregorian (GC)"}
             </Text>
           </View>
+
+          <View className="my-1.5 h-px w-full bg-stone-200/50 dark:bg-stone-800/50" />
+
+          {/* 4. Daily Reminder */}
+          <View className="flex-row items-center justify-between py-2">
+            <Text
+              className="text-sm text-muted dark:text-muted-dark"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              Daily Reminder
+            </Text>
+            <Text
+              className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+            >
+              {settings.reminderEnabled
+                ? (settings.reminderTime || "08:30")
+                : "Off"}
+            </Text>
+          </View>
         </View>
 
         {/* Start Reading Button */}
