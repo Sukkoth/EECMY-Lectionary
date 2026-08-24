@@ -15,9 +15,14 @@ export default function TabLayout() {
           backgroundColor: isDark ? "#11100E" : "#F8F6F3",
         },
         tabBarStyle: {
-          backgroundColor: isDark ? "#171717" : "#ffffff",
+          backgroundColor: isDark ? "#11100E" : "#F8F6F3",
           borderTopColor: isDark ? "#262626" : "#e5e5e5",
           borderTopWidth: 1,
+          elevation: 0,
+          shadowOpacity: 0,
+          shadowColor: "transparent",
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: 0,
         },
         tabBarLabelStyle: {
           fontFamily: "ReadingFont",
