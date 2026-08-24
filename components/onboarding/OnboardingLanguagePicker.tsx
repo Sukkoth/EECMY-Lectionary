@@ -61,7 +61,6 @@ export default function OnboardingLanguagePicker({
         langCode,
         versionCode,
         t("appTitle"),
-        30,
       ).catch(() => {});
     }
 

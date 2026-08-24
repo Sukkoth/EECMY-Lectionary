@@ -9,6 +9,7 @@ type SettingsContextValue = {
   availableLanguages: LanguageEntry[];
   languagesError: string | null;
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => Promise<void>;
+  updateMultipleSettings: (partial: Partial<AppSettings>) => Promise<void>;
   setAllSettings: (next: AppSettings) => Promise<void>;
   refreshAvailableLanguages: () => Promise<LanguageEntry[]>;
 };
@@ -80,9 +81,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [db]);
 
   const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    const next = { ...settings, [key]: value };
-    setSettings(next);
-    await saveSettings(next);
+    setSettings((prev) => {
+      const next = { ...prev, [key]: value };
+      void saveSettings(next);
+      return next;
+    });
+  };
+
+  const updateMultipleSettings = async (partial: Partial<AppSettings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...partial };
+      void saveSettings(next);
+      return next;
+    });
   };
 
   const setAllSettings = async (next: AppSettings) => {
@@ -101,6 +112,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         availableLanguages,
         languagesError,
         updateSetting,
+        updateMultipleSettings,
         setAllSettings,
         refreshAvailableLanguages,
       }}

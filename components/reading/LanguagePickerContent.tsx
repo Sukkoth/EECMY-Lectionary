@@ -268,17 +268,16 @@ export default function LanguagePickerContent({
     });
 
     if (settings.reminderEnabled) {
-      const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
-      const hour = parseInt(hStr, 10) || 7;
-      const minute = parseInt(mStr, 10) || 0;
-      await scheduleDailyReminder(
+      const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
+      const hour = parseInt(hStr, 10) || 8;
+      const minute = parseInt(mStr, 10) || 30;
+      void scheduleDailyReminder(
         hour,
         minute,
         db,
         langCode,
         versionCode,
         t("appTitle"),
-        30,
       );
     }
 

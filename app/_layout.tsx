@@ -54,19 +54,11 @@ const customLightTheme = {
   },
 };
 
+import { setupNotificationChannels } from "@/lib/NotificationService";
+
 async function setupNotifications() {
-  /** This is required to use notification, especially on android v8+ */
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "Default",
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-      showBadge: true,
-      enableLights: true,
-      enableVibrate: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
+    await setupNotificationChannels().catch(() => {});
   }
 }
 

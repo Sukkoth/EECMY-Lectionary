@@ -52,7 +52,7 @@
         {
           "icon": "./assets/images/android-icon-foreground.png",
           "color": "#3b82f6",
-          "defaultChannel": "default",
+          "defaultChannel": "daily",
           "allowExactAlarms": true
         }
       ],

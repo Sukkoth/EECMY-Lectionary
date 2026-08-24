@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   Pressable,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -20,8 +21,9 @@ import { useIsDark } from "@/lib/useIsDark";
 import { formatTimeString } from "@/lib/settings";
 import {
   scheduleDailyReminder,
-  cancelAllReminders,
-  requestNotificationPermissions,
+  cancelDailyReminder,
+  ensurePermissions,
+  openNotificationSettings,
 } from "@/lib/NotificationService";
 import { ReadingsDB, type DayData } from "@/lib/database";
 
@@ -73,9 +75,9 @@ export default function DailyReminderScreen() {
   }, [db, settings.language, settings.version]);
 
   const getReminderDate = (): Date => {
-    const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
+    const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
     const d = new Date();
-    d.setHours(parseInt(hStr, 10) || 7, parseInt(mStr, 10) || 0, 0, 0);
+    d.setHours(parseInt(hStr, 10) || 8, parseInt(mStr, 10) || 30, 0, 0);
     return d;
   };
 
@@ -95,16 +97,37 @@ export default function DailyReminderScreen() {
       await updateSetting("reminderTime", newTime);
 
       if (settings.reminderEnabled) {
-        await scheduleDailyReminder(
+        void scheduleDailyReminder(
           hour,
           minute,
           db,
           settings.language,
           settings.version,
           t("appTitle"),
-          30,
         );
       }
+    }
+  };
+
+  const handleSaveModalTime = async (selectedDate: Date) => {
+    setShowTimePicker(false);
+    const hour = selectedDate.getHours();
+    const minute = selectedDate.getMinutes();
+    const hStr = String(hour).padStart(2, "0");
+    const mStr = String(minute).padStart(2, "0");
+    const newTime = `${hStr}:${mStr}`;
+
+    await updateSetting("reminderTime", newTime);
+
+    if (settings.reminderEnabled) {
+      void scheduleDailyReminder(
+        hour,
+        minute,
+        db,
+        settings.language,
+        settings.version,
+        t("appTitle"),
+      );
     }
   };
 
@@ -163,25 +186,36 @@ export default function DailyReminderScreen() {
               value={settings.reminderEnabled}
               onValueChange={async (value) => {
                 if (value) {
-                  const granted = await requestNotificationPermissions();
-                  if (!granted) return;
+                  const { granted, canAskAgain } = await ensurePermissions();
+                  if (!granted) {
+                    if (!canAskAgain) {
+                      Alert.alert(
+                        "Notifications Disabled",
+                        "Please enable notifications in system settings to receive daily reminders.",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { text: "Open Settings", onPress: () => void openNotificationSettings() },
+                        ]
+                      );
+                    }
+                    return;
+                  }
 
                   await updateSetting("reminderEnabled", true);
-                  const [hStr, mStr] = (settings.reminderTime || "07:00").split(":");
-                  const hour = parseInt(hStr, 10) || 7;
-                  const minute = parseInt(mStr, 10) || 0;
-                  scheduleDailyReminder(
+                  const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
+                  const hour = parseInt(hStr, 10) || 8;
+                  const minute = parseInt(mStr, 10) || 30;
+                  void scheduleDailyReminder(
                     hour,
                     minute,
                     db,
                     settings.language,
                     settings.version,
                     t("appTitle"),
-                    30,
-                  ).catch(() => {});
+                  );
                 } else {
                   await updateSetting("reminderEnabled", false);
-                  cancelAllReminders().catch(() => {});
+                  void cancelDailyReminder();
                 }
               }}
               trackColor={{ false: isDark ? "#3f3f46" : "#e4e4e7", true: "#3b82f6" }}
