@@ -1,7 +1,6 @@
 import React, {
   forwardRef,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -36,6 +35,7 @@ export function getOffsetMonth(
 export type CalendarSwiperRef = {
   goToPrev: () => void;
   goToNext: () => void;
+  jumpTo: (date: { year: number; month: number }) => void;
 };
 
 type CalendarSwiperProps = {
@@ -83,7 +83,6 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
     const baseDateRef = useRef(baseDate);
     baseDateRef.current = baseDate;
 
-
     const onSettle = useCallback(
       (newTargetOffset: number) => {
         currentOffset.value = newTargetOffset;
@@ -121,6 +120,13 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
               runOnJS(onSettle)(target);
             },
           );
+        },
+        jumpTo: (targetDate: { year: number; month: number }) => {
+          setBaseDate(targetDate);
+          setVOffset(0);
+          sharedOffset.value = 0;
+          currentOffset.value = 0;
+          isAnimating.value = false;
         },
       }),
       [onSettle, isAnimating, currentOffset, sharedOffset],

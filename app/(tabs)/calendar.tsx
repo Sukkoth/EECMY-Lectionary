@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Text,
   TouchableOpacity,
@@ -39,30 +39,23 @@ export default function CalendarScreen() {
 
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
   const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
-  const [resetTrigger, setResetTrigger] = useState(0);
   const swiperRef = useRef<CalendarSwiperRef>(null);
 
-  // Synchronize when calendar style changes
-  useLayoutEffect(() => {
-    const initial = getInitialCurrent(isEth);
-    setCurrent(initial);
-    setPickerSelected(initial);
-  }, [isEth]);
-
   function handleToggleCalendarStyle(newStyle: "ethiopian" | "gregorian") {
+    if (newStyle === settings.calendarStyle) return;
     const newIsEth = newStyle === "ethiopian";
     const initial = getInitialCurrent(newIsEth);
     setCurrent(initial);
     setPickerSelected(initial);
-    setResetTrigger((c) => c + 1);
     updateSetting("calendarStyle", newStyle);
+    swiperRef.current?.jumpTo(initial);
   }
 
   function handleJumpToToday() {
     const initial = getInitialCurrent(isEth);
     setCurrent(initial);
     setPickerSelected(initial);
-    setResetTrigger((c) => c + 1);
+    swiperRef.current?.jumpTo(initial);
   }
 
   function handleOpenPicker(year: number, month: number) {
@@ -164,7 +157,6 @@ export default function CalendarScreen() {
 
       {/* Swipeable Calendar (Month Header + Grid + Holidays List move together) */}
       <CalendarSwiper
-        key={`swiper-${isEth ? "eth" : "gc"}-${resetTrigger}`}
         ref={swiperRef}
         initialDate={current}
         isEth={isEth}
@@ -185,9 +177,10 @@ export default function CalendarScreen() {
         selectedMonth={pickerSelected.month}
         isEth={isEth}
         onSelect={(y, m) => {
-          setCurrent({ year: y, month: m });
-          setPickerSelected({ year: y, month: m });
-          setResetTrigger((c) => c + 1);
+          const target = { year: y, month: m };
+          setCurrent(target);
+          setPickerSelected(target);
+          swiperRef.current?.jumpTo(target);
         }}
       />
     </SafeAreaView>
