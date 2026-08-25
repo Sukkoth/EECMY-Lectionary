@@ -8,7 +8,6 @@ import {
   BottomSheetBackdrop,
   type BottomSheetBackdropProps,
 } from "@gorhom/bottom-sheet";
-import * as Haptics from "expo-haptics";
 import {
   ETHIOPIAN_MONTH_NAMES_AM,
   ETHIOPIAN_MONTH_NAMES_EN,
@@ -75,14 +74,12 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
     }, [selectedYear, centerSelectedYear]);
 
     const handleMonthPress = (monthIndex: number) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onSelect(selectedYear, monthIndex);
       (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
       onClose?.();
     };
 
     const handleYearPress = (year: number) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onSelect(year, selectedMonth);
     };
 
