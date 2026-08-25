@@ -1,12 +1,16 @@
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { router, type Href } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "@/lib/i18n";
 
 export default function GlossaryScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+
+  const scrollBottomPadding = 168;
 
   const topics = [
     {
@@ -42,7 +46,7 @@ export default function GlossaryScreen() {
         contentContainerStyle={{
           paddingHorizontal: 24,
           paddingTop: 48,
-          paddingBottom: 110,
+          paddingBottom: scrollBottomPadding,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -55,12 +59,14 @@ export default function GlossaryScreen() {
         </Text>
 
         {/* Topic Cards */}
-        {topics.map((topic) => (
+        {topics.map((topic, index) => (
           <TouchableOpacity
             key={topic.route}
             onPress={() => router.push(topic.route as Href)}
             activeOpacity={0.7}
-            className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-5 py-4"
+            className={`bg-surface dark:bg-surface-dark flex-row items-center justify-between rounded-2xl px-5 py-4 ${
+              index === topics.length - 1 ? "mb-0" : "mb-4"
+            }`}
           >
             <View className="flex-row items-center gap-4 flex-1 pr-2">
               <View className="bg-primary-dimmed rounded-lg p-2">

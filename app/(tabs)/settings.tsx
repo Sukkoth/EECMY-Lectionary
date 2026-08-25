@@ -20,6 +20,8 @@ export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
   const { t } = useTranslation();
 
+  const scrollBottomPadding = 168;
+
   const toggleTheme = () => {
     const newTheme = isDark ? "light" : "dark";
     updateSetting("theme", newTheme);
@@ -43,7 +45,7 @@ export default function SettingsScreen() {
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
         className="flex-1 px-6 pt-12"
-        contentContainerStyle={{ paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: scrollBottomPadding }}
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
@@ -362,7 +364,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Group 6: About App */}
-        <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl overflow-hidden border border-stone-200/50 dark:border-stone-800/50">
+        <View className="bg-surface dark:bg-surface-dark mb-0 rounded-2xl overflow-hidden border border-stone-200/50 dark:border-stone-800/50">
           <TouchableOpacity
             onPress={() => router.push("/settings/about")}
             activeOpacity={0.7}

@@ -12,6 +12,7 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { router, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "@/lib/SettingsContext";
 import {
   useHydratedFavourites,
@@ -35,8 +36,11 @@ function formatDate(iso: string, calendarStyle: CalendarStyle, lang: string): st
 
 export default function FavouritesScreen() {
   const isDark = useIsDark();
+  const insets = useSafeAreaInsets();
   const { settings } = useSettings();
   const { t, lang } = useTranslation();
+
+  const scrollBottomPadding = 168;
   const { data: favourites = [], isLoading } = useHydratedFavourites(
     settings.language,
     settings.version,
@@ -125,7 +129,7 @@ export default function FavouritesScreen() {
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
         className="flex-1 px-6 pt-12"
-        contentContainerStyle={{ paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: scrollBottomPadding }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Title + Actions */}
@@ -167,12 +171,14 @@ export default function FavouritesScreen() {
         </View>
 
         {/* Journal Accent Cards */}
-        {favourites.map((fav) => (
+        {favourites.map((fav, index) => (
           <TouchableOpacity
             key={`${fav.date}-${fav.order}`}
             activeOpacity={0.85}
             onPress={() => handleRead(fav)}
-            className="bg-surface dark:bg-surface-dark mb-4 rounded-2xl border border-stone-200/60 p-5 dark:border-stone-800/60 shadow-sm"
+            className={`bg-surface dark:bg-surface-dark rounded-2xl border border-stone-200/60 p-5 dark:border-stone-800/60 shadow-sm ${
+              index === favourites.length - 1 ? "mb-0" : "mb-4"
+            }`}
           >
             {/* Top row: Reference Header */}
             <View className="mb-2.5 flex-row items-center justify-between">
