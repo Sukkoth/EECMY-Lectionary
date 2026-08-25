@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import type { HolidayIndex } from "@/lib/hooks/useHolidays";
@@ -7,8 +7,21 @@ import { getHolidaysForActiveMonth } from "@/lib/hooks/useHolidays";
 import type { DayInfoIndex } from "@/lib/hooks/useDayInfo";
 import { getDayInfoForActiveMonth } from "@/lib/hooks/useDayInfo";
 import { useTranslation } from "@/lib/i18n";
+import { useIsDark } from "@/lib/useIsDark";
 import { HOLIDAY_COLORS } from "@/constants";
 import type { CalendarStyle } from "@/lib/settings";
+import {
+  formatMonth,
+  formatEvangelistYear,
+  getSubMonthSpanString,
+  gregorianToEthiopian,
+} from "@/lib/ethiopianCalendar";
+
+function formatYear(year: number, month: number, isEth: boolean, lang: string = "am"): string {
+  const targetEthYear = isEth ? year : gregorianToEthiopian(new Date(year, month, 15)).year;
+  const evText = formatEvangelistYear(targetEthYear, lang);
+  return `${year} • ${evText}`;
+}
 
 type MonthPageProps = {
   year: number;
@@ -19,6 +32,7 @@ type MonthPageProps = {
   screenWidth: number;
   calendarStyle: CalendarStyle;
   showSeasonColors: boolean;
+  onOpenPicker?: (year: number, month: number) => void;
 };
 
 export const MonthPage = React.memo(function MonthPage({
@@ -30,8 +44,10 @@ export const MonthPage = React.memo(function MonthPage({
   screenWidth,
   calendarStyle,
   showSeasonColors,
+  onOpenPicker,
 }: MonthPageProps) {
   const { t, lang } = useTranslation();
+  const isDark = useIsDark();
 
   // O(1) lookup from the pre-indexed data structures
   const { map: holidayMap, list: holidays } = getHolidaysForActiveMonth(
@@ -45,6 +61,41 @@ export const MonthPage = React.memo(function MonthPage({
 
   return (
     <View className="flex-1">
+      {/* Month Title & Sub-Info Header (moves with animation) */}
+      <View className="px-6 pt-2 pb-3">
+        <TouchableOpacity
+          onPress={() => onOpenPicker?.(year, month)}
+          activeOpacity={0.7}
+          className="self-start"
+        >
+          <View className="flex-row items-center gap-1.5">
+            <Text
+              className="text-3xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {formatMonth(month, isEth, lang)}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={22}
+              color={isDark ? "#E8E4DC" : "#2D2A24"}
+            />
+          </View>
+          <Text
+            className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            {formatYear(year, month, isEth, lang)}
+          </Text>
+          <Text
+            className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
+            style={{ fontFamily: "ReadingFont" }}
+          >
+            {getSubMonthSpanString(year, month, isEth, lang)}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Month Grid */}
       <MonthGrid
         year={year}
