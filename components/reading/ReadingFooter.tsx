@@ -2,6 +2,7 @@ import { Share, Text, TouchableOpacity, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { useFavourites, useAddFavourite, useRemoveFavourite } from "@/lib/hooks/useFavourites";
+import { stripFormattedTags } from "@/lib/formatText";
 
 import { useSettings } from "@/lib/SettingsContext";
 import { getReadingFontFamily } from "@/lib/settings";
@@ -35,7 +36,7 @@ export default function ReadingFooter({ date, order, reference, text, version }:
 
   const handleShare = () => {
     Share.share({
-      message: `${text}\n\n${reference} (${version.toUpperCase()})`,
+      message: `${stripFormattedTags(text)}\n\n${reference} (${version.toUpperCase()})`,
     });
   };
 
