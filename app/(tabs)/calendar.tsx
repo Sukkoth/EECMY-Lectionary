@@ -1,7 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import {
-  PanResponder,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -9,18 +7,17 @@ import {
   SafeAreaView,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import MonthGrid from "@/components/calendar/MonthGrid";
 import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
-import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import {
-  useHolidays,
-  getHolidaysForActiveMonth,
-} from "@/lib/hooks/useHolidays";
-import { useDayInfo, getDayInfoForActiveMonth } from "@/lib/hooks/useDayInfo";
+  CalendarSwiper,
+  type CalendarSwiperRef,
+} from "@/components/calendar/CalendarSwiper";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { useHolidays } from "@/lib/hooks/useHolidays";
+import { useDayInfo } from "@/lib/hooks/useDayInfo";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
-import { HOLIDAY_COLORS } from "@/constants";
 import {
   gregorianToEthiopian,
   formatEvangelistYear,
@@ -52,6 +49,7 @@ export default function CalendarScreen() {
   const isEth = settings.calendarStyle === "ethiopian";
 
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
+  const swiperRef = useRef<CalendarSwiperRef>(null);
 
   // Reset calendar view to today's date when calendar system toggles — runs
   // before paint so there's no visible flash, and avoids the double-render
@@ -60,49 +58,12 @@ export default function CalendarScreen() {
     setCurrent(getInitialCurrent(isEth));
   }, [isEth]);
 
-  function addMonthDelta(delta: number) {
-    setCurrent((prev) => {
-      const totalMonths = isEth ? 13 : 12;
-      const total = prev.month + delta;
-      const newYear = prev.year + Math.floor(total / totalMonths);
-      const newMonth = ((total % totalMonths) + totalMonths) % totalMonths;
-      return { year: newYear, month: newMonth };
-    });
-  }
-
   function handleJumpToToday() {
     setCurrent(getInitialCurrent(isEth));
   }
 
   const { data: holidayIndex } = useHolidays(lang, settings.language);
   const { data: dayInfoIndex } = useDayInfo(lang, settings.language);
-
-  // O(1) lookup — index was built once when query data settled
-  const { map: holidayMap, list: holidays } = getHolidaysForActiveMonth(
-    holidayIndex,
-    current.year,
-    current.month,
-    isEth,
-    lang,
-  );
-  const dayInfoMap = getDayInfoForActiveMonth(dayInfoIndex, current.year, current.month, isEth);
-
-  // Keep addMonthDelta stable across renders so the one-time PanResponder
-  // always calls the latest version without being recreated.
-  const addMonthDeltaRef = useRef(addMonthDelta);
-  addMonthDeltaRef.current = addMonthDelta;
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dx) > 10 && Math.abs(gs.dx) > Math.abs(gs.dy),
-      onPanResponderRelease: (_, gs) => {
-        if (Math.abs(gs.dx) > 50) {
-          addMonthDeltaRef.current(gs.dx > 0 ? -1 : 1);
-        }
-      },
-    }),
-  ).current;
 
   const pickerSheetRef = useRef<BottomSheetModal>(null);
 
@@ -169,7 +130,7 @@ export default function CalendarScreen() {
           {/* Capsule Chevron Controls */}
           <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-2xl border border-stone-200/60 p-1 dark:border-stone-800/60">
             <TouchableOpacity
-              onPress={() => addMonthDelta(-1)}
+              onPress={() => swiperRef.current?.goToPrev()}
               className="p-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -182,7 +143,7 @@ export default function CalendarScreen() {
             </TouchableOpacity>
             <View className="mx-0.5 my-auto h-4 w-[1px] bg-stone-200 dark:bg-stone-800" />
             <TouchableOpacity
-              onPress={() => addMonthDelta(1)}
+              onPress={() => swiperRef.current?.goToNext()}
               className="p-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -235,117 +196,29 @@ export default function CalendarScreen() {
         </View>
       </View>
 
-      {/* Swipeable Month Grid */}
-      <View {...panResponder.panHandlers}>
-        <MonthGrid
-          year={current.year}
-          month={current.month}
-          holidays={holidayMap}
-          dayInfoMap={dayInfoMap}
-          width={screenWidth}
-          calendarStyle={settings.calendarStyle}
-          showSeasonColors={settings.showSeasonColors ?? true}
-        />
-      </View>
-
-      {/* Section Divider */}
-      <View className="mx-6 my-4 border-b border-stone-200/50 dark:border-stone-800/50" />
-
-      {/* Holidays List */}
-      <View className="flex-1 px-6">
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text
-            className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-widest"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            {t("holidaysAndEvents")}
-          </Text>
-          <View className="bg-primary/10 rounded-full px-2.5 py-0.5">
-            <Text
-              className="text-primary text-[11px] font-semibold"
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              {holidays.length} {holidays.length === 1 ? t("event") : t("events")}
-            </Text>
-          </View>
-        </View>
-
-        {holidays.length === 0 ? (
-          <View className="will-change-variable bg-surface dark:bg-surface-dark my-2 items-center justify-center rounded-2xl border border-stone-200/40 p-6 dark:border-stone-800/40">
-            <Ionicons name="sparkles-outline" size={22} color="#6b6560" />
-            <Text
-              className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
-              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-            >
-              {t("noHolidaysThisMonth")}
-            </Text>
-          </View>
-        ) : (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            className="flex-1"
-            contentContainerStyle={{ paddingBottom: 28 }}
-          >
-            {holidays.map((item, i) => {
-              const isSpan =
-                item.displayEndDay && item.displayEndDay !== item.displayDay;
-              const dayText = isSpan
-                ? `${item.displayDay}–${item.displayEndDay}`
-                : `${item.displayDay}`;
-
-              const themeColor = HOLIDAY_COLORS[item.type] ?? "#3b82f6";
-              const key = item.id ?? `${item.date}-${item.name}-${i}`;
-
-              return (
-                <View
-                  key={key}
-                  className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
-                >
-                  {/* Left: Accent Line + Feast Info */}
-                  <View className="flex-1 flex-row items-center gap-3 pr-3">
-                    <View
-                      className="h-10 w-1.5 rounded-full"
-                      style={{ backgroundColor: themeColor }}
-                    />
-                    <View className="flex-1">
-                      <Text
-                        className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                      >
-                        {item.name}
-                      </Text>
-                      <Text
-                        className="text-muted dark:text-muted-dark text-xs font-medium capitalize mt-0.5"
-                        style={{ fontFamily: "ReadingFont" }}
-                      >
-                        {item.type}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Right: Large Unboxed Date Number */}
-                  <Text
-                    className="text-2xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{
-                      fontFamily: "ReadingFont",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {dayText}
-                  </Text>
-                </View>
-              );
-            })}
-          </ScrollView>
-        )}
-      </View>
+      {/* Swipeable Calendar & Holidays Container */}
+      <CalendarSwiper
+        ref={swiperRef}
+        current={current}
+        isEth={isEth}
+        holidayIndex={holidayIndex}
+        dayInfoIndex={dayInfoIndex}
+        screenWidth={screenWidth}
+        calendarStyle={settings.calendarStyle}
+        showSeasonColors={settings.showSeasonColors ?? true}
+        onMonthChange={(year, month) => {
+          setCurrent({ year, month });
+        }}
+      />
 
       <MonthYearPickerModal
         ref={pickerSheetRef}
         selectedYear={current.year}
         selectedMonth={current.month}
         isEth={isEth}
-        onSelect={(y, m) => setCurrent({ year: y, month: m })}
+        onSelect={(y, m) => {
+          setCurrent({ year: y, month: m });
+        }}
       />
     </SafeAreaView>
   );
