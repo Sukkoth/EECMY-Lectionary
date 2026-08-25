@@ -189,19 +189,24 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
     }, [baseDate, vOffset, isEth]);
 
     return (
-      <View style={{ flex: 1, width: screenWidth, overflow: "hidden" }}>
+      <View style={{ flex: 1, width: screenWidth, overflow: "hidden", backgroundColor: "transparent" }}>
         <GestureDetector gesture={panGesture}>
-          <Animated.View style={[{ flex: 1 }, animatedContainerStyle]}>
+          <Animated.View
+            collapsable={false}
+            style={[{ flex: 1, backgroundColor: "transparent" }, animatedContainerStyle]}
+          >
             {slots.map(({ slotId, offset, monthData }) => {
               return (
                 <View
                   key={`slot-${slotId}`}
+                  collapsable={false}
                   style={{
                     position: "absolute",
                     left: offset * screenWidth,
                     width: screenWidth,
                     top: 0,
                     bottom: 0,
+                    backgroundColor: "transparent",
                   }}
                 >
                   <MonthPage

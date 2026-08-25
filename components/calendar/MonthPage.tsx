@@ -71,7 +71,7 @@ export const MonthPage = React.memo(function MonthPage({
   const subSpan = useMemo(() => getSubMonthSpanString(year, month, isEth, lang), [year, month, isEth, lang]);
 
   return (
-    <View className="flex-1">
+    <View collapsable={false} style={{ flex: 1, backgroundColor: "transparent" }}>
       {/* Month Title & Sub-Info Header (moves smoothly with animation) */}
       <View className="px-6 pt-2 pb-3">
         <TouchableOpacity
@@ -122,7 +122,11 @@ export const MonthPage = React.memo(function MonthPage({
       <View className="mx-6 my-4 border-b border-stone-200/50 dark:border-stone-800/50" />
 
       {/* Holidays List */}
-      <View className="flex-1 px-6">
+      <View
+        collapsable={false}
+        style={{ flex: 1, backgroundColor: "transparent" }}
+        className="px-6"
+      >
         <View className="mb-3 flex-row items-center justify-between">
           <Text
             className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-widest"
@@ -141,14 +145,19 @@ export const MonthPage = React.memo(function MonthPage({
         </View>
 
         {holidays.length === 0 ? (
-          <View className="will-change-variable bg-surface dark:bg-surface-dark my-2 items-center justify-center rounded-2xl border border-stone-200/40 p-6 dark:border-stone-800/40">
-            <Ionicons name="sparkles-outline" size={22} color="#6b6560" />
-            <Text
-              className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
-              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-            >
-              {t("noHolidaysThisMonth")}
-            </Text>
+          <View
+            collapsable={false}
+            style={{ flex: 1, backgroundColor: "transparent" }}
+          >
+            <View className="will-change-variable bg-surface dark:bg-surface-dark my-2 items-center justify-center rounded-2xl border border-stone-200/40 p-6 dark:border-stone-800/40">
+              <Ionicons name="sparkles-outline" size={22} color="#6b6560" />
+              <Text
+                className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
+                style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+              >
+                {t("noHolidaysThisMonth")}
+              </Text>
+            </View>
           </View>
         ) : (
           <ScrollView
