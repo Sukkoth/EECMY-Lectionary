@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthGrid from "@/components/calendar/MonthGrid";
@@ -49,19 +49,29 @@ export const MonthPage = React.memo(function MonthPage({
   const { t, lang } = useTranslation();
   const isDark = useIsDark();
 
-  // O(1) lookup from the pre-indexed data structures
-  const { map: holidayMap, list: holidays } = getHolidaysForActiveMonth(
-    holidayIndex,
-    year,
-    month,
-    isEth,
-    lang,
-  );
-  const dayInfoMap = getDayInfoForActiveMonth(dayInfoIndex, year, month, isEth);
+  // O(1) lookup from pre-indexed data structures
+  const { holidayMap, holidays } = useMemo(() => {
+    const { map, list } = getHolidaysForActiveMonth(
+      holidayIndex,
+      year,
+      month,
+      isEth,
+      lang,
+    );
+    return { holidayMap: map, holidays: list };
+  }, [holidayIndex, year, month, isEth, lang]);
+
+  const dayInfoMap = useMemo(() => {
+    return getDayInfoForActiveMonth(dayInfoIndex, year, month, isEth);
+  }, [dayInfoIndex, year, month, isEth]);
+
+  const monthTitle = useMemo(() => formatMonth(month, isEth, lang), [month, isEth, lang]);
+  const yearSubtitle = useMemo(() => formatYear(year, month, isEth, lang), [year, month, isEth, lang]);
+  const subSpan = useMemo(() => getSubMonthSpanString(year, month, isEth, lang), [year, month, isEth, lang]);
 
   return (
     <View className="flex-1">
-      {/* Month Title & Sub-Info Header (moves with animation) */}
+      {/* Month Title & Sub-Info Header (moves smoothly with animation) */}
       <View className="px-6 pt-2 pb-3">
         <TouchableOpacity
           onPress={() => onOpenPicker?.(year, month)}
@@ -73,7 +83,7 @@ export const MonthPage = React.memo(function MonthPage({
               className="text-3xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont" }}
             >
-              {formatMonth(month, isEth, lang)}
+              {monthTitle}
             </Text>
             <Ionicons
               name="chevron-down"
@@ -85,13 +95,13 @@ export const MonthPage = React.memo(function MonthPage({
             className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {formatYear(year, month, isEth, lang)}
+            {yearSubtitle}
           </Text>
           <Text
             className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {getSubMonthSpanString(year, month, isEth, lang)}
+            {subSpan}
           </Text>
         </TouchableOpacity>
       </View>

@@ -1,3 +1,4 @@
+import React, { useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import type { HolidayRow, DayInfoRow } from "@/lib/types";
@@ -28,7 +29,7 @@ type MonthGridProps = {
  * Renders a monthly calendar grid with dual-calendar sub-labels,
  * holiday event indicators, and liturgical season highlights.
  */
-export default function MonthGrid({
+function MonthGridComponent({
   year,
   month,
   holidays,
@@ -40,30 +41,32 @@ export default function MonthGrid({
   const isEth = calendarStyle === "ethiopian";
   const { lang } = useTranslation();
 
-  const weeks = isEth ? getEthiopianWeeks(year, month) : getGregorianWeeks(year, month);
-
-  const ethToday = gregorianToEthiopian(new Date());
-  const d = new Date();
-  const gcToday = { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
-
-  const { gcShorts, ethShorts } = getMonthShortNames(lang);
+  const dayLabels = useMemo(() => getDayLabels(lang), [lang]);
+  const monthShorts = useMemo(() => getMonthShortNames(lang), [lang]);
 
   const paddingX = 32;
   const cellWidth = Math.floor((width - paddingX) / 7);
 
-  const gridRows = buildMonthGridMatrix({
-    weeks,
-    year,
-    month,
-    isEth,
-    ethToday,
-    gcToday,
-    gcShorts,
-    ethShorts,
-    holidays,
-    dayInfoMap,
-    showSeasonColors,
-  });
+  const gridRows = useMemo(() => {
+    const weeks = isEth ? getEthiopianWeeks(year, month) : getGregorianWeeks(year, month);
+    const ethToday = gregorianToEthiopian(new Date());
+    const d = new Date();
+    const gcToday = { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
+
+    return buildMonthGridMatrix({
+      weeks,
+      year,
+      month,
+      isEth,
+      ethToday,
+      gcToday,
+      gcShorts: monthShorts.gcShorts,
+      ethShorts: monthShorts.ethShorts,
+      holidays,
+      dayInfoMap,
+      showSeasonColors,
+    });
+  }, [year, month, isEth, monthShorts, holidays, dayInfoMap, showSeasonColors]);
 
   return (
     <View style={{ width }} className="px-3">
@@ -71,7 +74,7 @@ export default function MonthGrid({
       <View className="will-change-variable bg-surface dark:bg-surface-dark rounded-3xl border border-stone-200/60 dark:border-stone-800/60 p-3">
         {/* Day labels header */}
         <View className="mb-2 flex-row items-center border-b border-stone-200/40 dark:border-stone-800/40 pb-2">
-          {getDayLabels(lang).map((label, index) => {
+          {dayLabels.map((label, index) => {
             const isWeekend = index === 0 || index === 6;
             return (
               <View
@@ -193,3 +196,5 @@ export default function MonthGrid({
     </View>
   );
 }
+
+export default React.memo(MonthGridComponent);

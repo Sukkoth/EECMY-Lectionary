@@ -33,22 +33,13 @@ export function getOffsetMonth(
   return { year: newYear, month: newMonth };
 }
 
-export function getMonthDifference(
-  from: { year: number; month: number },
-  to: { year: number; month: number },
-  isEth: boolean,
-): number {
-  const totalMonths = isEth ? 13 : 12;
-  return (to.year - from.year) * totalMonths + (to.month - from.month);
-}
-
 export type CalendarSwiperRef = {
   goToPrev: () => void;
   goToNext: () => void;
 };
 
 type CalendarSwiperProps = {
-  current: { year: number; month: number };
+  initialDate: { year: number; month: number };
   isEth: boolean;
   holidayIndex?: HolidayIndex;
   dayInfoIndex?: DayInfoIndex;
@@ -60,15 +51,14 @@ type CalendarSwiperProps = {
 };
 
 /**
- * 3-Slot Virtual Ring Carousel
- *
- * Slots continuously wrap without ever resetting `translateX` coordinates,
- * eliminating the visual flash and updating header state instantly upon release.
+ * High-Performance 3-Slot Carousel
+ * Uses 3 stable virtual slots that wrap continuously with zero unmounting
+ * and zero coordinate resets during swiping.
  */
 export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>(
   function CalendarSwiper(
     {
-      current,
+      initialDate,
       isEth,
       holidayIndex,
       dayInfoIndex,
@@ -80,8 +70,8 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
     },
     ref,
   ) {
-    const [baseDate, setBaseDate] = useState(() => current);
-    const [monthOffset, setMonthOffset] = useState(0);
+    const [baseDate, setBaseDate] = useState(() => initialDate);
+    const [vOffset, setVOffset] = useState(0);
 
     const sharedOffset = useSharedValue(0);
     const currentOffset = useSharedValue(0);
@@ -93,43 +83,16 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
     const baseDateRef = useRef(baseDate);
     baseDateRef.current = baseDate;
 
-    // Reset carousel base when calendar style toggles (Ethiopian <-> Gregorian)
-    useEffect(() => {
-      setBaseDate(current);
-      setMonthOffset(0);
-      sharedOffset.value = 0;
-      currentOffset.value = 0;
-      isAnimating.value = false;
-    }, [isEth]);
 
-    // Handle external month jumps (e.g. MonthYearPickerModal or "Today" button)
-    useEffect(() => {
-      const activeMonth = getOffsetMonth(baseDate, monthOffset, isEth);
-      if (current.year !== activeMonth.year || current.month !== activeMonth.month) {
-        const diff = getMonthDifference(baseDate, current, isEth);
-        setMonthOffset(diff);
-        sharedOffset.value = diff;
-        currentOffset.value = diff;
-        isAnimating.value = false;
-      }
-    }, [current, baseDate, monthOffset, isEth, sharedOffset, currentOffset, isAnimating]);
-
-    // Instantly notify the parent header as soon as the swipe gesture decides its target
-    const notifyTargetMonth = useCallback(
-      (target: number) => {
-        setMonthOffset(target);
-        const targetDate = getOffsetMonth(baseDateRef.current, target, isEth);
-        onMonthChangeRef.current(targetDate.year, targetDate.month);
-      },
-      [isEth],
-    );
-
-    const onAnimationFinish = useCallback(
+    const onSettle = useCallback(
       (newTargetOffset: number) => {
         currentOffset.value = newTargetOffset;
+        setVOffset(newTargetOffset);
         isAnimating.value = false;
+        const targetDate = getOffsetMonth(baseDateRef.current, newTargetOffset, isEth);
+        onMonthChangeRef.current(targetDate.year, targetDate.month);
       },
-      [currentOffset, isAnimating],
+      [isEth, currentOffset, isAnimating],
     );
 
     useImperativeHandle(
@@ -139,12 +102,11 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
           if (isAnimating.value) return;
           isAnimating.value = true;
           const target = currentOffset.value - 1;
-          notifyTargetMonth(target);
           sharedOffset.value = withTiming(
             target,
-            { duration: 200, easing: Easing.out(Easing.cubic) },
+            { duration: 180, easing: Easing.out(Easing.cubic) },
             () => {
-              runOnJS(onAnimationFinish)(target);
+              runOnJS(onSettle)(target);
             },
           );
         },
@@ -152,17 +114,16 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
           if (isAnimating.value) return;
           isAnimating.value = true;
           const target = currentOffset.value + 1;
-          notifyTargetMonth(target);
           sharedOffset.value = withTiming(
             target,
-            { duration: 200, easing: Easing.out(Easing.cubic) },
+            { duration: 180, easing: Easing.out(Easing.cubic) },
             () => {
-              runOnJS(onAnimationFinish)(target);
+              runOnJS(onSettle)(target);
             },
           );
         },
       }),
-      [notifyTargetMonth, onAnimationFinish, isAnimating, currentOffset, sharedOffset],
+      [onSettle, isAnimating, currentOffset, sharedOffset],
     );
 
     const panGesture = useMemo(() => {
@@ -180,34 +141,30 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
           const velocity = -e.velocityX / screenWidth;
 
           let target = currentOffset.value;
-          if (delta > 0.2 || velocity > 1.0) {
+          if (delta > 0.18 || velocity > 1.0) {
             target = currentOffset.value + 1;
-          } else if (delta < -0.2 || velocity < -1.0) {
+          } else if (delta < -0.18 || velocity < -1.0) {
             target = currentOffset.value - 1;
-          }
-
-          if (target !== currentOffset.value) {
-            runOnJS(notifyTargetMonth)(target);
           }
 
           isAnimating.value = true;
           sharedOffset.value = withTiming(
             target,
-            { duration: 200, easing: Easing.out(Easing.cubic) },
+            { duration: 180, easing: Easing.out(Easing.cubic) },
             () => {
-              runOnJS(onAnimationFinish)(target);
+              runOnJS(onSettle)(target);
             },
           );
         });
-    }, [screenWidth, notifyTargetMonth, onAnimationFinish, isAnimating, currentOffset, sharedOffset]);
+    }, [screenWidth, onSettle, isAnimating, currentOffset, sharedOffset]);
 
     const animatedContainerStyle = useAnimatedStyle(() => ({
       transform: [{ translateX: -sharedOffset.value * screenWidth }],
     }));
 
-    // Generate month data and positions for the 3 slots around the current monthOffset
+    // Assign months to the 3 physical slots
     const slots = useMemo(() => {
-      const k = monthOffset;
+      const k = vOffset;
       const slotIndices = [0, 1, 2];
       const activeOffsets = [k - 1, k, k + 1];
 
@@ -223,7 +180,7 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
           monthData,
         };
       });
-    }, [baseDate, monthOffset, isEth]);
+    }, [baseDate, vOffset, isEth]);
 
     return (
       <View style={{ flex: 1, width: screenWidth, overflow: "hidden" }}>
@@ -232,7 +189,7 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
             {slots.map(({ slotId, offset, monthData }) => {
               return (
                 <View
-                  key={`slot-${slotId}-${monthData.year}-${monthData.month}-${isEth ? "eth" : "gc"}`}
+                  key={`slot-${slotId}`}
                   style={{
                     position: "absolute",
                     left: offset * screenWidth,

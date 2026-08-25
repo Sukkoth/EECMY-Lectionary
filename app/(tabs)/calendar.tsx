@@ -18,18 +18,7 @@ import { useDayInfo } from "@/lib/hooks/useDayInfo";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
-import {
-  gregorianToEthiopian,
-  formatEvangelistYear,
-  getSubMonthSpanString,
-  formatMonth,
-} from "@/lib/ethiopianCalendar";
-
-function formatYear(year: number, month: number, isEth: boolean, lang: string = "am"): string {
-  const targetEthYear = isEth ? year : gregorianToEthiopian(new Date(year, month, 15)).year;
-  const evText = formatEvangelistYear(targetEthYear, lang);
-  return `${year} • ${evText}`;
-}
+import { gregorianToEthiopian } from "@/lib/ethiopianCalendar";
 
 function getInitialCurrent(isEth: boolean) {
   const now = new Date();
@@ -50,21 +39,30 @@ export default function CalendarScreen() {
 
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
   const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
+  const [resetTrigger, setResetTrigger] = useState(0);
   const swiperRef = useRef<CalendarSwiperRef>(null);
 
-  // Reset calendar view to today's date when calendar system toggles — runs
-  // before paint so there's no visible flash, and avoids the double-render
-  // caused by setState-during-render.
+  // Synchronize when calendar style changes
   useLayoutEffect(() => {
     const initial = getInitialCurrent(isEth);
     setCurrent(initial);
     setPickerSelected(initial);
   }, [isEth]);
 
+  function handleToggleCalendarStyle(newStyle: "ethiopian" | "gregorian") {
+    const newIsEth = newStyle === "ethiopian";
+    const initial = getInitialCurrent(newIsEth);
+    setCurrent(initial);
+    setPickerSelected(initial);
+    setResetTrigger((c) => c + 1);
+    updateSetting("calendarStyle", newStyle);
+  }
+
   function handleJumpToToday() {
     const initial = getInitialCurrent(isEth);
     setCurrent(initial);
     setPickerSelected(initial);
+    setResetTrigger((c) => c + 1);
   }
 
   function handleOpenPicker(year: number, month: number) {
@@ -89,7 +87,7 @@ export default function CalendarScreen() {
         {/* Left: Calendar System Segmented Toggle */}
         <View className="bg-stone-200/60 dark:bg-stone-800/60 flex-row items-center rounded-full p-0.5 border border-stone-200/60 dark:border-stone-800/60">
           <TouchableOpacity
-            onPress={() => updateSetting("calendarStyle", "ethiopian")}
+            onPress={() => handleToggleCalendarStyle("ethiopian")}
             activeOpacity={0.7}
             className={`rounded-full px-3 py-1.5 ${isEth ? "bg-primary" : ""}`}
           >
@@ -102,7 +100,7 @@ export default function CalendarScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => updateSetting("calendarStyle", "gregorian")}
+            onPress={() => handleToggleCalendarStyle("gregorian")}
             activeOpacity={0.7}
             className={`rounded-full px-3 py-1.5 ${!isEth ? "bg-primary" : ""}`}
           >
@@ -166,8 +164,9 @@ export default function CalendarScreen() {
 
       {/* Swipeable Calendar (Month Header + Grid + Holidays List move together) */}
       <CalendarSwiper
+        key={`swiper-${isEth ? "eth" : "gc"}-${resetTrigger}`}
         ref={swiperRef}
-        current={current}
+        initialDate={current}
         isEth={isEth}
         holidayIndex={holidayIndex}
         dayInfoIndex={dayInfoIndex}
@@ -188,6 +187,7 @@ export default function CalendarScreen() {
         onSelect={(y, m) => {
           setCurrent({ year: y, month: m });
           setPickerSelected({ year: y, month: m });
+          setResetTrigger((c) => c + 1);
         }}
       />
     </SafeAreaView>
