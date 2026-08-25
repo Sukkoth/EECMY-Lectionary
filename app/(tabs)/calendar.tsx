@@ -156,20 +156,22 @@ export default function CalendarScreen() {
       </View>
 
       {/* Swipeable Calendar (Month Header + Grid + Holidays List move together) */}
-      <CalendarSwiper
-        ref={swiperRef}
-        initialDate={current}
-        isEth={isEth}
-        holidayIndex={holidayIndex}
-        dayInfoIndex={dayInfoIndex}
-        screenWidth={screenWidth}
-        calendarStyle={settings.calendarStyle}
-        showSeasonColors={settings.showSeasonColors ?? true}
-        onMonthChange={(year, month) => {
-          setCurrent({ year, month });
-        }}
-        onOpenPicker={handleOpenPicker}
-      />
+      <View className="flex-1 pb-[76px]">
+        <CalendarSwiper
+          ref={swiperRef}
+          initialDate={current}
+          isEth={isEth}
+          holidayIndex={holidayIndex}
+          dayInfoIndex={dayInfoIndex}
+          screenWidth={screenWidth}
+          calendarStyle={settings.calendarStyle}
+          showSeasonColors={settings.showSeasonColors ?? true}
+          onMonthChange={(year, month) => {
+            setCurrent({ year, month });
+          }}
+          onOpenPicker={handleOpenPicker}
+        />
+      </View>
 
       <MonthYearPickerModal
         ref={pickerSheetRef}

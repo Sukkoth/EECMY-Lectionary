@@ -134,8 +134,8 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
 
     const panGesture = useMemo(() => {
       return Gesture.Pan()
-        .activeOffsetX([-10, 10])
-        .failOffsetY([-15, 15])
+        .activeOffsetX([-15, 15])
+        .failOffsetY([-6, 6])
         .onUpdate((e) => {
           if (!isAnimating.value) {
             sharedOffset.value = currentOffset.value - e.translationX / screenWidth;

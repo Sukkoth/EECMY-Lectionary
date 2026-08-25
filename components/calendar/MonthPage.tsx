@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import type { HolidayIndex } from "@/lib/hooks/useHolidays";
@@ -152,8 +153,9 @@ export const MonthPage = React.memo(function MonthPage({
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
             className="flex-1"
-            contentContainerStyle={{ paddingBottom: 28 }}
+            contentContainerStyle={{ paddingBottom: 130 }}
           >
             {holidays.map((item, i) => {
               const isSpan =

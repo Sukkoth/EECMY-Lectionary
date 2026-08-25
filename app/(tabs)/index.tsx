@@ -13,6 +13,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useEffect, useRef } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
 import { useStreak } from "@/lib/hooks/useStreak";
@@ -31,10 +32,13 @@ import { useTranslation, getDayLabels } from "@/lib/i18n";
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
+  const insets = useSafeAreaInsets();
   const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
   const { hasUpdate, checkUpdate, updateInfo } = useCheckContentUpdate();
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  const bottomGap = Math.max(insets.bottom, 12) + 56 + 6 + 16;
 
   useEffect(() => {
     if (hasUpdate) {
@@ -99,19 +103,28 @@ export default function HomeScreen() {
 
   const isMulti = dayData && dayData.readings.length > 1;
 
-  const formatDate = (date: Date): string => {
-    return formatDisplayDate(date, settings.calendarStyle, lang).fullString;
+  const formatDate = (date: Date) => {
+    return formatDisplayDate(date, settings.calendarStyle, lang).dateString;
   };
 
-  const currentWeekStart = getWeekStart(new Date());
-  const rawStreak = streak ?? { current: 0, best: 0, completedDays: [false, false, false, false, false, false, false], weekStartDate: "" };
+  const currentWeekStart = getWeekStart(readingDate);
+  const rawStreak = streak ?? {
+    current: 0,
+    best: 0,
+    completedDays: [false, false, false, false, false, false, false],
+    weekStartDate: "",
+  };
   const safeStreak = {
     ...rawStreak,
-    completedDays: rawStreak.weekStartDate === currentWeekStart
-      ? rawStreak.completedDays
-      : [false, false, false, false, false, false, false],
+    completedDays:
+      rawStreak.weekStartDate === currentWeekStart
+        ? rawStreak.completedDays
+        : [false, false, false, false, false, false, false],
   };
-  const progress = safeStreak.best > 0 ? Math.min(Math.max(safeStreak.current / safeStreak.best, 0), 1) : 0;
+  const progress =
+    safeStreak.best > 0
+      ? Math.min(Math.max(safeStreak.current / safeStreak.best, 0), 1)
+      : 0;
   const progressPercent = `${Math.round(progress * 100)}%`;
 
   const toggleTheme = () => {
@@ -122,9 +135,12 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6 pt-12">
+      <View
+        style={{ paddingBottom: bottomGap }}
+        className="flex-1 px-6 pt-12"
+      >
         {/* HEADER */}
-        <View className="mb-6 flex-row items-center justify-between">
+        <View className="mb-4 flex-row items-center justify-between">
           <Text
             className="flex-1 text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
@@ -181,7 +197,7 @@ export default function HomeScreen() {
         </View>
 
         {/* DATE CARD */}
-        <View className="bg-surface dark:bg-surface-dark mb-7 flex-row items-center justify-between rounded-2xl px-4 py-3.5">
+        <View className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-4 py-3.5">
           <View className="flex-1 flex-row items-center">
             <View className="bg-primary-dimmed rounded-lg p-2">
               <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
@@ -217,7 +233,7 @@ export default function HomeScreen() {
               });
             }}
             activeOpacity={0.8}
-            className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-7 flex-row items-center justify-between"
+            className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-4 flex-row items-center justify-between"
           >
             <View className="flex-1 flex-row items-center gap-3 pr-2">
               <View className="h-10 w-10 rounded-full items-center justify-center bg-amber-500/20">
@@ -317,7 +333,7 @@ export default function HomeScreen() {
               })
             }
             activeOpacity={0.7}
-            className="bg-surface dark:bg-surface-dark mb-7 flex-1 justify-center rounded-2xl px-6 py-8"
+            className="bg-surface dark:bg-surface-dark mb-4 flex-1 justify-center rounded-2xl px-6 py-6 border border-stone-200/40 dark:border-stone-800/40"
           >
             {isMulti ? (
               /* MULTI-READING VIEW (references + dayInfo only) */
@@ -374,27 +390,25 @@ export default function HomeScreen() {
               </ScrollView>
             ) : (
               /* SINGLE-READING VIEW (full text + reference) */
-              <>
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
-                >
-                  <FormattedText
-                    text={dayData.readings[0]?.text}
-                    className="text-center text-2xl leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400", textAlign: "center" }}
-                  />
-                  <View className="mt-6 items-center">
-                    <Text
-                      className="text-muted dark:text-muted-dark text-center text-xl leading-tight mb-4"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                    >
-                      {dayData.readings[0]?.reference}
-                    </Text>
-                    <VersionBadge version={dayData.readings[0]?.version} />
-                  </View>
-                </ScrollView>
-              </>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+              >
+                <FormattedText
+                  text={dayData.readings[0]?.text}
+                  className="text-center text-2xl leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "400", textAlign: "center" }}
+                />
+                <View className="mt-6 items-center">
+                  <Text
+                    className="text-muted dark:text-muted-dark text-center text-xl leading-tight mb-4"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                  >
+                    {dayData.readings[0]?.reference}
+                  </Text>
+                  <VersionBadge version={dayData.readings[0]?.version} />
+                </View>
+              </ScrollView>
             )}
             {/* Tap affordance */}
             <View className="mt-4 flex-row items-center justify-center opacity-70">
@@ -418,7 +432,7 @@ export default function HomeScreen() {
         )}
 
         {/* READING STREAK CARD */}
-        <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl px-5 py-5 border border-stone-200/40 dark:border-stone-800/40">
+        <View className="bg-surface dark:bg-surface-dark rounded-2xl px-5 py-4 border border-stone-200/40 dark:border-stone-800/40">
           {/* Streak header */}
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">

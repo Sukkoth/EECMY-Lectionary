@@ -43,7 +43,7 @@ export default function SettingsScreen() {
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
         className="flex-1 px-6 pt-12"
-        contentContainerStyle={{ paddingBottom: 60 }}
+        contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
