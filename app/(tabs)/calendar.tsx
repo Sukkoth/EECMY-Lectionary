@@ -78,11 +78,11 @@ export default function CalendarScreen() {
       {/* Top Fixed Control Bar */}
       <View className="flex-row items-center justify-between px-6 pt-11 pb-2">
         {/* Left: Calendar System Segmented Toggle */}
-        <View className="bg-stone-200/60 dark:bg-stone-800/60 flex-row items-center rounded-full p-0.5 border border-stone-200/60 dark:border-stone-800/60">
+        <View className="bg-stone-200/60 dark:bg-stone-800/60 flex-row items-center rounded-full p-0.5 h-9 border border-stone-200/60 dark:border-stone-800/60">
           <TouchableOpacity
             onPress={() => handleToggleCalendarStyle("ethiopian")}
             activeOpacity={0.7}
-            className={`rounded-full px-3 py-1.5 ${isEth ? "bg-primary" : ""}`}
+            className={`h-full justify-center rounded-full px-3 ${isEth ? "bg-primary" : ""}`}
           >
             <Text
               className={`text-xs font-semibold ${isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
@@ -95,7 +95,7 @@ export default function CalendarScreen() {
           <TouchableOpacity
             onPress={() => handleToggleCalendarStyle("gregorian")}
             activeOpacity={0.7}
-            className={`rounded-full px-3 py-1.5 ${!isEth ? "bg-primary" : ""}`}
+            className={`h-full justify-center rounded-full px-3 ${!isEth ? "bg-primary" : ""}`}
           >
             <Text
               className={`text-xs font-semibold ${!isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
@@ -112,7 +112,7 @@ export default function CalendarScreen() {
             <TouchableOpacity
               onPress={handleJumpToToday}
               activeOpacity={0.75}
-              className="bg-primary/10 flex-row items-center gap-1 rounded-full px-3 py-1.5"
+              className="bg-primary/10 flex-row items-center justify-center gap-1 rounded-full px-3 h-9"
             >
               <Ionicons name="today-outline" size={14} color="#3b82f6" />
               <Text
@@ -125,10 +125,10 @@ export default function CalendarScreen() {
           )}
 
           {/* Capsule Chevron Controls */}
-          <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-2xl border border-stone-200/60 p-1 dark:border-stone-800/60">
+          <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-full border border-stone-200/60 px-1 h-9 dark:border-stone-800/60">
             <TouchableOpacity
               onPress={() => swiperRef.current?.goToPrev()}
-              className="p-1.5"
+              className="h-full justify-center px-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
@@ -141,7 +141,7 @@ export default function CalendarScreen() {
             <View className="mx-0.5 my-auto h-4 w-[1px] bg-stone-200 dark:bg-stone-800" />
             <TouchableOpacity
               onPress={() => swiperRef.current?.goToNext()}
-              className="p-1.5"
+              className="h-full justify-center px-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
