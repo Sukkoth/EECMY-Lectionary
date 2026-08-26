@@ -12,13 +12,14 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
 import { formatTimeString } from "@/lib/settings";
+import { isDevice24Hour } from "@/lib/timeFormat";
 import {
   scheduleDailyReminder,
   cancelDailyReminder,
@@ -32,6 +33,7 @@ export default function DailyReminderScreen() {
   const { settings, updateSetting } = useSettings();
   const { t } = useTranslation();
   const db = useSQLiteContext();
+  const is24H = useMemo(() => isDevice24Hour(), []);
 
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [previewBody, setPreviewBody] = useState<string>("");
@@ -243,69 +245,10 @@ export default function DailyReminderScreen() {
                   className="text-primary text-sm font-semibold"
                   style={{ fontFamily: "ReadingFont" }}
                 >
-                  {formatTimeString(
-                    settings.reminderTime || "07:00",
-                    settings.timeFormat || "12h",
-                  )}
+                  {formatTimeString(settings.reminderTime || "07:00")}
                 </Text>
               </View>
             </TouchableOpacity>
-          )}
-
-          {/* Row 3: Time Format Switch (when enabled) */}
-          {settings.reminderEnabled && (
-            <View className="border-t border-stone-200/60 dark:border-stone-800/60 mt-3.5 flex-row items-center justify-between pt-3.5">
-              <Text
-                className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-              >
-                {t("timeFormat")}
-              </Text>
-
-              <View className="bg-bg-warm dark:bg-bg-warm-dark p-1 rounded-xl flex-row items-center gap-1 border border-stone-200/60 dark:border-stone-800/60">
-                <TouchableOpacity
-                  onPress={() => updateSetting("timeFormat", "12h")}
-                  activeOpacity={0.8}
-                  className={`px-3 py-1 rounded-lg ${
-                    settings.timeFormat !== "24h"
-                      ? "bg-primary"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-semibold ${
-                      settings.timeFormat !== "24h"
-                        ? "text-white"
-                        : "text-muted dark:text-muted-dark"
-                    }`}
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    12h (AM/PM)
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => updateSetting("timeFormat", "24h")}
-                  activeOpacity={0.8}
-                  className={`px-3 py-1 rounded-lg ${
-                    settings.timeFormat === "24h"
-                      ? "bg-primary"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-semibold ${
-                      settings.timeFormat === "24h"
-                        ? "text-white"
-                        : "text-muted dark:text-muted-dark"
-                    }`}
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    24h
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
           )}
         </View>
 
@@ -336,10 +279,7 @@ export default function DailyReminderScreen() {
                   className="text-[10px] text-muted dark:text-muted-dark"
                   style={{ fontFamily: "ReadingFont" }}
                 >
-                  {formatTimeString(
-                    settings.reminderTime || "07:00",
-                    settings.timeFormat || "12h",
-                  )}
+                  {formatTimeString(settings.reminderTime || "07:00")}
                 </Text>
               </View>
 
@@ -395,7 +335,7 @@ export default function DailyReminderScreen() {
                 <DateTimePicker
                   value={getReminderDate()}
                   mode="time"
-                  is24Hour={settings.timeFormat === "24h"}
+                  is24Hour={is24H}
                   display="spinner"
                   textColor={isDark ? "#E8E4DC" : "#2D2A24"}
                   themeVariant={isDark ? "dark" : "light"}
@@ -408,7 +348,7 @@ export default function DailyReminderScreen() {
           <DateTimePicker
             value={getReminderDate()}
             mode="time"
-            is24Hour={settings.timeFormat === "24h"}
+            is24Hour={is24H}
             display="clock"
             onChange={handleTimeChange}
           />
