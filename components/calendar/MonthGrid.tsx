@@ -75,6 +75,7 @@ const DayCell = React.memo(function DayCell({
         {/* Secondary reference micro-date in top right corner */}
         {cell.subLabel ? (
           <Text
+            allowFontScaling={false}
             style={{ fontFamily: "ReadingFont" }}
             className={`absolute top-1 right-1.5 text-[9px] ${
               cell.today
@@ -95,6 +96,7 @@ const DayCell = React.memo(function DayCell({
 
         {/* Main Primary Day Number Centered */}
         <Text
+          allowFontScaling={false}
           style={{ fontFamily: "ReadingFont" }}
           className={`text-lg ${
             cell.today
@@ -185,6 +187,7 @@ function MonthGridComponent({
                 className="items-center justify-center"
               >
                 <Text
+                  allowFontScaling={false}
                   style={{ fontFamily: "ReadingFont" }}
                   className={`text-xs uppercase tracking-wider font-semibold ${
                     isWeekend
