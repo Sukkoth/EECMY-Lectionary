@@ -316,7 +316,7 @@ export default function SettingsScreen() {
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                 >
                   {settings.reminderEnabled
-                    ? formatTimeString(settings.reminderTime || "07:00", settings.timeFormat || "12h")
+                    ? formatTimeString(settings.reminderTime || "07:00")
                     : "Off"}
                 </Text>
               </View>
