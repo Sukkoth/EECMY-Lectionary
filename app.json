@@ -57,7 +57,9 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-localization",
+      "react-native-localize"
     ],
     "experiments": {
       "typedRoutes": true,
