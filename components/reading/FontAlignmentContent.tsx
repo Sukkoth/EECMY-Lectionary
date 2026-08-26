@@ -305,6 +305,7 @@ export default function FontAlignmentContent({
             className="h-13 w-13 items-center justify-center rounded-2xl bg-bg-warm/80 dark:bg-bg-warm-dark/80 border border-stone-200/60 dark:border-stone-800/60"
           >
             <Text
+              allowFontScaling={false}
               className="text-lg font-semibold text-center"
               style={{
                 fontFamily: "ReadingFont",
@@ -332,6 +333,7 @@ export default function FontAlignmentContent({
             className="h-13 w-13 items-center justify-center rounded-2xl bg-bg-warm/80 dark:bg-bg-warm-dark/80 border border-stone-200/60 dark:border-stone-800/60"
           >
             <Text
+              allowFontScaling={false}
               className="text-2xl font-semibold text-center"
               style={{
                 fontFamily: "ReadingFont",
