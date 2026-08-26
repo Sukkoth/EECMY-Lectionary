@@ -170,6 +170,7 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
                   }`}
                 >
                   <Text
+                    allowFontScaling={false}
                     style={{ fontFamily: "ReadingFont" }}
                     className={`text-sm font-semibold ${
                       isSelected
@@ -207,6 +208,7 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
                   }`}
                 >
                   <Text
+                    allowFontScaling={false}
                     numberOfLines={1}
                     style={{ fontFamily: "ReadingFont" }}
                     className={`text-sm font-semibold ${
