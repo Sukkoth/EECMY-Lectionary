@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from "react";
-import { View, Text, TouchableOpacity, FlatList } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import type { HolidayIndex } from "@/lib/hooks/useHolidays";
@@ -90,12 +91,14 @@ export const MonthPage = React.memo(function MonthPage({
           />
           <View className="flex-1">
             <Text
+              maxFontSizeMultiplier={1.2}
               className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
               {item.name}
             </Text>
             <Text
+              maxFontSizeMultiplier={1.2}
               className="text-muted dark:text-muted-dark text-xs font-medium capitalize mt-0.5"
               style={{ fontFamily: "ReadingFont" }}
             >
@@ -106,6 +109,7 @@ export const MonthPage = React.memo(function MonthPage({
 
         {/* Right: Date Number */}
         <Text
+          allowFontScaling={false}
           className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{
             fontFamily: "ReadingFont",
@@ -135,6 +139,7 @@ export const MonthPage = React.memo(function MonthPage({
         >
           <View className="flex-row items-center gap-1.5">
             <Text
+              maxFontSizeMultiplier={1.2}
               className="text-3xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont" }}
             >
@@ -147,12 +152,14 @@ export const MonthPage = React.memo(function MonthPage({
             />
           </View>
           <Text
+            maxFontSizeMultiplier={1.2}
             className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
             style={{ fontFamily: "ReadingFont" }}
           >
             {yearSubtitle}
           </Text>
           <Text
+            maxFontSizeMultiplier={1.2}
             className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
             style={{ fontFamily: "ReadingFont" }}
           >
@@ -183,6 +190,7 @@ export const MonthPage = React.memo(function MonthPage({
       >
         <View className="mb-3 flex-row items-center justify-between">
           <Text
+            maxFontSizeMultiplier={1.2}
             className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont" }}
           >
@@ -190,6 +198,7 @@ export const MonthPage = React.memo(function MonthPage({
           </Text>
           <View className="bg-primary/10 rounded-full px-2.5 py-0.5">
             <Text
+              allowFontScaling={false}
               className="text-primary text-[11px] font-semibold"
               style={{ fontFamily: "ReadingFont" }}
             >
