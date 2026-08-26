@@ -1,17 +1,20 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
   SafeAreaView,
+  BackHandler,
 } from "react-native";
+import { useNavigation } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
 import {
   CalendarSwiper,
   type CalendarSwiperRef,
 } from "@/components/calendar/CalendarSwiper";
+import { CalendarStyleToggle } from "@/components/calendar/CalendarStyleToggle";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHolidays } from "@/lib/hooks/useHolidays";
 import { useDayInfo } from "@/lib/hooks/useDayInfo";
@@ -38,8 +41,33 @@ export default function CalendarScreen() {
 
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
   const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const swiperRef = useRef<CalendarSwiperRef>(null);
   const pickerSheetRef = useRef<BottomSheetModal>(null);
+  const navigation = useNavigation();
+
+  // Handle hardware back press on Android when picker bottom sheet is open
+  useEffect(() => {
+    if (!isPickerOpen) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      pickerSheetRef.current?.dismiss();
+      setIsPickerOpen(false);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [isPickerOpen]);
+
+  // Handle navigation beforeRemove (e.g. gesture back navigation)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (isPickerOpen) {
+        e.preventDefault();
+        pickerSheetRef.current?.dismiss();
+        setIsPickerOpen(false);
+      }
+    });
+    return unsubscribe;
+  }, [navigation, isPickerOpen]);
 
   // Compute today once per render cycle (stable within a render)
   const today = useMemo(() => new Date(), []);
@@ -67,6 +95,7 @@ export default function CalendarScreen() {
 
   const handleOpenPicker = useCallback((year: number, month: number) => {
     setPickerSelected({ year, month });
+    setIsPickerOpen(true);
     pickerSheetRef.current?.present();
   }, []);
 
@@ -93,33 +122,12 @@ export default function CalendarScreen() {
       {/* Top Fixed Control Bar */}
       <View className="flex-row items-center justify-between px-6 pt-11 pb-2">
         {/* Left: Calendar System Segmented Toggle */}
-        <View className="bg-stone-200/60 dark:bg-stone-800/60 flex-row items-center rounded-full p-0.5 h-9 border border-stone-200/60 dark:border-stone-800/60">
-          <TouchableOpacity
-            onPress={() => handleToggleCalendarStyle("ethiopian")}
-            activeOpacity={0.7}
-            className={`h-full justify-center rounded-full px-3 ${isEth ? "bg-primary" : ""}`}
-          >
-            <Text
-              className={`text-xs font-semibold ${isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              {t("ethiopianEC")}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => handleToggleCalendarStyle("gregorian")}
-            activeOpacity={0.7}
-            className={`h-full justify-center rounded-full px-3 ${!isEth ? "bg-primary" : ""}`}
-          >
-            <Text
-              className={`text-xs font-semibold ${!isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              {t("gregorianGC")}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <CalendarStyleToggle
+          isEth={isEth}
+          onToggle={handleToggleCalendarStyle}
+          ethiopianLabel={t("ethiopian")}
+          gregorianLabel={t("gregorian")}
+        />
 
         {/* Right: Today Button + Chevron Controls */}
         <View className="flex-row items-center gap-2">
@@ -191,6 +199,12 @@ export default function CalendarScreen() {
         selectedYear={pickerSelected.year}
         selectedMonth={pickerSelected.month}
         isEth={isEth}
+        onChange={(idx) => {
+          setIsPickerOpen(idx >= 0);
+        }}
+        onDismiss={() => {
+          setIsPickerOpen(false);
+        }}
         onSelect={handlePickerSelect}
       />
     </SafeAreaView>

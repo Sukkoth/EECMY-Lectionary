@@ -104,9 +104,9 @@ export const MonthPage = React.memo(function MonthPage({
           </View>
         </View>
 
-        {/* Right: Large Unboxed Date Number */}
+        {/* Right: Date Number */}
         <Text
-          className="text-2xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+          className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
           style={{
             fontFamily: "ReadingFont",
             fontWeight: "600",

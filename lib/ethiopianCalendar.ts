@@ -249,13 +249,15 @@ export function getEthiopianWeeks(ethYear: number, monthIndex: number): (number 
 
 const WEEKDAY_NAMES_AM = ["እሑድ", "ሰኞ", "ማክሰኞ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ"] as const;
 const WEEKDAY_NAMES_OM = ["Dilbata", "Wiixata", "Qibxata", "Roobii", "Kamiisa", "Jimaata", "Sanbata"] as const;
+const WEEKDAY_NAMES_SHORT_OM = ["Dil", "Wix", "Qib", "Roob", "Kam", "Jim", "San"] as const;
+const WEEKDAY_NAMES_SHORT_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 /** Formats a Date object into a readable date string according to the selected calendar style */
 export function formatDisplayDate(
   date: Date,
   calendarStyle: "gregorian" | "ethiopian" = "gregorian",
   lang: string = "am",
-): { weekday: string; dateString: string; fullString: string } {
+): { weekday: string; shortWeekday: string; dateString: string; fullString: string } {
   const dayOfWeekIndex = date.getDay();
   const weekday =
     lang === "om"
@@ -264,20 +266,27 @@ export function formatDisplayDate(
       ? WEEKDAY_NAMES_AM[dayOfWeekIndex]
       : date.toLocaleDateString("en-US", { weekday: "long" });
 
+  const shortWeekday =
+    lang === "om"
+      ? WEEKDAY_NAMES_SHORT_OM[dayOfWeekIndex]
+      : lang === "am"
+      ? WEEKDAY_NAMES_AM[dayOfWeekIndex]
+      : WEEKDAY_NAMES_SHORT_EN[dayOfWeekIndex];
+
   if (calendarStyle === "ethiopian") {
     const eth = gregorianToEthiopian(date);
     const monthName = formatMonth(eth.month, true, lang);
     const dateString = `${monthName} ${eth.day}, ${eth.year}`;
     const fullString = `${weekday}, ${monthName} ${eth.day}, ${eth.year}`;
 
-    return { weekday, dateString, fullString };
+    return { weekday, shortWeekday, dateString, fullString };
   }
 
   const monthName = formatMonth(date.getMonth(), false, lang);
   const dateString = `${monthName} ${date.getDate()}, ${date.getFullYear()}`;
   const fullString = `${weekday}, ${dateString}`;
 
-  return { weekday, dateString, fullString };
+  return { weekday, shortWeekday, dateString, fullString };
 }
 
 /** Generate the secondary calendar month span subtitle for header */

@@ -27,9 +27,9 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
       <View className="border-b border-stone-200 px-6 pb-4 pt-12 dark:border-stone-800">
         <View className="flex-row items-center justify-between">
           {/* Left: weekday + date */}
-          <View className="flex-1">
+          <View className="flex-1 pr-3">
             <Text
-              className="text-[22px] leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
+              className="text-lg font-semibold leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily, fontWeight: "600" }}
             >
               {weekday}, {formattedDate}

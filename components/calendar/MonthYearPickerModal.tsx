@@ -24,10 +24,12 @@ type MonthYearPickerModalProps = {
   isEth: boolean;
   onSelect: (year: number, month: number) => void;
   onClose?: () => void;
+  onChange?: (index: number) => void;
+  onDismiss?: () => void;
 };
 
 const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalProps>(
-  ({ selectedYear, selectedMonth, isEth, onSelect, onClose }, ref) => {
+  ({ selectedYear, selectedMonth, isEth, onSelect, onClose, onChange, onDismiss }, ref) => {
     const isDark = useColorScheme() === "dark";
     const { width: screenWidth } = useWindowDimensions();
     const { lang, t } = useTranslation();
@@ -105,6 +107,11 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
         index={0}
         onChange={(idx) => {
           if (idx >= 0) centerSelectedYear(false);
+          onChange?.(idx);
+        }}
+        onDismiss={() => {
+          onDismiss?.();
+          onClose?.();
         }}
         backdropComponent={renderBackdrop}
         backgroundStyle={{

@@ -156,7 +156,7 @@ export default function ReadingScreen() {
       settings.appLanguage || settings.language,
     );
     return {
-      weekday: displayDate.weekday,
+      weekday: displayDate.shortWeekday,
       formattedDate: displayDate.dateString,
     };
   }, [centerDate, settings.calendarStyle, settings.appLanguage, settings.language]);
