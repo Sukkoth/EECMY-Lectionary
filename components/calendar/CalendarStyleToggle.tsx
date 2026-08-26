@@ -109,6 +109,7 @@ export function CalendarStyleToggle({
         className="h-full justify-center rounded-full px-3.5 z-10"
       >
         <Text
+          allowFontScaling={false}
           className={`text-xs font-semibold ${
             isEth ? "text-white" : "text-muted dark:text-muted-dark"
           }`}
@@ -126,6 +127,7 @@ export function CalendarStyleToggle({
         className="h-full justify-center rounded-full px-3.5 z-10"
       >
         <Text
+          allowFontScaling={false}
           className={`text-xs font-semibold ${
             !isEth ? "text-white" : "text-muted dark:text-muted-dark"
           }`}
