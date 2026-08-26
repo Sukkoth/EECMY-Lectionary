@@ -82,16 +82,11 @@ function getSeasonContainerStyle(
 ) {
   if (today || !showSeasonColors || !seasonColor) return undefined;
   const sc = seasonColor.trim();
-  if (sc.startsWith("#") && sc.length === 7) {
-    return {
-      borderColor: `${sc}60`,
-      borderWidth: 1,
-      backgroundColor: "transparent",
-    };
-  }
+  const borderColor = sc.startsWith("#") && sc.length === 7 ? `${sc}60` : sc;
   return {
-    borderColor: sc,
+    borderColor,
     borderWidth: 1,
+    borderRadius: 16,
     backgroundColor: "transparent",
   };
 }

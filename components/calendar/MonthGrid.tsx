@@ -51,7 +51,15 @@ const DayCell = React.memo(function DayCell({
   onLongPressDay,
 }: DayCellProps) {
   const cellContainerStyle = useMemo(
-    () => [{ width: cellWidth - 4, height: 44, position: "relative" as const }, cell.seasonStyle],
+    () => [
+      {
+        width: cellWidth - 4,
+        height: 44,
+        position: "relative" as const,
+        borderRadius: 16,
+      },
+      cell.seasonStyle,
+    ],
     [cellWidth, cell.seasonStyle],
   );
 
