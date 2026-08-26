@@ -5,7 +5,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
 
 type CalendarStyleToggleProps = {
   isEth: boolean;
@@ -79,10 +78,6 @@ export function CalendarStyleToggle({
   };
 
   const handlePress = (style: "ethiopian" | "gregorian") => {
-    const switching = (style === "ethiopian") !== isEth;
-    if (switching) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    }
     onToggle(style);
   };
 
