@@ -182,9 +182,23 @@ function LangSelectionStep({
         );
         const unsyncedVersionCodes = unsyncedVersions.map((v) => v.code);
         const liturgicalSynced = isLiturgicalSynced(lang);
-        const hasUnsyncedLiturgical = !liturgicalSynced;
+
+        const holidaysRecord = syncedLangPackVersions.find(
+          (r) =>
+            r.year === year.year &&
+            r.language.toLowerCase() === lang.code.toLowerCase() &&
+            r.type === "holidays",
+        );
+        const dayInfoRecord = syncedLangPackVersions.find(
+          (r) =>
+            r.year === year.year &&
+            r.language.toLowerCase() === lang.code.toLowerCase() &&
+            r.type === "day-info",
+        );
+        const isLiturgicalInstalled = !!holidaysRecord || !!dayInfoRecord;
+        const isLiturgicalUpdate = isLiturgicalInstalled && !liturgicalSynced;
         const langAllSynced =
-          unsyncedVersionCodes.length === 0 && !hasUnsyncedLiturgical;
+          unsyncedVersionCodes.length === 0 && !isLiturgicalUpdate;
 
         let langUpdateCount = 0;
         let langAvailableCount = 0;
@@ -204,37 +218,21 @@ function LangSelectionStep({
           }
         });
 
-        if (hasUnsyncedLiturgical) {
-          const holidaysRecord = syncedLangPackVersions.find(
-            (r) =>
-              r.year === year.year &&
-              r.language.toLowerCase() === lang.code.toLowerCase() &&
-              r.type === "holidays",
-          );
-          const dayInfoRecord = syncedLangPackVersions.find(
-            (r) =>
-              r.year === year.year &&
-              r.language.toLowerCase() === lang.code.toLowerCase() &&
-              r.type === "day-info",
-          );
-          if (holidaysRecord || dayInfoRecord) {
-            langUpdateCount++;
-          } else {
-            langAvailableCount++;
-          }
+        if (isLiturgicalUpdate) {
+          langUpdateCount++;
         }
 
         const unsyncedSelectedCount =
           selectedVersions.filter((v) => unsyncedVersionCodes.includes(v))
             .length +
-          (hasUnsyncedLiturgical &&
+          (isLiturgicalUpdate &&
           (selectedVersions.includes("__holidays__") ||
             selectedVersions.includes("__dayinfo__"))
             ? 1
             : 0);
 
         const totalUnsyncedCount =
-          unsyncedVersionCodes.length + (hasUnsyncedLiturgical ? 1 : 0);
+          unsyncedVersionCodes.length + (isLiturgicalUpdate ? 1 : 0);
         const allUnsyncedSelected =
           !langAllSynced &&
           totalUnsyncedCount > 0 &&
@@ -252,9 +250,8 @@ function LangSelectionStep({
               }
             }
             if (
-              hasUnsyncedLiturgical &&
-              (selectedVersions.includes("__holidays__") ||
-                selectedVersions.includes("__dayinfo__"))
+              selectedVersions.includes("__holidays__") ||
+              selectedVersions.includes("__dayinfo__")
             ) {
               onToggleLangPack(lang.code, "liturgical");
             }
@@ -266,7 +263,6 @@ function LangSelectionStep({
               }
             }
             if (
-              hasUnsyncedLiturgical &&
               !selectedVersions.includes("__holidays__") &&
               !selectedVersions.includes("__dayinfo__")
             ) {
