@@ -71,6 +71,7 @@ export default function VersionBadge({
       className={`rounded-xl border border-stone-200/80 dark:border-stone-800/80 bg-stone-100/80 dark:bg-stone-800/80 px-3 py-1 flex-row items-center justify-center ${className}`}
     >
       <Text
+        allowFontScaling={false}
         className="text-xs font-semibold text-primary uppercase tracking-wider text-center"
         style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
       >
