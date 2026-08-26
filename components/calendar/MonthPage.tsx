@@ -36,6 +36,7 @@ type MonthPageProps = {
   calendarStyle: CalendarStyle;
   showSeasonColors: boolean;
   onOpenPicker?: (year: number, month: number) => void;
+  onOpenAddEvent?: (year: number, month: number, day?: number) => void;
 };
 
 export const MonthPage = React.memo(function MonthPage({
@@ -48,6 +49,7 @@ export const MonthPage = React.memo(function MonthPage({
   calendarStyle,
   showSeasonColors,
   onOpenPicker,
+  onOpenAddEvent,
 }: MonthPageProps) {
   const { t, lang } = useTranslation();
   const isDark = useIsDark();
@@ -177,6 +179,7 @@ export const MonthPage = React.memo(function MonthPage({
         width={screenWidth}
         calendarStyle={calendarStyle}
         showSeasonColors={showSeasonColors}
+        onLongPressDay={(d) => onOpenAddEvent?.(year, month, d)}
       />
 
       {/* Section Divider */}
@@ -196,14 +199,32 @@ export const MonthPage = React.memo(function MonthPage({
           >
             {t("holidaysAndEvents")}
           </Text>
-          <View className="bg-primary/10 rounded-full px-2.5 py-0.5">
-            <Text
-              allowFontScaling={false}
-              className="text-primary text-[11px] font-semibold"
-              style={{ fontFamily: "ReadingFont" }}
+
+          <View className="flex-row items-center gap-2">
+            <TouchableOpacity
+              onPress={() => onOpenAddEvent?.(year, month)}
+              activeOpacity={0.7}
+              className="bg-primary/10 flex-row items-center gap-1 rounded-full px-2.5 py-1"
             >
-              {holidays.length} {holidays.length === 1 ? t("event") : t("events")}
-            </Text>
+              <Ionicons name="add" size={13} color="#3b82f6" />
+              <Text
+                allowFontScaling={false}
+                className="text-primary text-[11px] font-semibold"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {lang === "am" ? "ጨምር" : "Add"}
+              </Text>
+            </TouchableOpacity>
+
+            <View className="bg-stone-200/60 dark:bg-stone-800/60 rounded-full px-2.5 py-1">
+              <Text
+                allowFontScaling={false}
+                className="text-muted dark:text-muted-dark text-[11px] font-semibold"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {holidays.length} {holidays.length === 1 ? t("event") : t("events")}
+              </Text>
+            </View>
           </View>
         </View>
 

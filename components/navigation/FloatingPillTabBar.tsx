@@ -18,6 +18,8 @@ function getTabIconName(
       return isFocused ? "heart" : "heart-outline";
     case "glossary":
       return isFocused ? "book" : "book-outline";
+    case "notes":
+      return isFocused ? "document-text" : "document-text-outline";
     case "settings":
       return isFocused ? "settings" : "settings-outline";
     default:

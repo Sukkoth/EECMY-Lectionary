@@ -10,6 +10,7 @@ import {
 import { useNavigation } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
+import { AddEventModal } from "@/components/calendar/AddEventModal";
 import {
   CalendarSwiper,
   type CalendarSwiperRef,
@@ -42,32 +43,47 @@ export default function CalendarScreen() {
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
   const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [addEventInitialDay, setAddEventInitialDay] = useState<number | undefined>(undefined);
   const swiperRef = useRef<CalendarSwiperRef>(null);
   const pickerSheetRef = useRef<BottomSheetModal>(null);
+  const addEventSheetRef = useRef<BottomSheetModal>(null);
   const navigation = useNavigation();
 
   // Handle hardware back press on Android when picker bottom sheet is open
   useEffect(() => {
-    if (!isPickerOpen) return;
+    if (!isPickerOpen && !isAddEventOpen) return;
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      pickerSheetRef.current?.dismiss();
-      setIsPickerOpen(false);
-      return true;
+      if (isAddEventOpen) {
+        addEventSheetRef.current?.dismiss();
+        setIsAddEventOpen(false);
+        return true;
+      }
+      if (isPickerOpen) {
+        pickerSheetRef.current?.dismiss();
+        setIsPickerOpen(false);
+        return true;
+      }
+      return false;
     });
     return () => subscription.remove();
-  }, [isPickerOpen]);
+  }, [isPickerOpen, isAddEventOpen]);
 
   // Handle navigation beforeRemove (e.g. gesture back navigation)
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (e) => {
-      if (isPickerOpen) {
+      if (isAddEventOpen) {
+        e.preventDefault();
+        addEventSheetRef.current?.dismiss();
+        setIsAddEventOpen(false);
+      } else if (isPickerOpen) {
         e.preventDefault();
         pickerSheetRef.current?.dismiss();
         setIsPickerOpen(false);
       }
     });
     return unsubscribe;
-  }, [navigation, isPickerOpen]);
+  }, [navigation, isPickerOpen, isAddEventOpen]);
 
   // Compute today once per render cycle (stable within a render)
   const today = useMemo(() => new Date(), []);
@@ -98,6 +114,28 @@ export default function CalendarScreen() {
     setIsPickerOpen(true);
     pickerSheetRef.current?.present();
   }, []);
+
+  const handleOpenAddEvent = useCallback(
+    (year: number, month: number, day?: number) => {
+      setPickerSelected({ year, month });
+      if (day != null) {
+        setAddEventInitialDay(day);
+      } else {
+        const isThisMonthToday = isEth
+          ? year === ethToday.year && month === ethToday.month
+          : year === today.getFullYear() && month === today.getMonth();
+        const defaultDay = isThisMonthToday
+          ? isEth
+            ? ethToday.day
+            : today.getDate()
+          : 1;
+        setAddEventInitialDay(defaultDay);
+      }
+      setIsAddEventOpen(true);
+      addEventSheetRef.current?.present();
+    },
+    [isEth, ethToday, today],
+  );
 
   const handleMonthChange = useCallback((year: number, month: number) => {
     setCurrent({ year, month });
@@ -192,6 +230,7 @@ export default function CalendarScreen() {
           showSeasonColors={settings.showSeasonColors ?? true}
           onMonthChange={handleMonthChange}
           onOpenPicker={handleOpenPicker}
+          onOpenAddEvent={handleOpenAddEvent}
         />
       </View>
 
@@ -207,6 +246,20 @@ export default function CalendarScreen() {
           setIsPickerOpen(false);
         }}
         onSelect={handlePickerSelect}
+      />
+
+      <AddEventModal
+        ref={addEventSheetRef}
+        selectedYear={pickerSelected.year}
+        selectedMonth={pickerSelected.month}
+        isEth={isEth}
+        initialDay={addEventInitialDay}
+        onChange={(idx: number) => {
+          setIsAddEventOpen(idx >= 0);
+        }}
+        onDismiss={() => {
+          setIsAddEventOpen(false);
+        }}
       />
     </SafeAreaView>
   );

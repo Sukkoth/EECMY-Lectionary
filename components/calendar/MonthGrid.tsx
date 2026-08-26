@@ -24,6 +24,7 @@ type MonthGridProps = {
   width: number;
   calendarStyle?: CalendarStyle;
   showSeasonColors?: boolean;
+  onLongPressDay?: (day: number) => void;
 };
 
 // Hoist today computation to module level — it doesn't change during a session
@@ -34,6 +35,12 @@ const MODULE_GC_TODAY = { year: _now.getFullYear(), month: _now.getMonth(), day:
 // Hoisted static style for the dot indicator
 const DOT_WHITE_BG = { backgroundColor: "#ffffff" };
 
+type DayCellProps = {
+  cell: Extract<GridCell, { isNull: false }>;
+  cellWidth: number;
+  onLongPressDay?: (day: number) => void;
+};
+
 /**
  * Memoized individual day cell — prevents re-rendering all 42 cells
  * when only a few props change (rerender-memo).
@@ -41,10 +48,8 @@ const DOT_WHITE_BG = { backgroundColor: "#ffffff" };
 const DayCell = React.memo(function DayCell({
   cell,
   cellWidth,
-}: {
-  cell: Extract<GridCell, { isNull: false }>;
-  cellWidth: number;
-}) {
+  onLongPressDay,
+}: DayCellProps) {
   const cellContainerStyle = useMemo(
     () => [{ width: cellWidth - 4, height: 44, position: "relative" as const }, cell.seasonStyle],
     [cellWidth, cell.seasonStyle],
@@ -54,6 +59,12 @@ const DayCell = React.memo(function DayCell({
     <Pressable
       style={{ width: cellWidth }}
       className="items-center justify-center py-0.5"
+      delayLongPress={350}
+      onLongPress={() => {
+        if (cell.day) {
+          onLongPressDay?.(cell.day);
+        }
+      }}
       onPress={() =>
         router.push({
           pathname: "/reading",
@@ -144,6 +155,7 @@ function MonthGridComponent({
   width,
   calendarStyle = "ethiopian",
   showSeasonColors = true,
+  onLongPressDay,
 }: MonthGridProps) {
   const isEth = calendarStyle === "ethiopian";
   const { lang } = useTranslation();
@@ -218,6 +230,7 @@ function MonthGridComponent({
                     key={cell.key}
                     cell={cell}
                     cellWidth={cellWidth}
+                    onLongPressDay={onLongPressDay}
                   />
                 );
               })}
