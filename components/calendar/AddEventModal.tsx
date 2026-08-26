@@ -3,11 +3,13 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useColorScheme,
   Switch,
+  Platform,
+  Modal,
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import {
   BottomSheetModal,
   BottomSheetScrollView,
@@ -22,16 +24,64 @@ import {
   getDaysInEthiopianMonth,
   ethiopianToGregorian,
 } from "@/lib/ethiopianCalendar";
+import { isDevice24Hour, formatTimeSlot } from "@/lib/timeFormat";
 
-export type EventCategory = "church" | "choir" | "fasting" | "personal";
+export type CategoryItem = {
+  id: string;
+  labelEn: string;
+  labelAm: string;
+  labelOm?: string;
+  color: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  isCustom?: boolean;
+};
+
+export type ReminderOffset =
+  | "at_time"
+  | "30_min"
+  | "1_hour"
+  | "2_hours"
+  | "1_day"
+  | "2_days"
+  | "1_week";
+
+export const REMINDER_OFFSETS: {
+  id: ReminderOffset;
+  labelEn: string;
+  labelAm: string;
+  labelOm: string;
+}[] = [
+  { id: "at_time", labelEn: "At time of event", labelAm: "በሰዓቱ", labelOm: "Yeroo qophiitti" },
+  { id: "30_min", labelEn: "30 min before", labelAm: "30 ደ/ቅ በፊት", labelOm: "Daqiiqaa 30 dura" },
+  { id: "1_hour", labelEn: "1 hour before", labelAm: "1 ሰዓት በፊት", labelOm: "Sa'aatii 1 dura" },
+  { id: "2_hours", labelEn: "2 hours before", labelAm: "2 ሰዓት በፊት", labelOm: "Sa'aatii 2 dura" },
+  { id: "1_day", labelEn: "1 day before", labelAm: "1 ቀን በፊት", labelOm: "Guyyaa 1 dura" },
+  { id: "2_days", labelEn: "2 days before", labelAm: "2 ቀናት በፊት", labelOm: "Guyyoota 2 dura" },
+  { id: "1_week", labelEn: "1 week before", labelAm: "1 ሳምንት በፊት", labelOm: "Torban 1 dura" },
+];
+
+export function getCategoryLabel(cat: CategoryItem, lang: string): string {
+  if (lang === "om") return cat.labelOm || cat.labelEn;
+  if (lang === "am") return cat.labelAm;
+  return cat.labelEn;
+}
+
+export function getOffsetLabel(offset: (typeof REMINDER_OFFSETS)[number], lang: string): string {
+  if (lang === "om") return offset.labelOm || offset.labelEn;
+  if (lang === "am") return offset.labelAm;
+  return offset.labelEn;
+}
 
 export type CustomEventData = {
   id: string;
   title: string;
-  category: EventCategory;
+  category?: string | null;
+  categoryColor?: string | null;
   date: string; // YYYY-MM-DD
   hasReminder: boolean;
   reminderTime: string;
+  reminderOffsets?: ReminderOffset[];
+  reminderOffset?: ReminderOffset;
   notes?: string;
 };
 
@@ -46,34 +96,80 @@ type AddEventModalProps = {
   onDismiss?: () => void;
 };
 
-const CATEGORIES: {
-  id: EventCategory;
-  labelEn: string;
-  labelAm: string;
-  color: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}[] = [
-  { id: "church", labelEn: "Church", labelAm: "ቤተክርስቲያን", color: "#3b82f6", icon: "business-outline" },
-  { id: "choir", labelEn: "Choir", labelAm: "ዝማሬ/መዘምራን", color: "#10b981", icon: "musical-notes-outline" },
-  { id: "fasting", labelEn: "Fasting", labelAm: "ጾም", color: "#8b5cf6", icon: "flame-outline" },
-  { id: "personal", labelEn: "Personal", labelAm: "የግል", color: "#f59e0b", icon: "person-outline" },
+const DEFAULT_CATEGORIES: CategoryItem[] = [
+  { id: "liturgy", labelEn: "Liturgy", labelAm: "ሥርዓተ አምልኮ", labelOm: "Sirna Sagadaa", color: "#3b82f6", icon: "book-outline" },
+  { id: "sermon", labelEn: "Sermon", labelAm: "ስብከት", labelOm: "Lallaba", color: "#8b5cf6", icon: "mic-outline" },
+  { id: "choir", labelEn: "Choir", labelAm: "ዝማሬ", labelOm: "Faarfannaa", color: "#10b981", icon: "musical-notes-outline" },
+  { id: "prayer", labelEn: "Prayer", labelAm: "ጸሎት", labelOm: "Kadhannaa", color: "#f59e0b", icon: "flame-outline" },
+  { id: "meeting", labelEn: "Meeting", labelAm: "ስብሰባ", labelOm: "Walga'ii", color: "#0ea5e9", icon: "people-outline" },
+  { id: "conference", labelEn: "Conference", labelAm: "ኮንፈረንስ", labelOm: "Koonfaransii", color: "#6366f1", icon: "globe-outline" },
+  { id: "training", labelEn: "Training", labelAm: "ስልጠና", labelOm: "Leenjii", color: "#14b8a6", icon: "school-outline" },
+  { id: "retreat", labelEn: "Retreat", labelAm: "መንፈሳዊ ዕረፍት", labelOm: "Boqonnaa Hafuuraa", color: "#ec4899", icon: "leaf-outline" },
+  { id: "wedding", labelEn: "Wedding", labelAm: "ጋብቻ", labelOm: "Gaa'ila", color: "#f43f5e", icon: "heart-outline" },
+];
+
+const PALETTE_COLORS = [
+  "#3b82f6", // Blue
+  "#2563eb", // Royal Blue
+  "#0ea5e9", // Sky Blue
+  "#06b6d4", // Cyan
+  "#14b8a6", // Teal
+  "#10b981", // Emerald
+  "#16a34a", // Green
+  "#84cc16", // Lime
+  "#eab308", // Yellow
+  "#f59e0b", // Amber
+  "#f97316", // Orange
+  "#ef4444", // Red
+  "#f43f5e", // Rose
+  "#ec4899", // Pink
+  "#d946ef", // Fuchsia
+  "#8b5cf6", // Purple
+  "#6366f1", // Indigo
+  "#64748b", // Slate
 ];
 
 export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
   ({ selectedYear, selectedMonth, isEth, initialDay, onSave, onClose, onChange, onDismiss }, ref) => {
     const isDark = useIsDark();
-    const { lang, t } = useTranslation();
+    const { t, lang } = useTranslation();
 
     const titleRef = useRef("");
     const notesRef = useRef("");
+    const newTagNameRef = useRef("");
     const titleInputRef = useRef<any>(null);
     const notesInputRef = useRef<any>(null);
+    const newTagInputRef = useRef<any>(null);
     const scrollViewRef = useRef<any>(null);
 
+    const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [isCreatingTag, setIsCreatingTag] = useState(false);
+    const [newTagColor, setNewTagColor] = useState(PALETTE_COLORS[0]);
+    const [tagToDelete, setTagToDelete] = useState<{ id: string; name: string } | null>(null);
+
     const [selectedDay, setSelectedDay] = useState(() => initialDay ?? 1);
-    const [selectedCategory, setSelectedCategory] = useState<EventCategory>("church");
-    const [hasReminder, setHasReminder] = useState(true);
-    const [selectedTime, setSelectedTime] = useState("07:00 AM");
+    const [hasReminder, setHasReminder] = useState(false);
+    const [isTitleFilled, setIsTitleFilled] = useState(false);
+    const [reminderOffsets, setReminderOffsets] = useState<ReminderOffset[]>(["at_time"]);
+    const is24H = useMemo(() => isDevice24Hour(), []);
+    const [reminderDate, setReminderDate] = useState(() => {
+      const d = new Date();
+      d.setHours(7, 0, 0, 0);
+      return d;
+    });
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [selectedTime, setSelectedTime] = useState(() => formatTimeSlot(7, 0, isDevice24Hour()));
+
+    const handleTimeChange = (_event: DateTimePickerEvent, date?: Date) => {
+      if (Platform.OS === "android") {
+        setShowTimePicker(false);
+      }
+      if (date) {
+        setReminderDate(date);
+        setSelectedTime(formatTimeSlot(date.getHours(), date.getMinutes(), is24H));
+      }
+    };
 
     const dayScrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
     const snapPoints = useMemo(() => ["85%"], []);
@@ -133,14 +229,33 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
     const handleSheetChange = useCallback(
       (index: number) => {
         onChange?.(index);
-        if (index >= 0) {
-          setTimeout(() => {
-            scrollToSelectedDay(initialDay ?? 1, true);
-          }, 80);
+        if (index === -1) {
+          isMountedRef.current = false;
+          setIsCreatingTag(false);
+          setShowTimePicker(false);
+          setReminderOffsets(["at_time"]);
+          setSelectedCategory(null);
+          setHasReminder(false);
+          setIsTitleFilled(false);
+          newTagNameRef.current = "";
+          newTagInputRef.current?.clear();
         }
       },
-      [onChange, scrollToSelectedDay, initialDay],
+      [onChange],
     );
+
+    const handleDismiss = useCallback(() => {
+      isMountedRef.current = false;
+      setIsCreatingTag(false);
+      setShowTimePicker(false);
+      setReminderOffsets(["at_time"]);
+      setSelectedCategory(null);
+      setHasReminder(false);
+      setIsTitleFilled(false);
+      newTagNameRef.current = "";
+      newTagInputRef.current?.clear();
+      onDismiss?.();
+    }, [onDismiss]);
 
     const dateDisplay = useMemo(() => {
       const mName = formatMonth(selectedMonth, isEth, lang);
@@ -151,21 +266,36 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       const enteredTitle = titleRef.current.trim();
       if (!enteredTitle) return;
 
+      const activeCat = selectedCategory
+        ? categories.find((c) => c.id === selectedCategory)
+        : null;
+
       onSave?.({
         id: String(Date.now()),
         title: enteredTitle,
-        category: selectedCategory,
+        category: selectedCategory ?? undefined,
+        categoryColor: activeCat?.color,
         date: `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`,
         hasReminder,
         reminderTime: selectedTime,
+        reminderOffsets: hasReminder ? reminderOffsets : undefined,
+        reminderOffset: hasReminder && reminderOffsets.length > 0 ? reminderOffsets[0] : undefined,
         notes: notesRef.current.trim() || undefined,
       });
 
       // Clear inputs
       titleRef.current = "";
       notesRef.current = "";
+      newTagNameRef.current = "";
       titleInputRef.current?.clear();
       notesInputRef.current?.clear();
+      newTagInputRef.current?.clear();
+      setIsCreatingTag(false);
+      setShowTimePicker(false);
+      setReminderOffsets(["at_time"]);
+      setSelectedCategory(null);
+      setHasReminder(false);
+      setIsTitleFilled(false);
 
       (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
       onClose?.();
@@ -174,10 +304,64 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
     const handleCancel = () => {
       titleRef.current = "";
       notesRef.current = "";
+      newTagNameRef.current = "";
       titleInputRef.current?.clear();
       notesInputRef.current?.clear();
+      newTagInputRef.current?.clear();
+      setIsCreatingTag(false);
+      setShowTimePicker(false);
+      setReminderOffsets(["at_time"]);
+      setSelectedCategory(null);
+      setHasReminder(false);
+      setIsTitleFilled(false);
       (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
       onClose?.();
+    };
+
+    const handleToggleOffset = (offsetId: ReminderOffset) => {
+      setReminderOffsets((prev) => {
+        if (prev.includes(offsetId)) {
+          return prev.filter((id) => id !== offsetId);
+        }
+        if (prev.length >= 3) {
+          return prev; // Capped at max 3 alerts
+        }
+        return [...prev, offsetId];
+      });
+    };
+
+    const handleAddCustomTag = () => {
+      const enteredName = newTagNameRef.current.trim();
+      if (!enteredName) return;
+      const tagId = `custom_${Date.now()}`;
+      const newCat: CategoryItem = {
+        id: tagId,
+        labelEn: enteredName,
+        labelAm: enteredName,
+        color: newTagColor,
+        isCustom: true,
+      };
+      setCategories((prev) => [newCat, ...prev]);
+      setSelectedCategory(tagId);
+      newTagNameRef.current = "";
+      newTagInputRef.current?.clear();
+      setIsCreatingTag(false);
+    };
+
+    const handleDeleteCustomTag = (tagId: string) => {
+      const targetTag = categories.find((c) => c.id === tagId);
+      const tagName = targetTag ? getCategoryLabel(targetTag, lang) : "";
+      setTagToDelete({ id: tagId, name: tagName });
+    };
+
+    const confirmDeleteTag = () => {
+      if (!tagToDelete) return;
+      const tagId = tagToDelete.id;
+      setCategories((prev) => prev.filter((c) => c.id !== tagId));
+      if (selectedCategory === tagId) {
+        setSelectedCategory(null);
+      }
+      setTagToDelete(null);
     };
 
     const renderBackdrop = useCallback(
@@ -202,7 +386,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustPan"
         onChange={handleSheetChange}
-        onDismiss={onDismiss}
+        onDismiss={handleDismiss}
         handleIndicatorStyle={{
           backgroundColor: isDark ? "#524C46" : "#D1D1D6",
           width: 36,
@@ -231,7 +415,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
                 className="text-sm font-medium text-muted dark:text-muted-dark"
                 style={{ fontFamily: "ReadingFont" }}
               >
-                {lang === "am" ? "ሰርዝ" : "Cancel"}
+                {t("cancel")}
               </Text>
             </TouchableOpacity>
 
@@ -240,20 +424,29 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
               className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont" }}
             >
-              {lang === "am" ? "አዲስ ክስተት" : "New Event"}
+              {t("newEvent")}
             </Text>
 
             <TouchableOpacity
               onPress={handleSave}
+              disabled={!isTitleFilled}
               activeOpacity={0.7}
-              className="bg-primary rounded-full px-4 py-1.5"
+              className={`h-9 rounded-full px-4 items-center justify-center ${
+                isTitleFilled
+                  ? "bg-primary"
+                  : "bg-stone-300/70 dark:bg-stone-800/80"
+              }`}
             >
               <Text
                 allowFontScaling={false}
-                className="text-xs font-semibold text-white"
+                className={`text-xs font-semibold ${
+                  isTitleFilled
+                    ? "text-white"
+                    : "text-stone-400 dark:text-stone-500"
+                }`}
                 style={{ fontFamily: "ReadingFont" }}
               >
-                {lang === "am" ? "አስቀምጥ" : "Save"}
+                {t("save")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -264,19 +457,17 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted dark:text-muted-dark"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {lang === "am" ? "የርዕስ ስም" : "Event Title"}
+            {t("eventTitle")}
           </Text>
           <BottomSheetTextInput
             ref={titleInputRef}
             defaultValue=""
             onChangeText={(text) => {
               titleRef.current = text;
+              const hasText = text.trim().length > 0;
+              setIsTitleFilled((prev) => (prev !== hasText ? hasText : prev));
             }}
-            placeholder={
-              lang === "am"
-                ? "ምሳሌ፡ የዝማሬ ልምምድ፣ የጾም ጸሎት..."
-                : "e.g. Choir Rehearsal, Prayer & Fasting..."
-            }
+            placeholder={t("eventTitlePlaceholder")}
             placeholderTextColor={isDark ? "#8A8480" : "#A8A29E"}
             className="mb-4 rounded-2xl border border-stone-200/90 bg-[#F5F2EB] px-4 py-3.5 text-base text-[#2D2A24] dark:border-stone-700/60 dark:bg-[#25221E] dark:text-[#F3EFE6]"
             style={{ fontFamily: "ReadingFont" }}
@@ -288,7 +479,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted dark:text-muted-dark"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {lang === "am" ? "ቀን" : "Date"}
+            {t("date")}
           </Text>
           <View className="mb-3 flex-row items-center gap-2.5 rounded-2xl border border-stone-200/90 bg-[#F5F2EB] px-4 py-3.5 dark:border-stone-700/60 dark:bg-[#25221E]">
             <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
@@ -305,7 +496,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
                 className="text-primary text-[10px] font-semibold"
                 style={{ fontFamily: "ReadingFont" }}
               >
-                {isEth ? "Ethiopian" : "Gregorian"}
+                {isEth ? t("ethiopian") : t("gregorian")}
               </Text>
             </View>
           </View>
@@ -314,6 +505,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
           <ScrollView
             ref={dayScrollRef}
             horizontal
+            keyboardShouldPersistTaps="always"
             showsHorizontalScrollIndicator={false}
             className="mb-5"
             onContentSizeChange={() => {
@@ -369,23 +561,156 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             })}
           </ScrollView>
 
-          {/* Category Selector */}
+          {/* Tag Header */}
           <Text
             allowFontScaling={false}
             className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted dark:text-muted-dark"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {lang === "am" ? "ምድብ" : "Category"}
+            {t("tag")}
           </Text>
-          <View className="mb-5 flex-row flex-wrap gap-2">
-            {CATEGORIES.map((cat) => {
+
+          {/* Inline Tag Creator Tray */}
+          {isCreatingTag && (
+            <View className="mb-3.5 rounded-2xl border border-primary/30 bg-[#F5F2EB] p-3.5 dark:border-primary/40 dark:bg-[#25221E]">
+              <Text
+                allowFontScaling={false}
+                className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted dark:text-muted-dark"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {t("newTagName")}
+              </Text>
+              <BottomSheetTextInput
+                ref={newTagInputRef}
+                defaultValue=""
+                onChangeText={(text) => {
+                  newTagNameRef.current = text;
+                }}
+                placeholder={t("newTagPlaceholder")}
+                placeholderTextColor={isDark ? "#8A8480" : "#A8A29E"}
+                className="mb-3 rounded-xl border border-stone-200/90 bg-white px-3.5 py-2.5 text-sm text-[#2D2A24] dark:border-stone-700/60 dark:bg-[#1A1815] dark:text-[#F3EFE6]"
+                style={{ fontFamily: "ReadingFont" }}
+              />
+
+              <Text
+                allowFontScaling={false}
+                className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted dark:text-muted-dark"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {t("selectColor")}
+              </Text>
+              <ScrollView
+                horizontal
+                keyboardShouldPersistTaps="always"
+                showsHorizontalScrollIndicator={false}
+                className="mb-3.5"
+                contentContainerStyle={{ paddingRight: 8 }}
+              >
+                {PALETTE_COLORS.map((c) => {
+                  const isColorSelected = newTagColor === c;
+                  return (
+                    <TouchableOpacity
+                      key={c}
+                      onPress={() => setNewTagColor(c)}
+                      activeOpacity={0.7}
+                      className="mr-2.5 items-center justify-center py-1"
+                    >
+                      <View
+                        className="h-7 w-7 rounded-full items-center justify-center"
+                        style={{
+                          backgroundColor: c,
+                          borderWidth: isColorSelected ? 2.5 : 0,
+                          borderColor: isDark ? "#FFFFFF" : "#1A1815",
+                        }}
+                      >
+                        {isColorSelected && (
+                          <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              <View className="flex-row items-center justify-end gap-2 pt-1">
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsCreatingTag(false);
+                    newTagNameRef.current = "";
+                    newTagInputRef.current?.clear();
+                  }}
+                  className="px-3 py-1.5"
+                >
+                  <Text
+                    allowFontScaling={false}
+                    className="text-xs font-medium text-muted dark:text-muted-dark"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("cancel")}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleAddCustomTag}
+                  activeOpacity={0.7}
+                  className="bg-primary rounded-xl px-3.5 py-1.5 flex-row items-center gap-1"
+                >
+                  <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+                  <Text
+                    allowFontScaling={false}
+                    className="text-xs font-semibold text-white"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("addTag")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Category Chips Horizontal Scroller */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyboardShouldPersistTaps="always"
+            className="mb-5"
+            contentContainerStyle={{ paddingRight: 16 }}
+          >
+            {/* + Add Tag Button as First Chip */}
+            <TouchableOpacity
+              onPress={() => setIsCreatingTag((prev) => !prev)}
+              activeOpacity={0.7}
+              className={`h-9 mr-2 flex-row items-center gap-1 rounded-full border border-dashed px-3.5 ${
+                isCreatingTag
+                  ? "border-primary bg-primary/20 dark:bg-primary/30"
+                  : "border-primary/50 bg-primary/5 dark:border-primary/40 dark:bg-primary/10"
+              }`}
+            >
+              <Text
+                allowFontScaling={false}
+                className="text-primary text-base font-semibold"
+                style={{ fontFamily: "ReadingFont", lineHeight: 18 }}
+              >
+                +
+              </Text>
+              <Text
+                allowFontScaling={false}
+                className="text-primary text-xs font-semibold"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {t("add")}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Existing and Custom Categories */}
+            {categories.map((cat) => {
               const isSelected = selectedCategory === cat.id;
               return (
                 <TouchableOpacity
                   key={cat.id}
-                  onPress={() => setSelectedCategory(cat.id)}
+                  onPress={() => setSelectedCategory((prev) => (prev === cat.id ? null : cat.id))}
                   activeOpacity={0.7}
-                  className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-2 ${
+                  className={`h-9 mr-2 flex-row items-center gap-1.5 rounded-full border px-3.5 ${
                     isSelected
                       ? "border-primary bg-primary/15 dark:bg-primary/25"
                       : "border-stone-200/90 bg-[#F5F2EB] dark:border-stone-700/60 dark:bg-[#25221E]"
@@ -404,36 +729,53 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
                     }`}
                     style={{ fontFamily: "ReadingFont" }}
                   >
-                    {lang === "am" ? cat.labelAm : cat.labelEn}
+                    {getCategoryLabel(cat, lang)}
                   </Text>
+
+                  {cat.isCustom && (
+                    <TouchableOpacity
+                      onPress={() => handleDeleteCustomTag(cat.id)}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      className="ml-0.5"
+                    >
+                      <Ionicons
+                        name="close-circle"
+                        size={14}
+                        color={isDark ? "#8A8480" : "#A8A29E"}
+                      />
+                    </TouchableOpacity>
+                  )}
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
 
-          {/* Reminder Section */}
-          <View className="mb-4 rounded-2xl border border-stone-200/90 bg-[#F5F2EB] p-4 dark:border-stone-700/60 dark:bg-[#25221E]">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2.5">
-                <Ionicons
-                  name={hasReminder ? "notifications" : "notifications-off-outline"}
-                  size={18}
-                  color={hasReminder ? "#3b82f6" : "#8A8480"}
-                />
-                <View>
+          {/* Reminder Section (Inset-Grouped Card) */}
+          <View className="mb-4 overflow-hidden rounded-2xl border border-stone-200/90 bg-[#F5F2EB] dark:border-stone-700/60 dark:bg-[#25221E]">
+            {/* Row 1: Enable Reminder Switch */}
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1 pr-2 flex-row items-center gap-3">
+                <View className="h-9 w-9 items-center justify-center rounded-xl bg-white dark:bg-[#1A1815] border border-stone-200/80 dark:border-stone-700/50">
+                  <Ionicons
+                    name={hasReminder ? "notifications" : "notifications-off-outline"}
+                    size={18}
+                    color={hasReminder ? "#3b82f6" : "#8A8480"}
+                  />
+                </View>
+                <View className="flex-1">
                   <Text
                     allowFontScaling={false}
                     className="text-sm font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
                     style={{ fontFamily: "ReadingFont" }}
                   >
-                    {lang === "am" ? "ማሳሰቢያ" : "Reminder"}
+                    {t("reminder")}
                   </Text>
                   <Text
                     allowFontScaling={false}
-                    className="text-xs text-muted dark:text-muted-dark"
+                    className="text-xs text-muted dark:text-muted-dark mt-0.5"
                     style={{ fontFamily: "ReadingFont" }}
                   >
-                    {lang === "am" ? "በእለቱ ጠዋት ማሳሰቢያ ይላኩ" : "Send notification on event day"}
+                    {t("sendAlertForEvent")}
                   </Text>
                 </View>
               </View>
@@ -447,34 +789,121 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             </View>
 
             {hasReminder && (
-              <View className="mt-3 flex-row gap-2 border-t border-stone-200/60 pt-3 dark:border-stone-700/50">
-                {["07:00 AM", "08:30 AM", "06:00 PM"].map((time) => {
-                  const isTimeSelected = selectedTime === time;
-                  return (
-                    <TouchableOpacity
-                      key={time}
-                      onPress={() => setSelectedTime(time)}
-                      className={`rounded-xl px-3 py-1.5 ${
-                        isTimeSelected
-                          ? "bg-primary"
-                          : "bg-white dark:bg-[#1A1815] border border-stone-200/80 dark:border-stone-700/60"
-                      }`}
+              <>
+                {/* Divider */}
+                <View className="h-[1px] bg-stone-200/80 dark:bg-stone-700/50" />
+
+                {/* Row 2: Event Time Picker Trigger */}
+                <TouchableOpacity
+                  onPress={() => setShowTimePicker(true)}
+                  activeOpacity={0.7}
+                  className="flex-row items-center justify-between px-4 py-3.5"
+                >
+                  <View className="flex-row items-center gap-2.5">
+                    <Ionicons name="time-outline" size={17} color={isDark ? "#E8E4DC" : "#2D2A24"} />
+                    <Text
+                      allowFontScaling={false}
+                      className="text-sm font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
+                      style={{ fontFamily: "ReadingFont" }}
                     >
+                      {t("eventTime")}
+                    </Text>
+                  </View>
+
+                  <View className="h-9 flex-row items-center gap-1.5 rounded-xl border border-stone-200/90 bg-white px-3 dark:border-stone-700/60 dark:bg-[#1A1815]">
+                    <Text
+                      allowFontScaling={false}
+                      className="text-sm font-semibold text-[#2D2A24] dark:text-[#F3EFE6]"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      {selectedTime}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={13}
+                      color={isDark ? "#8A8480" : "#A8A29E"}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Divider */}
+                <View className="h-[1px] bg-stone-200/80 dark:bg-stone-700/50" />
+
+                {/* Row 3: Alert Timing (When to Notify) */}
+                <View className="px-4 py-3.5">
+                  <View className="mb-2.5 flex-row items-center justify-between pr-1">
+                    <View className="flex-row items-center gap-2">
+                      <Ionicons name="alarm-outline" size={16} color={isDark ? "#E8E4DC" : "#2D2A24"} />
                       <Text
                         allowFontScaling={false}
-                        className={`text-xs font-semibold ${
-                          isTimeSelected
-                            ? "text-white"
-                            : "text-[#2D2A24] dark:text-[#E8E4DC]"
-                        }`}
+                        className="text-sm font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
                         style={{ fontFamily: "ReadingFont" }}
                       >
-                        {time}
+                        {t("alerts")}
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                    </View>
+                    {reminderOffsets.length > 0 && (
+                      <View className="bg-primary/10 rounded-full px-2 py-0.5">
+                        <Text
+                          allowFontScaling={false}
+                          className="text-primary text-[11px] font-semibold"
+                          style={{ fontFamily: "ReadingFont" }}
+                        >
+                          {reminderOffsets.length}/3
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyboardShouldPersistTaps="always"
+                    contentContainerStyle={{ paddingRight: 8 }}
+                  >
+                    {REMINDER_OFFSETS.map((offset) => {
+                      const isOffsetSelected = reminderOffsets.includes(offset.id);
+                      const isMaxReached = reminderOffsets.length >= 3 && !isOffsetSelected;
+                      return (
+                        <TouchableOpacity
+                          key={offset.id}
+                          onPress={() => handleToggleOffset(offset.id)}
+                          activeOpacity={0.7}
+                          className={`h-9 mr-2 items-center justify-center rounded-xl border px-3.5 ${
+                            isOffsetSelected
+                              ? "border-primary bg-primary"
+                              : isMaxReached
+                                ? "border-stone-200/50 bg-white/50 opacity-40 dark:border-stone-800 dark:bg-[#1A1815]/50"
+                                : "border-stone-200/90 bg-white dark:border-stone-700/60 dark:bg-[#1A1815]"
+                          }`}
+                        >
+                          <Text
+                            allowFontScaling={false}
+                            className={`text-xs ${
+                              isOffsetSelected
+                                ? "font-semibold text-white"
+                                : "font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
+                            }`}
+                            style={{ fontFamily: "ReadingFont" }}
+                          >
+                            {getOffsetLabel(offset, lang)}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+
+                {showTimePicker && (
+                  <DateTimePicker
+                    value={reminderDate}
+                    mode="time"
+                    is24Hour={is24H}
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={handleTimeChange}
+                  />
+                )}
+              </>
             )}
           </View>
 
@@ -484,7 +913,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted dark:text-muted-dark"
             style={{ fontFamily: "ReadingFont" }}
           >
-            {lang === "am" ? "ማስታወሻ (አማራጭ)" : "Notes (Optional)"}
+            {t("notesOptional")}
           </Text>
           <BottomSheetTextInput
             ref={notesInputRef}
@@ -494,16 +923,75 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             }}
             multiline
             numberOfLines={10}
-            placeholder={
-              lang === "am"
-                ? "ተጨማሪ ዝርዝሮች፣ ቦታ ወይም ማስታወሻ..."
-                : "Location, preparation notes, or details..."
-            }
+            placeholder={t("notesPlaceholder")}
             placeholderTextColor={isDark ? "#8A8480" : "#A8A29E"}
             className="rounded-2xl border border-stone-200/90 bg-[#F5F2EB] px-4 py-3.5 text-sm text-[#2D2A24] dark:border-stone-700/60 dark:bg-[#25221E] dark:text-[#F3EFE6]"
             style={{ fontFamily: "ReadingFont", minHeight: 110, textAlignVertical: "top" }}
           />
         </BottomSheetScrollView>
+
+        {/* Delete Tag Confirmation Modal (matching Favourites modal style) */}
+        <Modal
+          visible={!!tagToDelete}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setTagToDelete(null)}
+        >
+          <View className="flex-1 items-center justify-center bg-black/50 px-8">
+            <View className="w-full max-w-sm rounded-2xl bg-white p-6 dark:bg-[#1C1C1C] border border-stone-200/60 dark:border-stone-800/60 shadow-lg">
+              <Text
+                allowFontScaling={false}
+                className="mb-2 text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {lang === "am"
+                  ? `"${tagToDelete?.name}" ታግ ይጥፋ?`
+                  : lang === "om"
+                  ? `"${tagToDelete?.name}" haquu?`
+                  : `Delete "${tagToDelete?.name}"?`}
+              </Text>
+              <Text
+                allowFontScaling={false}
+                className="mb-6 text-sm text-muted dark:text-muted-dark leading-relaxed"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {lang === "am"
+                  ? "ይህን ታግ ሲያጠፉ፣ የተመደቡባቸው ክስተቶች አይጠፉም፤ ነገር ግን ታጋቸው ባዶ ይሆናል።"
+                  : lang === "om"
+                  ? "Taagii kana haquun ni balleessa. Qophiileen taagii kanaan uumaman ni tursiifamu, garuu taagiin isaanii hin ramadamu."
+                  : "Deleting this tag will remove it. Events created under this tag will be kept, but their tag will be set to uncategorized."}
+              </Text>
+              <View className="flex-row justify-end gap-3">
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="rounded-xl bg-stone-100 px-5 py-2.5 dark:bg-[#2A2A2A]"
+                  onPress={() => setTagToDelete(null)}
+                >
+                  <Text
+                    allowFontScaling={false}
+                    className="text-center text-sm font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("cancel")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="rounded-xl bg-red-600 dark:bg-red-500 px-5 py-2.5"
+                  onPress={confirmDeleteTag}
+                >
+                  <Text
+                    allowFontScaling={false}
+                    className="text-center text-sm font-semibold text-white"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("delete")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </BottomSheetModal>
     );
   },
