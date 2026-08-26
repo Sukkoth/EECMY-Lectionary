@@ -21,6 +21,8 @@ import type { HolidayIndex } from "@/lib/hooks/useHolidays";
 import type { DayInfoIndex } from "@/lib/hooks/useDayInfo";
 import type { CalendarStyle } from "@/lib/settings";
 
+import type { CustomEventData } from "@/components/calendar/AddEventModal";
+
 export function getOffsetMonth(
   curr: { year: number; month: number },
   delta: number,
@@ -44,6 +46,7 @@ type CalendarSwiperProps = {
   isEth: boolean;
   holidayIndex?: HolidayIndex;
   dayInfoIndex?: DayInfoIndex;
+  userEvents?: CustomEventData[];
   screenWidth: number;
   calendarStyle: CalendarStyle;
   showSeasonColors: boolean;
@@ -77,6 +80,7 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
       isEth,
       holidayIndex,
       dayInfoIndex,
+      userEvents,
       screenWidth,
       calendarStyle,
       showSeasonColors,
@@ -259,6 +263,7 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
                     isEth={isEth}
                     holidayIndex={holidayIndex}
                     dayInfoIndex={dayInfoIndex}
+                    userEvents={userEvents}
                     screenWidth={screenWidth}
                     calendarStyle={calendarStyle}
                     showSeasonColors={showSeasonColors}

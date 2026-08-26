@@ -10,7 +10,7 @@ import {
 import { useNavigation } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
-import { AddEventModal } from "@/components/calendar/AddEventModal";
+import { AddEventModal, type CustomEventData } from "@/components/calendar/AddEventModal";
 import {
   CalendarSwiper,
   type CalendarSwiperRef,
@@ -42,6 +42,7 @@ export default function CalendarScreen() {
 
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
   const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
+  const [userEvents, setUserEvents] = useState<CustomEventData[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [addEventInitialDay, setAddEventInitialDay] = useState<number | undefined>(undefined);
@@ -49,6 +50,10 @@ export default function CalendarScreen() {
   const pickerSheetRef = useRef<BottomSheetModal>(null);
   const addEventSheetRef = useRef<BottomSheetModal>(null);
   const navigation = useNavigation();
+
+  const handleSaveEvent = useCallback((event: CustomEventData) => {
+    setUserEvents((prev) => [event, ...prev]);
+  }, []);
 
   // Handle hardware back press on Android when picker bottom sheet is open
   useEffect(() => {
@@ -225,6 +230,7 @@ export default function CalendarScreen() {
           isEth={isEth}
           holidayIndex={holidayIndex}
           dayInfoIndex={dayInfoIndex}
+          userEvents={userEvents}
           screenWidth={screenWidth}
           calendarStyle={settings.calendarStyle}
           showSeasonColors={settings.showSeasonColors ?? true}
@@ -254,6 +260,7 @@ export default function CalendarScreen() {
         selectedMonth={pickerSelected.month}
         isEth={isEth}
         initialDay={addEventInitialDay}
+        onSave={handleSaveEvent}
         onChange={(idx: number) => {
           setIsAddEventOpen(idx >= 0);
         }}

@@ -96,7 +96,7 @@ type AddEventModalProps = {
   onDismiss?: () => void;
 };
 
-const DEFAULT_CATEGORIES: CategoryItem[] = [
+export const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: "liturgy", labelEn: "Liturgy", labelAm: "ሥርዓተ አምልኮ", labelOm: "Sirna Sagadaa", color: "#3b82f6", icon: "book-outline" },
   { id: "sermon", labelEn: "Sermon", labelAm: "ስብከት", labelOm: "Lallaba", color: "#8b5cf6", icon: "mic-outline" },
   { id: "choir", labelEn: "Choir", labelAm: "ዝማሬ", labelOm: "Faarfannaa", color: "#10b981", icon: "musical-notes-outline" },
@@ -107,6 +107,13 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: "retreat", labelEn: "Retreat", labelAm: "መንፈሳዊ ዕረፍት", labelOm: "Boqonnaa Hafuuraa", color: "#ec4899", icon: "leaf-outline" },
   { id: "wedding", labelEn: "Wedding", labelAm: "ጋብቻ", labelOm: "Gaa'ila", color: "#f43f5e", icon: "heart-outline" },
 ];
+
+export function getCategoryNameById(catId?: string | null, lang = "en"): string | null {
+  if (!catId) return null;
+  const match = DEFAULT_CATEGORIES.find((c) => c.id === catId);
+  if (!match) return catId;
+  return getCategoryLabel(match, lang);
+}
 
 const PALETTE_COLORS = [
   "#3b82f6", // Blue
