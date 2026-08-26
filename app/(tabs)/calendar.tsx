@@ -139,6 +139,7 @@ export default function CalendarScreen() {
             >
               <Ionicons name="today-outline" size={14} color="#3b82f6" />
               <Text
+                allowFontScaling={false}
                 className="text-primary text-xs font-semibold"
                 style={{ fontFamily: "ReadingFont" }}
               >
