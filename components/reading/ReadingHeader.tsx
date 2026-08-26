@@ -29,6 +29,7 @@ const ReadingHeader = forwardRef<BottomSheetModal, ReadingHeaderProps>(
           {/* Left: weekday + date */}
           <View className="flex-1 pr-3">
             <Text
+              maxFontSizeMultiplier={1.2}
               className="text-lg font-semibold leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily, fontWeight: "600" }}
             >
