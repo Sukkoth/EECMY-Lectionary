@@ -1,6 +1,5 @@
-import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { ScrollView } from "react-native-gesture-handler";
+import React, { useCallback, useMemo } from "react";
+import { View, Text, TouchableOpacity, FlatList } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthGrid from "@/components/calendar/MonthGrid";
 import type { HolidayIndex } from "@/lib/hooks/useHolidays";
@@ -17,6 +16,8 @@ import {
   getSubMonthSpanString,
   gregorianToEthiopian,
 } from "@/lib/ethiopianCalendar";
+
+const HOLIDAY_LIST_CONTENT_STYLE = { paddingBottom: 130 };
 
 function formatYear(year: number, month: number, isEth: boolean, lang: string = "am"): string {
   const targetEthYear = isEth ? year : gregorianToEthiopian(new Date(year, month, 15)).year;
@@ -69,6 +70,59 @@ export const MonthPage = React.memo(function MonthPage({
   const monthTitle = useMemo(() => formatMonth(month, isEth, lang), [month, isEth, lang]);
   const yearSubtitle = useMemo(() => formatYear(year, month, isEth, lang), [year, month, isEth, lang]);
   const subSpan = useMemo(() => getSubMonthSpanString(year, month, isEth, lang), [year, month, isEth, lang]);
+
+  const renderHolidayItem = useCallback(({ item, index }: { item: (typeof holidays)[number]; index: number }) => {
+    const isSpan = item.displayEndDay && item.displayEndDay !== item.displayDay;
+    const dayText = isSpan
+      ? `${item.displayDay}–${item.displayEndDay}`
+      : `${item.displayDay}`;
+    const themeColor = HOLIDAY_COLORS[item.type] ?? "#3b82f6";
+
+    return (
+      <View
+        className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
+      >
+        {/* Left: Accent Line + Feast Info */}
+        <View className="flex-1 flex-row items-center gap-3 pr-3">
+          <View
+            className="h-10 w-1.5 rounded-full"
+            style={{ backgroundColor: themeColor }}
+          />
+          <View className="flex-1">
+            <Text
+              className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+            >
+              {item.name}
+            </Text>
+            <Text
+              className="text-muted dark:text-muted-dark text-xs font-medium capitalize mt-0.5"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {item.type}
+            </Text>
+          </View>
+        </View>
+
+        {/* Right: Large Unboxed Date Number */}
+        <Text
+          className="text-2xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+          style={{
+            fontFamily: "ReadingFont",
+            fontWeight: "600",
+          }}
+        >
+          {dayText}
+        </Text>
+      </View>
+    );
+  }, []);
+
+  const holidayKeyExtractor = useCallback(
+    (item: (typeof holidays)[number], index: number) =>
+      item.id ?? `${item.date}-${item.name}-${index}`,
+    [],
+  );
 
   return (
     <View collapsable={false} style={{ flex: 1, backgroundColor: "transparent" }}>
@@ -160,63 +214,15 @@ export const MonthPage = React.memo(function MonthPage({
             </View>
           </View>
         ) : (
-          <ScrollView
+          <FlatList
+            data={holidays}
+            renderItem={renderHolidayItem}
+            keyExtractor={holidayKeyExtractor}
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled
             className="flex-1"
-            contentContainerStyle={{ paddingBottom: 130 }}
-          >
-            {holidays.map((item, i) => {
-              const isSpan =
-                item.displayEndDay && item.displayEndDay !== item.displayDay;
-              const dayText = isSpan
-                ? `${item.displayDay}–${item.displayEndDay}`
-                : `${item.displayDay}`;
-
-              const themeColor = HOLIDAY_COLORS[item.type] ?? "#3b82f6";
-              const key = item.id ?? `${item.date}-${item.name}-${i}`;
-
-              return (
-                <View
-                  key={key}
-                  className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
-                >
-                  {/* Left: Accent Line + Feast Info */}
-                  <View className="flex-1 flex-row items-center gap-3 pr-3">
-                    <View
-                      className="h-10 w-1.5 rounded-full"
-                      style={{ backgroundColor: themeColor }}
-                    />
-                    <View className="flex-1">
-                      <Text
-                        className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                      >
-                        {item.name}
-                      </Text>
-                      <Text
-                        className="text-muted dark:text-muted-dark text-xs font-medium capitalize mt-0.5"
-                        style={{ fontFamily: "ReadingFont" }}
-                      >
-                        {item.type}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Right: Large Unboxed Date Number */}
-                  <Text
-                    className="text-2xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{
-                      fontFamily: "ReadingFont",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {dayText}
-                  </Text>
-                </View>
-              );
-            })}
-          </ScrollView>
+            contentContainerStyle={HOLIDAY_LIST_CONTENT_STYLE}
+          />
         )}
       </View>
     </View>

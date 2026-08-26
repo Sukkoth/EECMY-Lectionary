@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, Pressable, View } from "react-native";
 import { router } from "expo-router";
 import type { HolidayRow, DayInfoRow } from "@/lib/types";
 import { HOLIDAY_COLORS } from "@/constants";
@@ -13,6 +13,7 @@ import {
   buildMonthGridMatrix,
   getGregorianWeeks,
   getMonthShortNames,
+  type GridCell,
 } from "@/lib/calendarGridHelpers";
 
 type MonthGridProps = {
@@ -24,6 +25,110 @@ type MonthGridProps = {
   calendarStyle?: CalendarStyle;
   showSeasonColors?: boolean;
 };
+
+// Hoist today computation to module level — it doesn't change during a session
+const _now = new Date();
+const MODULE_ETH_TODAY = gregorianToEthiopian(_now);
+const MODULE_GC_TODAY = { year: _now.getFullYear(), month: _now.getMonth(), day: _now.getDate() };
+
+// Hoisted static style for the dot indicator
+const DOT_WHITE_BG = { backgroundColor: "#ffffff" };
+
+/**
+ * Memoized individual day cell — prevents re-rendering all 42 cells
+ * when only a few props change (rerender-memo).
+ */
+const DayCell = React.memo(function DayCell({
+  cell,
+  cellWidth,
+}: {
+  cell: Extract<GridCell, { isNull: false }>;
+  cellWidth: number;
+}) {
+  const cellContainerStyle = useMemo(
+    () => [{ width: cellWidth - 4, height: 44, position: "relative" as const }, cell.seasonStyle],
+    [cellWidth, cell.seasonStyle],
+  );
+
+  return (
+    <Pressable
+      style={{ width: cellWidth }}
+      className="items-center justify-center py-0.5"
+      onPress={() =>
+        router.push({
+          pathname: "/reading",
+          params: {
+            year: cell.targetGc.year,
+            month: cell.targetGc.month + 1,
+            day: cell.targetGc.day,
+          },
+        })
+      }
+    >
+      {/* Day number container */}
+      <View
+        style={cellContainerStyle}
+        className={`items-center justify-center rounded-2xl ${
+          cell.today ? "bg-primary" : ""
+        }`}
+      >
+        {/* Secondary reference micro-date in top right corner */}
+        {cell.subLabel ? (
+          <Text
+            style={{ fontFamily: "ReadingFont" }}
+            className={`absolute top-1 right-1.5 text-[9px] ${
+              cell.today
+                ? "text-white/80 font-medium"
+                : cell.seasonColor
+                  ? "text-muted dark:text-muted-dark font-medium"
+                  : cell.isSunday
+                    ? "text-primary/70 dark:text-blue-300 font-medium"
+                    : cell.showSubMonthLabel
+                      ? "text-primary dark:text-blue-400 font-semibold"
+                      : "text-muted dark:text-muted-dark opacity-60 font-normal"
+            }`}
+            numberOfLines={1}
+          >
+            {cell.subLabel}
+          </Text>
+        ) : null}
+
+        {/* Main Primary Day Number Centered */}
+        <Text
+          style={{ fontFamily: "ReadingFont" }}
+          className={`text-lg ${
+            cell.today
+              ? "text-white font-semibold"
+              : cell.seasonColor
+                ? "text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
+                : cell.isSunday
+                  ? "text-primary dark:text-blue-400 font-semibold"
+                  : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
+          }`}
+        >
+          {cell.day}
+        </Text>
+
+        {/* Event Indicator Dots */}
+        {cell.types.length > 0 && (
+          <View className="absolute bottom-1 flex-row items-center justify-center gap-1">
+            {cell.types.map((type, i) => (
+              <View
+                key={i}
+                style={
+                  cell.today
+                    ? DOT_WHITE_BG
+                    : { backgroundColor: (HOLIDAY_COLORS as Record<string, string>)[type] || "#3b82f6" }
+                }
+                className="h-1 w-1 rounded-full"
+              />
+            ))}
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
+});
 
 /**
  * Renders a monthly calendar grid with dual-calendar sub-labels,
@@ -49,17 +154,14 @@ function MonthGridComponent({
 
   const gridRows = useMemo(() => {
     const weeks = isEth ? getEthiopianWeeks(year, month) : getGregorianWeeks(year, month);
-    const ethToday = gregorianToEthiopian(new Date());
-    const d = new Date();
-    const gcToday = { year: d.getFullYear(), month: d.getMonth(), day: d.getDate() };
 
     return buildMonthGridMatrix({
       weeks,
       year,
       month,
       isEth,
-      ethToday,
-      gcToday,
+      ethToday: MODULE_ETH_TODAY,
+      gcToday: MODULE_GC_TODAY,
       gcShorts: monthShorts.gcShorts,
       ethShorts: monthShorts.ethShorts,
       holidays,
@@ -109,84 +211,11 @@ function MonthGridComponent({
                 }
 
                 return (
-                  <TouchableOpacity
+                  <DayCell
                     key={cell.key}
-                    style={{ width: cellWidth }}
-                    className="items-center justify-center py-0.5"
-                    activeOpacity={0.7}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/reading",
-                        params: {
-                          year: cell.targetGc.year,
-                          month: cell.targetGc.month + 1,
-                          day: cell.targetGc.day,
-                        },
-                      })
-                    }
-                  >
-                    {/* Day number container */}
-                    <View
-                      style={[{ width: cellWidth - 4, height: 44, position: "relative" }, cell.seasonStyle]}
-                      className={`items-center justify-center rounded-2xl ${
-                        cell.today ? "bg-primary" : ""
-                      }`}
-                    >
-                      {/* Secondary reference micro-date in top right corner */}
-                      {cell.subLabel ? (
-                        <Text
-                          style={{ fontFamily: "ReadingFont" }}
-                          className={`absolute top-1 right-1.5 text-[9px] ${
-                            cell.today
-                              ? "text-white/80 font-medium"
-                              : cell.seasonColor
-                                ? "text-muted dark:text-muted-dark font-medium"
-                                : cell.isSunday
-                                  ? "text-primary/70 dark:text-blue-300 font-medium"
-                                  : cell.showSubMonthLabel
-                                    ? "text-primary dark:text-blue-400 font-semibold"
-                                    : "text-muted dark:text-muted-dark opacity-60 font-normal"
-                          }`}
-                          numberOfLines={1}
-                        >
-                          {cell.subLabel}
-                        </Text>
-                      ) : null}
-
-                      {/* Main Primary Day Number Centered */}
-                      <Text
-                        style={{ fontFamily: "ReadingFont" }}
-                        className={`text-lg ${
-                          cell.today
-                            ? "text-white font-semibold"
-                            : cell.seasonColor
-                              ? "text-[#2D2A24] dark:text-[#E8E4DC] font-semibold"
-                              : cell.isSunday
-                                ? "text-primary dark:text-blue-400 font-semibold"
-                                : "text-[#2D2A24] dark:text-[#E8E4DC] font-medium"
-                        }`}
-                      >
-                        {cell.day}
-                      </Text>
-
-                      {/* Event Indicator Dots */}
-                      {cell.types.length > 0 && (
-                        <View className="absolute bottom-1 flex-row items-center justify-center gap-1">
-                          {cell.types.map((type, i) => (
-                            <View
-                              key={i}
-                              style={{
-                                backgroundColor: cell.today
-                                  ? "#ffffff"
-                                  : (HOLIDAY_COLORS as Record<string, string>)[type] || "#3b82f6",
-                              }}
-                              className="h-1 w-1 rounded-full"
-                            />
-                          ))}
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
+                    cell={cell}
+                    cellWidth={cellWidth}
+                  />
                 );
               })}
             </View>

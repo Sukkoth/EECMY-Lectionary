@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Text,
   TouchableOpacity,
@@ -31,7 +31,6 @@ function getInitialCurrent(isEth: boolean) {
 
 export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
-  const today = new Date();
   const isDark = useIsDark();
   const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
@@ -40,35 +39,51 @@ export default function CalendarScreen() {
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
   const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
   const swiperRef = useRef<CalendarSwiperRef>(null);
+  const pickerSheetRef = useRef<BottomSheetModal>(null);
 
-  function handleToggleCalendarStyle(newStyle: "ethiopian" | "gregorian") {
-    if (newStyle === settings.calendarStyle) return;
-    const newIsEth = newStyle === "ethiopian";
-    const initial = getInitialCurrent(newIsEth);
-    setCurrent(initial);
-    setPickerSelected(initial);
-    updateSetting("calendarStyle", newStyle);
-    swiperRef.current?.jumpTo(initial);
-  }
+  // Compute today once per render cycle (stable within a render)
+  const today = useMemo(() => new Date(), []);
+  const ethToday = useMemo(() => gregorianToEthiopian(today), [today]);
 
-  function handleJumpToToday() {
+  const handleToggleCalendarStyle = useCallback(
+    (newStyle: "ethiopian" | "gregorian") => {
+      if (newStyle === settings.calendarStyle) return;
+      const newIsEth = newStyle === "ethiopian";
+      const initial = getInitialCurrent(newIsEth);
+      setCurrent(initial);
+      setPickerSelected(initial);
+      updateSetting("calendarStyle", newStyle);
+      swiperRef.current?.jumpTo(initial);
+    },
+    [settings.calendarStyle, updateSetting],
+  );
+
+  const handleJumpToToday = useCallback(() => {
     const initial = getInitialCurrent(isEth);
     setCurrent(initial);
     setPickerSelected(initial);
     swiperRef.current?.jumpTo(initial);
-  }
+  }, [isEth]);
 
-  function handleOpenPicker(year: number, month: number) {
+  const handleOpenPicker = useCallback((year: number, month: number) => {
     setPickerSelected({ year, month });
     pickerSheetRef.current?.present();
-  }
+  }, []);
+
+  const handleMonthChange = useCallback((year: number, month: number) => {
+    setCurrent({ year, month });
+  }, []);
+
+  const handlePickerSelect = useCallback((y: number, m: number) => {
+    const target = { year: y, month: m };
+    setCurrent(target);
+    setPickerSelected(target);
+    swiperRef.current?.jumpTo(target);
+  }, []);
 
   const { data: holidayIndex } = useHolidays(lang, settings.language);
   const { data: dayInfoIndex } = useDayInfo(lang, settings.language);
 
-  const pickerSheetRef = useRef<BottomSheetModal>(null);
-
-  const ethToday = gregorianToEthiopian(today);
   const isCurrentTodayMonth = isEth
     ? current.year === ethToday.year && current.month === ethToday.month
     : current.year === today.getFullYear() && current.month === today.getMonth();
@@ -166,9 +181,7 @@ export default function CalendarScreen() {
           screenWidth={screenWidth}
           calendarStyle={settings.calendarStyle}
           showSeasonColors={settings.showSeasonColors ?? true}
-          onMonthChange={(year, month) => {
-            setCurrent({ year, month });
-          }}
+          onMonthChange={handleMonthChange}
           onOpenPicker={handleOpenPicker}
         />
       </View>
@@ -178,12 +191,7 @@ export default function CalendarScreen() {
         selectedYear={pickerSelected.year}
         selectedMonth={pickerSelected.month}
         isEth={isEth}
-        onSelect={(y, m) => {
-          const target = { year: y, month: m };
-          setCurrent(target);
-          setPickerSelected(target);
-          swiperRef.current?.jumpTo(target);
-        }}
+        onSelect={handlePickerSelect}
       />
     </SafeAreaView>
   );

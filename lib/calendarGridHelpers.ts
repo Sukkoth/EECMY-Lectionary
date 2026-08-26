@@ -161,7 +161,10 @@ export function buildMonthGridMatrix(params: {
       const subLabel = showSubMonthLabel ? `${subAbbr} ${subDay}` : `${subDay}`;
 
       const dayHolidays = holidays.get(day) ?? [];
-      const types = [...new Set(dayHolidays.map((h) => h.type))];
+      const types: string[] = [];
+      for (const h of dayHolidays) {
+        if (!types.includes(h.type)) types.push(h.type);
+      }
 
       const dayInfo = dayInfoMap?.get(day);
       const seasonColor = dayInfo?.seasonColor?.trim();
