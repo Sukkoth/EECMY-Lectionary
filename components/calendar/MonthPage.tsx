@@ -204,22 +204,22 @@ export const MonthPage = React.memo(function MonthPage({
             <TouchableOpacity
               onPress={() => onOpenAddEvent?.(year, month)}
               activeOpacity={0.7}
-              className="bg-primary/10 flex-row items-center gap-1 rounded-full px-2.5 py-1"
+              className="h-9 bg-primary/10 flex-row items-center justify-center gap-1 rounded-full px-3"
             >
-              <Ionicons name="add" size={13} color="#3b82f6" />
+              <Ionicons name="add" size={15} color="#3b82f6" />
               <Text
                 allowFontScaling={false}
-                className="text-primary text-[11px] font-semibold"
+                className="text-primary text-xs font-semibold"
                 style={{ fontFamily: "ReadingFont" }}
               >
-                {lang === "am" ? "ጨምር" : "Add"}
+                {t("add")}
               </Text>
             </TouchableOpacity>
 
-            <View className="bg-stone-200/60 dark:bg-stone-800/60 rounded-full px-2.5 py-1">
+            <View className="h-9 bg-stone-200/60 dark:bg-stone-800/60 items-center justify-center rounded-full px-3">
               <Text
                 allowFontScaling={false}
-                className="text-muted dark:text-muted-dark text-[11px] font-semibold"
+                className="text-muted dark:text-muted-dark text-xs font-semibold"
                 style={{ fontFamily: "ReadingFont" }}
               >
                 {holidays.length} {holidays.length === 1 ? t("event") : t("events")}
