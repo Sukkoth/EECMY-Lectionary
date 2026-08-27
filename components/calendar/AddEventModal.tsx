@@ -6,6 +6,7 @@ import {
   Switch,
   Platform,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,8 +24,15 @@ import {
   formatMonth,
   getDaysInEthiopianMonth,
   ethiopianToGregorian,
+  gregorianYmdToEthiopian,
 } from "@/lib/ethiopianCalendar";
 import { isDevice24Hour, formatTimeSlot } from "@/lib/timeFormat";
+import { useTags, useCreateTag, useDeleteTag } from "@/lib/hooks/useTags";
+import {
+  useCreateEvent,
+  useUpdateEvent,
+  useDeleteEvent,
+} from "@/lib/hooks/useEvents";
 
 export type CategoryItem = {
   id: string;
@@ -77,12 +85,14 @@ export type CustomEventData = {
   title: string;
   category?: string | null;
   categoryColor?: string | null;
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD (canonical GC)
   hasReminder: boolean;
   reminderTime?: string;
   reminderOffsets?: ReminderOffset[];
   reminderOffset?: ReminderOffset;
   notes?: string;
+  tagName?: string | null;
+  tagColor?: string | null;
 };
 
 type AddEventModalProps = {
@@ -97,25 +107,6 @@ type AddEventModalProps = {
   onChange?: (index: number) => void;
   onDismiss?: () => void;
 };
-
-export const DEFAULT_CATEGORIES: CategoryItem[] = [
-  { id: "liturgy", labelEn: "Liturgy", labelAm: "ሥርዓተ አምልኮ", labelOm: "Sirna Sagadaa", color: "#8b5cf6", icon: "book-outline" },
-  { id: "sermon", labelEn: "Sermon", labelAm: "ስብከት", labelOm: "Lallaba", color: "#6366f1", icon: "mic-outline" },
-  { id: "choir", labelEn: "Choir", labelAm: "ዝማሬ", labelOm: "Faarfannaa", color: "#ec4899", icon: "musical-notes-outline" },
-  { id: "prayer", labelEn: "Prayer", labelAm: "ጸሎት", labelOm: "Kadhannaa", color: "#f97316", icon: "flame-outline" },
-  { id: "meeting", labelEn: "Meeting", labelAm: "ስብሰባ", labelOm: "Walga'ii", color: "#14b8a6", icon: "people-outline" },
-  { id: "conference", labelEn: "Conference", labelAm: "ኮንፈረንስ", labelOm: "Koonfaransii", color: "#d946ef", icon: "globe-outline" },
-  { id: "training", labelEn: "Training", labelAm: "ስልጠና", labelOm: "Leenjii", color: "#06b6d4", icon: "school-outline" },
-  { id: "retreat", labelEn: "Retreat", labelAm: "መንፈሳዊ ዕረፍት", labelOm: "Boqonnaa Hafuuraa", color: "#64748b", icon: "leaf-outline" },
-  { id: "wedding", labelEn: "Wedding", labelAm: "ጋብቻ", labelOm: "Gaa'ila", color: "#f43f5e", icon: "heart-outline" },
-];
-
-export function getCategoryNameById(catId?: string | null, lang = "en"): string | null {
-  if (!catId) return null;
-  const match = DEFAULT_CATEGORIES.find((c) => c.id === catId);
-  if (!match) return catId;
-  return getCategoryLabel(match, lang);
-}
 
 const PALETTE_COLORS = [
   "#8b5cf6", // Purple
@@ -151,13 +142,34 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
     const { t, lang } = useTranslation();
     const isEditMode = Boolean(eventToEdit);
 
+    const { data: dbTags = [] } = useTags();
+    const { mutate: createTagMutation } = useCreateTag();
+    const { mutate: deleteTagMutation } = useDeleteTag();
+
+    const { mutateAsync: createEventAsync, isPending: isCreating } = useCreateEvent();
+    const { mutateAsync: updateEventAsync, isPending: isUpdating } = useUpdateEvent();
+    const { mutateAsync: deleteEventAsync, isPending: isDeleting } = useDeleteEvent();
+    const isSubmitting = isCreating || isUpdating;
+
+    const categories: CategoryItem[] = useMemo(
+      () =>
+        dbTags.map((t) => ({
+          id: t.id,
+          labelEn: t.name,
+          labelAm: t.name,
+          labelOm: t.name,
+          color: t.color,
+          isCustom: true,
+        })),
+      [dbTags],
+    );
+
     const titleRef = useRef(eventToEdit?.title || "");
     const notesRef = useRef(eventToEdit?.notes || "");
     const newTagNameRef = useRef("");
     const newTagInputRef = useRef<any>(null);
     const scrollViewRef = useRef<any>(null);
 
-    const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(
       eventToEdit?.category ?? null,
     );
@@ -168,8 +180,12 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
 
     const [selectedDay, setSelectedDay] = useState(() => {
       if (eventToEdit?.date) {
-        const d = parseInt(eventToEdit.date.split("-")[2], 10);
-        if (!isNaN(d)) return d;
+        const [gcY, gcM, gcD] = eventToEdit.date.split("-").map(Number);
+        if (isEth) {
+          const eth = gregorianYmdToEthiopian(gcY, gcM - 1, gcD);
+          return eth.day;
+        }
+        return gcD;
       }
       return initialDay ?? 1;
     });
@@ -259,10 +275,11 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         }
 
         if (eventToEdit.date) {
-          const d = parseInt(eventToEdit.date.split("-")[2], 10);
-          if (!isNaN(d) && d >= 1 && d <= daysInMonth) {
-            setSelectedDay(d);
-            const timer = setTimeout(() => scrollToSelectedDay(d, true), 100);
+          const [gcY, gcM, gcD] = eventToEdit.date.split("-").map(Number);
+          const targetDay = isEth ? gregorianYmdToEthiopian(gcY, gcM - 1, gcD).day : gcD;
+          if (targetDay >= 1 && targetDay <= daysInMonth) {
+            setSelectedDay(targetDay);
+            const timer = setTimeout(() => scrollToSelectedDay(targetDay, true), 100);
             return () => clearTimeout(timer);
           }
         }
@@ -283,7 +300,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
           return () => clearTimeout(timer);
         }
       }
-    }, [eventToEdit, initialDay, daysInMonth, scrollToSelectedDay, is24H]);
+    }, [eventToEdit, initialDay, daysInMonth, scrollToSelectedDay, is24H, isEth]);
 
     const daysList = useMemo(() => {
       const list: { day: number; weekdayName: string; isSunday: boolean }[] = [];
@@ -348,42 +365,84 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       return `${mName} ${selectedDay}, ${selectedYear}`;
     }, [selectedMonth, selectedDay, selectedYear, isEth, lang]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
       const enteredTitle = titleRef.current.trim();
-      if (!enteredTitle) return;
+      if (!enteredTitle || isSubmitting) return;
 
       const activeCat = selectedCategory
         ? categories.find((c) => c.id === selectedCategory)
         : null;
 
-      onSave?.({
+      let canonicalGcDate: string;
+      if (isEth) {
+        const gc = ethiopianToGregorian(selectedYear, selectedMonth, selectedDay);
+        canonicalGcDate = `${gc.year}-${String(gc.month + 1).padStart(2, "0")}-${String(gc.day).padStart(2, "0")}`;
+      } else {
+        canonicalGcDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
+      }
+
+      const eventPayload: CustomEventData = {
         id: eventToEdit ? eventToEdit.id : String(Date.now()),
         title: enteredTitle,
         category: selectedCategory ?? undefined,
         categoryColor: activeCat?.color,
-        date: `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`,
+        tagName: activeCat ? getCategoryLabel(activeCat, lang) : undefined,
+        tagColor: activeCat?.color,
+        date: canonicalGcDate,
         hasReminder,
         reminderTime: hasReminder ? selectedTime : undefined,
         reminderOffsets: hasReminder ? reminderOffsets : undefined,
         reminderOffset: hasReminder && reminderOffsets.length > 0 ? reminderOffsets[0] : undefined,
         notes: notesRef.current.trim() || undefined,
-      });
+      };
 
-      // Clear inputs
-      titleRef.current = "";
-      notesRef.current = "";
-      newTagNameRef.current = "";
-      newTagInputRef.current?.clear();
-      setIsCreatingTag(false);
-      setShowTimePicker(false);
-      setReminderOffsets(["at_time"]);
-      setSelectedCategory(null);
-      setHasReminder(false);
-      setIsTitleFilled(false);
-      setShowDeleteEventConfirm(false);
+      try {
+        if (eventToEdit) {
+          await updateEventAsync({
+            id: eventPayload.id,
+            title: eventPayload.title,
+            date: eventPayload.date,
+            reminderTime: eventPayload.reminderTime,
+            notes: eventPayload.notes,
+            tagId: eventPayload.category ?? null,
+            tagName: eventPayload.tagName ?? null,
+            tagColor: eventPayload.tagColor ?? null,
+            reminderOffsets: eventPayload.reminderOffsets,
+          });
+        } else {
+          await createEventAsync({
+            id: eventPayload.id,
+            title: eventPayload.title,
+            date: eventPayload.date,
+            reminderTime: eventPayload.reminderTime,
+            notes: eventPayload.notes,
+            tagId: eventPayload.category ?? null,
+            tagName: eventPayload.tagName ?? null,
+            tagColor: eventPayload.tagColor ?? null,
+            reminderOffsets: eventPayload.reminderOffsets,
+          });
+        }
 
-      (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
-      onClose?.();
+        onSave?.(eventPayload);
+
+        // Clear inputs only after mutation successfully finishes
+        titleRef.current = "";
+        notesRef.current = "";
+        newTagNameRef.current = "";
+        newTagInputRef.current?.clear();
+        setIsCreatingTag(false);
+        setShowTimePicker(false);
+        setReminderOffsets(["at_time"]);
+        setSelectedCategory(null);
+        setHasReminder(false);
+        setIsTitleFilled(false);
+        setShowDeleteEventConfirm(false);
+
+        (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
+        onClose?.();
+      } catch (err) {
+        console.warn("Failed to persist event:", err);
+      }
     };
 
     const handleCancel = () => {
@@ -402,13 +461,17 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       onClose?.();
     };
 
-    const confirmDeleteEvent = () => {
-      if (eventToEdit) {
+    const confirmDeleteEvent = async () => {
+      if (!eventToEdit || isDeleting) return;
+      try {
+        await deleteEventAsync(eventToEdit.id);
         onDeleteEvent?.(eventToEdit.id);
+        setShowDeleteEventConfirm(false);
+        (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
+        onClose?.();
+      } catch (err) {
+        console.warn("Failed to delete event:", err);
       }
-      setShowDeleteEventConfirm(false);
-      (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
-      onClose?.();
     };
 
     const handleToggleOffset = (offsetId: ReminderOffset) => {
@@ -426,15 +489,12 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
     const handleAddCustomTag = () => {
       const enteredName = newTagNameRef.current.trim();
       if (!enteredName) return;
-      const tagId = `custom_${Date.now()}`;
-      const newCat: CategoryItem = {
+      const tagId = `tag_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      createTagMutation({
         id: tagId,
-        labelEn: enteredName,
-        labelAm: enteredName,
+        name: enteredName,
         color: newTagColor,
-        isCustom: true,
-      };
-      setCategories((prev) => [newCat, ...prev]);
+      });
       setSelectedCategory(tagId);
       newTagNameRef.current = "";
       newTagInputRef.current?.clear();
@@ -450,7 +510,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
     const confirmDeleteTag = () => {
       if (!tagToDelete) return;
       const tagId = tagToDelete.id;
-      setCategories((prev) => prev.filter((c) => c.id !== tagId));
+      deleteTagMutation(tagId);
       if (selectedCategory === tagId) {
         setSelectedCategory(null);
       }
@@ -522,25 +582,29 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
 
             <TouchableOpacity
               onPress={handleSave}
-              disabled={!isTitleFilled}
+              disabled={!isTitleFilled || isSubmitting}
               activeOpacity={0.7}
-              className={`h-9 rounded-full px-4 items-center justify-center ${
-                isTitleFilled
+              className={`h-9 min-w-[68px] rounded-full px-4 items-center justify-center ${
+                isTitleFilled && !isSubmitting
                   ? "bg-primary"
                   : "bg-stone-300/70 dark:bg-stone-800/80"
               }`}
             >
-              <Text
-                allowFontScaling={false}
-                className={`text-xs font-semibold ${
-                  isTitleFilled
-                    ? "text-white"
-                    : "text-stone-400 dark:text-stone-500"
-                }`}
-                style={{ fontFamily: "ReadingFont" }}
-              >
-                {t("save")}
-              </Text>
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text
+                  allowFontScaling={false}
+                  className={`text-xs font-semibold ${
+                    isTitleFilled
+                      ? "text-white"
+                      : "text-stone-400 dark:text-stone-500"
+                  }`}
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("save")}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -1022,81 +1086,80 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             style={{ fontFamily: "ReadingFont", minHeight: 110, textAlignVertical: "top" }}
           />
 
-          {/* Edit Mode: Delete Event Action Button */}
+          {/* Edit Mode: Delete Event Action Button / Inline Confirmation */}
           {isEditMode && (
             <View className="mt-6 mb-2">
-              <TouchableOpacity
-                onPress={() => setShowDeleteEventConfirm(true)}
-                activeOpacity={0.7}
-                className="flex-row items-center justify-center gap-2 rounded-2xl border border-red-200/80 bg-red-50/50 py-3.5 dark:border-red-900/40 dark:bg-red-950/20"
-              >
-                <Ionicons name="trash-outline" size={17} color="#ef4444" />
-                <Text
-                  allowFontScaling={false}
-                  className="text-sm font-semibold text-red-600 dark:text-red-400"
-                  style={{ fontFamily: "ReadingFont" }}
+              {showDeleteEventConfirm ? (
+                <View className="rounded-2xl border border-red-200/80 bg-red-50/70 p-4 dark:border-red-900/50 dark:bg-red-950/30">
+                  <Text
+                    allowFontScaling={false}
+                    className="mb-1 text-sm font-semibold text-red-700 dark:text-red-300"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("deleteEventConfirmTitle")}
+                  </Text>
+                  <Text
+                    allowFontScaling={false}
+                    className="mb-4 text-xs text-red-600/80 dark:text-red-400/80 leading-relaxed"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("deleteEventConfirmDesc")}
+                  </Text>
+                  <View className="flex-row items-center justify-end gap-2.5">
+                    <TouchableOpacity
+                      onPress={() => setShowDeleteEventConfirm(false)}
+                      disabled={isDeleting}
+                      activeOpacity={0.7}
+                      className="rounded-xl bg-white px-4 py-2 dark:bg-[#1C1C1C] border border-stone-200/60 dark:border-stone-800/60"
+                    >
+                      <Text
+                        allowFontScaling={false}
+                        className="text-xs font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {t("cancel")}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={confirmDeleteEvent}
+                      disabled={isDeleting}
+                      activeOpacity={0.7}
+                      className="h-8 min-w-[70px] rounded-xl bg-red-600 px-4 items-center justify-center dark:bg-red-500"
+                    >
+                      {isDeleting ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text
+                          allowFontScaling={false}
+                          className="text-xs font-semibold text-white"
+                          style={{ fontFamily: "ReadingFont" }}
+                        >
+                          {t("delete")}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => setShowDeleteEventConfirm(true)}
+                  activeOpacity={0.7}
+                  className="flex-row items-center justify-center gap-2 rounded-2xl border border-red-200/80 bg-red-50/50 py-3.5 dark:border-red-900/40 dark:bg-red-950/20"
                 >
-                  {t("deleteEvent")}
-                </Text>
-              </TouchableOpacity>
+                  <Ionicons name="trash-outline" size={17} color="#ef4444" />
+                  <Text
+                    allowFontScaling={false}
+                    className="text-sm font-semibold text-red-600 dark:text-red-400"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("deleteEvent")}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </BottomSheetScrollView>
-
-        {/* Delete Event Confirmation Modal */}
-        <Modal
-          visible={showDeleteEventConfirm}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowDeleteEventConfirm(false)}
-        >
-          <View className="flex-1 items-center justify-center bg-black/50 px-8">
-            <View className="w-full max-w-sm rounded-2xl bg-white p-6 dark:bg-[#1C1C1C] border border-stone-200/60 dark:border-stone-800/60 shadow-lg">
-              <Text
-                allowFontScaling={false}
-                className="mb-2 text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont" }}
-              >
-                {t("deleteEventConfirmTitle")}
-              </Text>
-              <Text
-                allowFontScaling={false}
-                className="mb-6 text-sm text-muted dark:text-muted-dark leading-relaxed"
-                style={{ fontFamily: "ReadingFont" }}
-              >
-                {t("deleteEventConfirmDesc")}
-              </Text>
-              <View className="flex-row justify-end gap-3">
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  className="rounded-xl bg-stone-100 px-5 py-2.5 dark:bg-[#2A2A2A]"
-                  onPress={() => setShowDeleteEventConfirm(false)}
-                >
-                  <Text
-                    allowFontScaling={false}
-                    className="text-center text-sm font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    {t("cancel")}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  className="rounded-xl bg-red-600 dark:bg-red-500 px-5 py-2.5"
-                  onPress={confirmDeleteEvent}
-                >
-                  <Text
-                    allowFontScaling={false}
-                    className="text-center text-sm font-semibold text-white"
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    {t("delete")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
 
         {/* Delete Tag Confirmation Modal (matching Favourites modal style) */}
         <Modal

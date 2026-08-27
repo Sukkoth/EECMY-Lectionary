@@ -20,6 +20,8 @@ import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useIsDark } from "@/lib/useIsDark";
+import { useEvents } from "@/lib/hooks/useEvents";
+import { useTags } from "@/lib/hooks/useTags";
 import "./global.css";
 
 import { Lora_400Regular } from "@expo-google-fonts/lora";
@@ -73,6 +75,10 @@ function AppContent() {
   const { isOnboardingComplete, loading } = useOnboarding();
   const segments = useSegments();
   const router = useRouter();
+
+  // Pre-load custom events and tags into TanStack cache at app start
+  useEvents();
+  useTags();
 
   useEffect(() => {
     const style = isDark ? "light" : "dark";

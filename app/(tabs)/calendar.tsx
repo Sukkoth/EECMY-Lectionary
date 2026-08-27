@@ -22,7 +22,12 @@ import { useDayInfo } from "@/lib/hooks/useDayInfo";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
-import { gregorianToEthiopian } from "@/lib/ethiopianCalendar";
+import {
+  formatEvangelistYear,
+  gregorianToEthiopian,
+  gregorianYmdToEthiopian,
+} from "@/lib/ethiopianCalendar";
+import { useEvents } from "@/lib/hooks/useEvents";
 
 function getInitialCurrent(isEth: boolean) {
   const now = new Date();
@@ -42,7 +47,9 @@ export default function CalendarScreen() {
 
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
   const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
-  const [userEvents, setUserEvents] = useState<CustomEventData[]>([]);
+
+  const { data: eventIndex } = useEvents();
+
   const [editingEvent, setEditingEvent] = useState<CustomEventData | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
@@ -52,19 +59,11 @@ export default function CalendarScreen() {
   const addEventSheetRef = useRef<BottomSheetModal>(null);
   const navigation = useNavigation();
 
-  const handleSaveEvent = useCallback((savedEvent: CustomEventData) => {
-    setUserEvents((prev) => {
-      const exists = prev.some((e) => e.id === savedEvent.id);
-      if (exists) {
-        return prev.map((e) => (e.id === savedEvent.id ? savedEvent : e));
-      }
-      return [savedEvent, ...prev];
-    });
+  const handleSaveEvent = useCallback((_savedEvent: CustomEventData) => {
     setEditingEvent(null);
   }, []);
 
-  const handleDeleteEvent = useCallback((eventId: string) => {
-    setUserEvents((prev) => prev.filter((e) => e.id !== eventId));
+  const handleDeleteEvent = useCallback((_eventId: string) => {
     setEditingEvent(null);
   }, []);
 
@@ -159,16 +158,19 @@ export default function CalendarScreen() {
   const handleOpenEditEvent = useCallback(
     (event: CustomEventData) => {
       setEditingEvent(event);
-      const parts = event.date.split("-");
-      const yr = parseInt(parts[0], 10) || current.year;
-      const mo = (parseInt(parts[1], 10) || 1) - 1;
-      const dy = parseInt(parts[2], 10) || 1;
-      setPickerSelected({ year: yr, month: mo });
-      setAddEventInitialDay(dy);
+      const [gcY, gcM, gcD] = event.date.split("-").map(Number);
+      if (isEth) {
+        const eth = gregorianYmdToEthiopian(gcY, gcM - 1, gcD);
+        setPickerSelected({ year: eth.year, month: eth.month });
+        setAddEventInitialDay(eth.day);
+      } else {
+        setPickerSelected({ year: gcY, month: gcM - 1 });
+        setAddEventInitialDay(gcD);
+      }
       setIsAddEventOpen(true);
       addEventSheetRef.current?.present();
     },
-    [current],
+    [isEth],
   );
 
   const handleMonthChange = useCallback((year: number, month: number) => {
@@ -259,7 +261,7 @@ export default function CalendarScreen() {
           isEth={isEth}
           holidayIndex={holidayIndex}
           dayInfoIndex={dayInfoIndex}
-          userEvents={userEvents}
+          eventIndex={eventIndex}
           screenWidth={screenWidth}
           calendarStyle={settings.calendarStyle}
           showSeasonColors={settings.showSeasonColors ?? true}

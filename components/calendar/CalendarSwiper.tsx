@@ -19,6 +19,7 @@ import Animated, {
 import { MonthPage } from "./MonthPage";
 import type { HolidayIndex } from "@/lib/hooks/useHolidays";
 import type { DayInfoIndex } from "@/lib/hooks/useDayInfo";
+import type { EventIndex } from "@/lib/hooks/useEvents";
 import type { CalendarStyle } from "@/lib/settings";
 
 import type { CustomEventData } from "@/components/calendar/AddEventModal";
@@ -46,6 +47,7 @@ type CalendarSwiperProps = {
   isEth: boolean;
   holidayIndex?: HolidayIndex;
   dayInfoIndex?: DayInfoIndex;
+  eventIndex?: EventIndex;
   userEvents?: CustomEventData[];
   screenWidth: number;
   calendarStyle: CalendarStyle;
@@ -81,6 +83,7 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
       isEth,
       holidayIndex,
       dayInfoIndex,
+      eventIndex,
       userEvents,
       screenWidth,
       calendarStyle,
@@ -265,6 +268,7 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
                     isEth={isEth}
                     holidayIndex={holidayIndex}
                     dayInfoIndex={dayInfoIndex}
+                    eventIndex={eventIndex}
                     userEvents={userEvents}
                     screenWidth={screenWidth}
                     calendarStyle={calendarStyle}

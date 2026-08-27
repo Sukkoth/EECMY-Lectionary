@@ -7,6 +7,8 @@ import type { HolidayIndex } from "@/lib/hooks/useHolidays";
 import { getHolidaysForActiveMonth } from "@/lib/hooks/useHolidays";
 import type { DayInfoIndex } from "@/lib/hooks/useDayInfo";
 import { getDayInfoForActiveMonth } from "@/lib/hooks/useDayInfo";
+import type { EventIndex } from "@/lib/hooks/useEvents";
+import { getEventsForActiveMonth } from "@/lib/hooks/useEvents";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
 import { HOLIDAY_COLORS } from "@/constants";
@@ -16,10 +18,10 @@ import {
   formatEvangelistYear,
   getSubMonthSpanString,
   gregorianToEthiopian,
+  gregorianYmdToEthiopian,
 } from "@/lib/ethiopianCalendar";
 
 import type { CustomEventData } from "@/components/calendar/AddEventModal";
-import { getCategoryNameById } from "@/components/calendar/AddEventModal";
 
 const HOLIDAY_LIST_CONTENT_STYLE = { paddingBottom: 130 };
 
@@ -59,6 +61,7 @@ type MonthPageProps = {
   isEth: boolean;
   holidayIndex?: HolidayIndex;
   dayInfoIndex?: DayInfoIndex;
+  eventIndex?: EventIndex;
   userEvents?: CustomEventData[];
   screenWidth: number;
   calendarStyle: CalendarStyle;
@@ -74,6 +77,7 @@ export const MonthPage = React.memo(function MonthPage({
   isEth,
   holidayIndex,
   dayInfoIndex,
+  eventIndex,
   userEvents = [],
   screenWidth,
   calendarStyle,
@@ -109,31 +113,68 @@ export const MonthPage = React.memo(function MonthPage({
       themeColor: HOLIDAY_COLORS[h.type] ?? "#3b82f6",
     }));
 
-    const targetPrefix = `${year}-${String(month + 1).padStart(2, "0")}-`;
-    const userEventFeed: CalendarFeedItem[] = userEvents
-      .filter((e) => e.date.startsWith(targetPrefix))
-      .map((e) => {
-        const parts = e.date.split("-");
-        const day = parseInt(parts[2], 10) || 1;
-        return {
-          kind: "custom_event",
-          id: e.id,
-          title: e.title,
-          tagLabel: getCategoryNameById(e.category, lang),
-          tagColor: e.categoryColor,
-          time: e.hasReminder ? e.reminderTime : undefined,
-          hasReminder: e.hasReminder,
-          reminderCount: e.reminderOffsets?.length ?? (e.hasReminder ? 1 : 0),
-          notes: e.notes,
-          displayDay: day,
-          customEvent: e,
-        };
-      });
+    let userEventFeed: CalendarFeedItem[] = [];
+
+    if (eventIndex) {
+      const activeEvents = getEventsForActiveMonth(eventIndex, year, month, isEth);
+      userEventFeed = activeEvents.map(({ event: e, displayDay }) => ({
+        kind: "custom_event",
+        id: e.id,
+        title: e.title,
+        tagLabel: e.tagName || null,
+        tagColor: e.tagColor,
+        time: e.hasReminder ? e.reminderTime : undefined,
+        hasReminder: e.hasReminder,
+        reminderCount: e.reminderOffsets?.length ?? (e.hasReminder ? 1 : 0),
+        notes: e.notes,
+        displayDay,
+        customEvent: e,
+      }));
+    } else if (userEvents.length > 0) {
+      for (const e of userEvents) {
+        const [gcY, gcM, gcD] = e.date.split("-").map(Number);
+        if (isEth) {
+          const eth = gregorianYmdToEthiopian(gcY, gcM - 1, gcD);
+          if (eth.year === year && eth.month === month) {
+            userEventFeed.push({
+              kind: "custom_event",
+              id: e.id,
+              title: e.title,
+              tagLabel: e.tagName || e.category,
+              tagColor: e.tagColor || e.categoryColor,
+              time: e.hasReminder ? e.reminderTime : undefined,
+              hasReminder: e.hasReminder,
+              reminderCount: e.reminderOffsets?.length ?? (e.hasReminder ? 1 : 0),
+              notes: e.notes,
+              displayDay: eth.day,
+              customEvent: e,
+            });
+          }
+        } else {
+          const targetPrefix = `${year}-${String(month + 1).padStart(2, "0")}-`;
+          if (e.date.startsWith(targetPrefix)) {
+            userEventFeed.push({
+              kind: "custom_event",
+              id: e.id,
+              title: e.title,
+              tagLabel: e.tagName || e.category,
+              tagColor: e.tagColor || e.categoryColor,
+              time: e.hasReminder ? e.reminderTime : undefined,
+              hasReminder: e.hasReminder,
+              reminderCount: e.reminderOffsets?.length ?? (e.hasReminder ? 1 : 0),
+              notes: e.notes,
+              displayDay: gcD,
+              customEvent: e,
+            });
+          }
+        }
+      }
+    }
 
     return [...holidayFeed, ...userEventFeed].sort(
       (a, b) => a.displayDay - b.displayDay,
     );
-  }, [holidays, userEvents, year, month, lang]);
+  }, [holidays, eventIndex, userEvents, year, month, isEth]);
 
   const dayInfoMap = useMemo(() => {
     return getDayInfoForActiveMonth(dayInfoIndex, year, month, isEth);
