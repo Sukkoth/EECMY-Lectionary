@@ -194,107 +194,75 @@ export const MonthPage = React.memo(function MonthPage({
 
       // User Custom Event
       const accentColor = item.tagColor || "#3b82f6";
+      const metaParts: string[] = [];
+      if (item.tagLabel) metaParts.push(item.tagLabel);
+      if (item.time) metaParts.push(item.time);
+      if (item.hasReminder && item.reminderCount) {
+        const alertLabel =
+          item.reminderCount === 1 ? t("alert") : t("alerts");
+        metaParts.push(`${item.reminderCount} ${alertLabel.toLowerCase()}`);
+      }
+      const metaText = metaParts.join(" • ");
+
       return (
         <TouchableOpacity
           onPress={() => onOpenEditEvent?.(item.customEvent)}
           activeOpacity={0.7}
-          className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 rounded-2xl border border-stone-200/60 p-4 dark:border-stone-800/60"
+          className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-start justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
         >
-          <View className="flex-row items-start justify-between">
-            {/* Left: Custom Tag Accent Bar + Event Content */}
-            <View className="flex-1 flex-row items-stretch gap-3 pr-3">
-              <View
-                className="w-1.5 self-stretch rounded-full my-0.5"
-                style={{ backgroundColor: accentColor }}
-              />
+          {/* Left: Custom Tag Accent Bar + Event Content */}
+          <View className="flex-1 flex-row items-stretch gap-3 pr-3">
+            <View
+              className="w-1.5 self-stretch rounded-full my-0.5"
+              style={{ backgroundColor: accentColor }}
+            />
 
-              <View className="flex-1">
-                {/* Title */}
+            <View className="flex-1">
+              {/* Title */}
+              <Text
+                maxFontSizeMultiplier={1.2}
+                className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+              >
+                {item.title}
+              </Text>
+
+              {/* Subtitle Line (matches Feast Subtitle style) */}
+              {Boolean(metaText) && (
                 <Text
                   maxFontSizeMultiplier={1.2}
-                  className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                  style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                  className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
+                  style={{ fontFamily: "ReadingFont" }}
+                  numberOfLines={1}
                 >
-                  {item.title}
+                  {metaText}
                 </Text>
+              )}
 
-                {/* Metadata Pills Row: Tag • Time • Alerts */}
-                <View className="mt-1.5 flex-row flex-wrap items-center gap-2">
-                  {Boolean(item.tagLabel) && (
-                    <View
-                      className="flex-row items-center gap-1 rounded-full px-2 py-0.5"
-                      style={{ backgroundColor: `${accentColor}18` }}
-                    >
-                      <View
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{ backgroundColor: accentColor }}
-                      />
-                      <Text
-                        allowFontScaling={false}
-                        className="text-[11px] font-semibold"
-                        style={{ fontFamily: "ReadingFont", color: accentColor }}
-                      >
-                        {item.tagLabel}
-                      </Text>
-                    </View>
-                  )}
-
-                  {Boolean(item.time) && (
-                    <View className="flex-row items-center gap-1 rounded-full bg-stone-200/50 px-2 py-0.5 dark:bg-[#25221E]">
-                      <Ionicons
-                        name="time-outline"
-                        size={11}
-                        color={isDark ? "#A8A29E" : "#78716C"}
-                      />
-                      <Text
-                        allowFontScaling={false}
-                        className="text-[11px] font-medium text-stone-600 dark:text-stone-400"
-                        style={{ fontFamily: "ReadingFont" }}
-                      >
-                        {item.time}
-                      </Text>
-                    </View>
-                  )}
-
-                  {Boolean(item.hasReminder) && (
-                    <View className="bg-primary/10 flex-row items-center gap-1 rounded-full px-2 py-0.5">
-                      <Ionicons name="alarm-outline" size={11} color="#3b82f6" />
-                      <Text
-                        allowFontScaling={false}
-                        className="text-primary text-[11px] font-semibold"
-                        style={{ fontFamily: "ReadingFont" }}
-                      >
-                        {item.reminderCount ?? 1}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Optional Notes Preview */}
-                {Boolean(item.notes) && (
-                  <Text
-                    numberOfLines={1}
-                    className="text-muted dark:text-muted-dark mt-2 text-xs italic"
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    &quot;{item.notes}&quot;
-                  </Text>
-                )}
-              </View>
+              {/* Optional Notes Preview */}
+              {Boolean(item.notes) && (
+                <Text
+                  numberOfLines={1}
+                  className="text-muted/70 dark:text-muted-dark/70 mt-1 text-xs"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {item.notes}
+                </Text>
+              )}
             </View>
-
-            {/* Right: Date Number */}
-            <Text
-              allowFontScaling={false}
-              className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-              style={{
-                fontFamily: "ReadingFont",
-                fontWeight: "600",
-              }}
-            >
-              {item.displayDay}
-            </Text>
           </View>
+
+          {/* Right: Date Number */}
+          <Text
+            allowFontScaling={false}
+            className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+            style={{
+              fontFamily: "ReadingFont",
+              fontWeight: "600",
+            }}
+          >
+            {item.displayDay}
+          </Text>
         </TouchableOpacity>
       );
     },
