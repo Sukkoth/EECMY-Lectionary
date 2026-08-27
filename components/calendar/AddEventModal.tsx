@@ -99,14 +99,14 @@ type AddEventModalProps = {
 };
 
 export const DEFAULT_CATEGORIES: CategoryItem[] = [
-  { id: "liturgy", labelEn: "Liturgy", labelAm: "ሥርዓተ አምልኮ", labelOm: "Sirna Sagadaa", color: "#3b82f6", icon: "book-outline" },
-  { id: "sermon", labelEn: "Sermon", labelAm: "ስብከት", labelOm: "Lallaba", color: "#8b5cf6", icon: "mic-outline" },
-  { id: "choir", labelEn: "Choir", labelAm: "ዝማሬ", labelOm: "Faarfannaa", color: "#10b981", icon: "musical-notes-outline" },
-  { id: "prayer", labelEn: "Prayer", labelAm: "ጸሎት", labelOm: "Kadhannaa", color: "#f59e0b", icon: "flame-outline" },
-  { id: "meeting", labelEn: "Meeting", labelAm: "ስብሰባ", labelOm: "Walga'ii", color: "#0ea5e9", icon: "people-outline" },
-  { id: "conference", labelEn: "Conference", labelAm: "ኮንፈረንስ", labelOm: "Koonfaransii", color: "#6366f1", icon: "globe-outline" },
-  { id: "training", labelEn: "Training", labelAm: "ስልጠና", labelOm: "Leenjii", color: "#14b8a6", icon: "school-outline" },
-  { id: "retreat", labelEn: "Retreat", labelAm: "መንፈሳዊ ዕረፍት", labelOm: "Boqonnaa Hafuuraa", color: "#ec4899", icon: "leaf-outline" },
+  { id: "liturgy", labelEn: "Liturgy", labelAm: "ሥርዓተ አምልኮ", labelOm: "Sirna Sagadaa", color: "#8b5cf6", icon: "book-outline" },
+  { id: "sermon", labelEn: "Sermon", labelAm: "ስብከት", labelOm: "Lallaba", color: "#6366f1", icon: "mic-outline" },
+  { id: "choir", labelEn: "Choir", labelAm: "ዝማሬ", labelOm: "Faarfannaa", color: "#ec4899", icon: "musical-notes-outline" },
+  { id: "prayer", labelEn: "Prayer", labelAm: "ጸሎት", labelOm: "Kadhannaa", color: "#f97316", icon: "flame-outline" },
+  { id: "meeting", labelEn: "Meeting", labelAm: "ስብሰባ", labelOm: "Walga'ii", color: "#14b8a6", icon: "people-outline" },
+  { id: "conference", labelEn: "Conference", labelAm: "ኮንፈረንስ", labelOm: "Koonfaransii", color: "#d946ef", icon: "globe-outline" },
+  { id: "training", labelEn: "Training", labelAm: "ስልጠና", labelOm: "Leenjii", color: "#06b6d4", icon: "school-outline" },
+  { id: "retreat", labelEn: "Retreat", labelAm: "መንፈሳዊ ዕረፍት", labelOm: "Boqonnaa Hafuuraa", color: "#64748b", icon: "leaf-outline" },
   { id: "wedding", labelEn: "Wedding", labelAm: "ጋብቻ", labelOm: "Gaa'ila", color: "#f43f5e", icon: "heart-outline" },
 ];
 
@@ -118,23 +118,16 @@ export function getCategoryNameById(catId?: string | null, lang = "en"): string 
 }
 
 const PALETTE_COLORS = [
-  "#3b82f6", // Blue
-  "#2563eb", // Royal Blue
-  "#0ea5e9", // Sky Blue
-  "#06b6d4", // Cyan
-  "#14b8a6", // Teal
-  "#10b981", // Emerald
-  "#16a34a", // Green
-  "#84cc16", // Lime
-  "#eab308", // Yellow
-  "#f59e0b", // Amber
-  "#f97316", // Orange
-  "#ef4444", // Red
-  "#f43f5e", // Rose
-  "#ec4899", // Pink
-  "#d946ef", // Fuchsia
   "#8b5cf6", // Purple
   "#6366f1", // Indigo
+  "#a855f7", // Violet
+  "#d946ef", // Fuchsia
+  "#ec4899", // Pink
+  "#f43f5e", // Rose
+  "#ef4444", // Crimson Red
+  "#f97316", // Tangerine Orange
+  "#14b8a6", // Teal
+  "#06b6d4", // Cyan
   "#64748b", // Slate
 ];
 
