@@ -79,7 +79,7 @@ export type CustomEventData = {
   categoryColor?: string | null;
   date: string; // YYYY-MM-DD
   hasReminder: boolean;
-  reminderTime: string;
+  reminderTime?: string;
   reminderOffsets?: ReminderOffset[];
   reminderOffset?: ReminderOffset;
   notes?: string;
@@ -90,7 +90,9 @@ type AddEventModalProps = {
   selectedMonth: number;
   isEth: boolean;
   initialDay?: number;
+  eventToEdit?: CustomEventData | null;
   onSave?: (event: CustomEventData) => void;
+  onDeleteEvent?: (eventId: string) => void;
   onClose?: () => void;
   onChange?: (index: number) => void;
   onDismiss?: () => void;
@@ -137,28 +139,62 @@ const PALETTE_COLORS = [
 ];
 
 export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
-  ({ selectedYear, selectedMonth, isEth, initialDay, onSave, onClose, onChange, onDismiss }, ref) => {
+  (
+    {
+      selectedYear,
+      selectedMonth,
+      isEth,
+      initialDay,
+      eventToEdit,
+      onSave,
+      onDeleteEvent,
+      onClose,
+      onChange,
+      onDismiss,
+    },
+    ref,
+  ) => {
     const isDark = useIsDark();
     const { t, lang } = useTranslation();
+    const isEditMode = Boolean(eventToEdit);
 
-    const titleRef = useRef("");
-    const notesRef = useRef("");
+    const titleRef = useRef(eventToEdit?.title || "");
+    const notesRef = useRef(eventToEdit?.notes || "");
     const newTagNameRef = useRef("");
-    const titleInputRef = useRef<any>(null);
-    const notesInputRef = useRef<any>(null);
     const newTagInputRef = useRef<any>(null);
     const scrollViewRef = useRef<any>(null);
 
     const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(
+      eventToEdit?.category ?? null,
+    );
     const [isCreatingTag, setIsCreatingTag] = useState(false);
     const [newTagColor, setNewTagColor] = useState(PALETTE_COLORS[0]);
     const [tagToDelete, setTagToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [showDeleteEventConfirm, setShowDeleteEventConfirm] = useState(false);
 
-    const [selectedDay, setSelectedDay] = useState(() => initialDay ?? 1);
-    const [hasReminder, setHasReminder] = useState(false);
-    const [isTitleFilled, setIsTitleFilled] = useState(false);
-    const [reminderOffsets, setReminderOffsets] = useState<ReminderOffset[]>(["at_time"]);
+    const [selectedDay, setSelectedDay] = useState(() => {
+      if (eventToEdit?.date) {
+        const d = parseInt(eventToEdit.date.split("-")[2], 10);
+        if (!isNaN(d)) return d;
+      }
+      return initialDay ?? 1;
+    });
+
+    const [hasReminder, setHasReminder] = useState(eventToEdit?.hasReminder ?? false);
+    const [isTitleFilled, setIsTitleFilled] = useState(
+      Boolean(eventToEdit?.title && eventToEdit.title.trim().length > 0),
+    );
+    const [reminderOffsets, setReminderOffsets] = useState<ReminderOffset[]>(() => {
+      if (eventToEdit?.reminderOffsets && eventToEdit.reminderOffsets.length > 0) {
+        return eventToEdit.reminderOffsets;
+      }
+      if (eventToEdit?.reminderOffset) {
+        return [eventToEdit.reminderOffset];
+      }
+      return ["at_time"];
+    });
+
     const is24H = useMemo(() => isDevice24Hour(), []);
     const [reminderDate, setReminderDate] = useState(() => {
       const d = new Date();
@@ -166,7 +202,9 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       return d;
     });
     const [showTimePicker, setShowTimePicker] = useState(false);
-    const [selectedTime, setSelectedTime] = useState(() => formatTimeSlot(7, 0, isDevice24Hour()));
+    const [selectedTime, setSelectedTime] = useState(
+      () => eventToEdit?.reminderTime || formatTimeSlot(7, 0, isDevice24Hour()),
+    );
 
     const handleTimeChange = (_event: DateTimePickerEvent, date?: Date) => {
       if (Platform.OS === "android") {
@@ -196,15 +234,63 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       dayScrollRef.current?.scrollTo({ x: offset, animated });
     }, []);
 
+    // Synchronize form when eventToEdit or initialDay changes
     useEffect(() => {
-      if (initialDay && initialDay >= 1 && initialDay <= daysInMonth) {
-        setSelectedDay(initialDay);
-        const timer = setTimeout(() => {
-          scrollToSelectedDay(initialDay, true);
-        }, 100);
-        return () => clearTimeout(timer);
+      if (eventToEdit) {
+        titleRef.current = eventToEdit.title;
+        notesRef.current = eventToEdit.notes || "";
+        setIsTitleFilled(eventToEdit.title.trim().length > 0);
+        setSelectedCategory(eventToEdit.category ?? null);
+        setHasReminder(eventToEdit.hasReminder);
+
+        if (eventToEdit.reminderOffsets && eventToEdit.reminderOffsets.length > 0) {
+          setReminderOffsets(eventToEdit.reminderOffsets);
+        } else if (eventToEdit.reminderOffset) {
+          setReminderOffsets([eventToEdit.reminderOffset]);
+        } else {
+          setReminderOffsets(["at_time"]);
+        }
+
+        if (eventToEdit.reminderTime) {
+          setSelectedTime(eventToEdit.reminderTime);
+          const parts = eventToEdit.reminderTime.split(":");
+          if (parts.length >= 2) {
+            const h = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            if (!isNaN(h) && !isNaN(m)) {
+              const d = new Date();
+              d.setHours(h, m, 0, 0);
+              setReminderDate(d);
+            }
+          }
+        }
+
+        if (eventToEdit.date) {
+          const d = parseInt(eventToEdit.date.split("-")[2], 10);
+          if (!isNaN(d) && d >= 1 && d <= daysInMonth) {
+            setSelectedDay(d);
+            const timer = setTimeout(() => scrollToSelectedDay(d, true), 100);
+            return () => clearTimeout(timer);
+          }
+        }
+      } else {
+        titleRef.current = "";
+        notesRef.current = "";
+        setIsTitleFilled(false);
+        setSelectedCategory(null);
+        setHasReminder(false);
+        setReminderOffsets(["at_time"]);
+        setSelectedTime(formatTimeSlot(7, 0, is24H));
+        const d = new Date();
+        d.setHours(7, 0, 0, 0);
+        setReminderDate(d);
+        if (initialDay && initialDay >= 1 && initialDay <= daysInMonth) {
+          setSelectedDay(initialDay);
+          const timer = setTimeout(() => scrollToSelectedDay(initialDay, true), 100);
+          return () => clearTimeout(timer);
+        }
       }
-    }, [initialDay, daysInMonth, scrollToSelectedDay]);
+    }, [eventToEdit, initialDay, daysInMonth, scrollToSelectedDay, is24H]);
 
     const daysList = useMemo(() => {
       const list: { day: number; weekdayName: string; isSunday: boolean }[] = [];
@@ -278,13 +364,13 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         : null;
 
       onSave?.({
-        id: String(Date.now()),
+        id: eventToEdit ? eventToEdit.id : String(Date.now()),
         title: enteredTitle,
         category: selectedCategory ?? undefined,
         categoryColor: activeCat?.color,
         date: `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`,
         hasReminder,
-        reminderTime: selectedTime,
+        reminderTime: hasReminder ? selectedTime : undefined,
         reminderOffsets: hasReminder ? reminderOffsets : undefined,
         reminderOffset: hasReminder && reminderOffsets.length > 0 ? reminderOffsets[0] : undefined,
         notes: notesRef.current.trim() || undefined,
@@ -294,8 +380,6 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       titleRef.current = "";
       notesRef.current = "";
       newTagNameRef.current = "";
-      titleInputRef.current?.clear();
-      notesInputRef.current?.clear();
       newTagInputRef.current?.clear();
       setIsCreatingTag(false);
       setShowTimePicker(false);
@@ -303,6 +387,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       setSelectedCategory(null);
       setHasReminder(false);
       setIsTitleFilled(false);
+      setShowDeleteEventConfirm(false);
 
       (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
       onClose?.();
@@ -312,8 +397,6 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       titleRef.current = "";
       notesRef.current = "";
       newTagNameRef.current = "";
-      titleInputRef.current?.clear();
-      notesInputRef.current?.clear();
       newTagInputRef.current?.clear();
       setIsCreatingTag(false);
       setShowTimePicker(false);
@@ -321,6 +404,16 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       setSelectedCategory(null);
       setHasReminder(false);
       setIsTitleFilled(false);
+      setShowDeleteEventConfirm(false);
+      (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
+      onClose?.();
+    };
+
+    const confirmDeleteEvent = () => {
+      if (eventToEdit) {
+        onDeleteEvent?.(eventToEdit.id);
+      }
+      setShowDeleteEventConfirm(false);
       (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
       onClose?.();
     };
@@ -431,7 +524,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
               className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont" }}
             >
-              {t("newEvent")}
+              {isEditMode ? t("editEvent") : t("newEvent")}
             </Text>
 
             <TouchableOpacity
@@ -467,8 +560,8 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             {t("eventTitle")}
           </Text>
           <BottomSheetTextInput
-            ref={titleInputRef}
-            defaultValue=""
+            key={eventToEdit ? `title-${eventToEdit.id}` : "title-new"}
+            defaultValue={eventToEdit?.title || ""}
             onChangeText={(text) => {
               titleRef.current = text;
               const hasText = text.trim().length > 0;
@@ -923,8 +1016,8 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             {t("notesOptional")}
           </Text>
           <BottomSheetTextInput
-            ref={notesInputRef}
-            defaultValue=""
+            key={eventToEdit ? `notes-${eventToEdit.id}` : "notes-new"}
+            defaultValue={eventToEdit?.notes || ""}
             onChangeText={(text) => {
               notesRef.current = text;
             }}
@@ -935,7 +1028,82 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             className="rounded-2xl border border-stone-200/90 bg-[#F5F2EB] px-4 py-3.5 text-sm text-[#2D2A24] dark:border-stone-700/60 dark:bg-[#25221E] dark:text-[#F3EFE6]"
             style={{ fontFamily: "ReadingFont", minHeight: 110, textAlignVertical: "top" }}
           />
+
+          {/* Edit Mode: Delete Event Action Button */}
+          {isEditMode && (
+            <View className="mt-6 mb-2">
+              <TouchableOpacity
+                onPress={() => setShowDeleteEventConfirm(true)}
+                activeOpacity={0.7}
+                className="flex-row items-center justify-center gap-2 rounded-2xl border border-red-200/80 bg-red-50/50 py-3.5 dark:border-red-900/40 dark:bg-red-950/20"
+              >
+                <Ionicons name="trash-outline" size={17} color="#ef4444" />
+                <Text
+                  allowFontScaling={false}
+                  className="text-sm font-semibold text-red-600 dark:text-red-400"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("deleteEvent")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </BottomSheetScrollView>
+
+        {/* Delete Event Confirmation Modal */}
+        <Modal
+          visible={showDeleteEventConfirm}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDeleteEventConfirm(false)}
+        >
+          <View className="flex-1 items-center justify-center bg-black/50 px-8">
+            <View className="w-full max-w-sm rounded-2xl bg-white p-6 dark:bg-[#1C1C1C] border border-stone-200/60 dark:border-stone-800/60 shadow-lg">
+              <Text
+                allowFontScaling={false}
+                className="mb-2 text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {t("deleteEventConfirmTitle")}
+              </Text>
+              <Text
+                allowFontScaling={false}
+                className="mb-6 text-sm text-muted dark:text-muted-dark leading-relaxed"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {t("deleteEventConfirmDesc")}
+              </Text>
+              <View className="flex-row justify-end gap-3">
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="rounded-xl bg-stone-100 px-5 py-2.5 dark:bg-[#2A2A2A]"
+                  onPress={() => setShowDeleteEventConfirm(false)}
+                >
+                  <Text
+                    allowFontScaling={false}
+                    className="text-center text-sm font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("cancel")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="rounded-xl bg-red-600 dark:bg-red-500 px-5 py-2.5"
+                  onPress={confirmDeleteEvent}
+                >
+                  <Text
+                    allowFontScaling={false}
+                    className="text-center text-sm font-semibold text-white"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("delete")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Delete Tag Confirmation Modal (matching Favourites modal style) */}
         <Modal

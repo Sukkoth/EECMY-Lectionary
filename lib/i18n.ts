@@ -202,6 +202,10 @@ export const translations = {
     alerts: "Alerts",
     notesOptional: "Notes (Optional)",
     notesPlaceholder: "Location, preparation notes, or details...",
+    editEvent: "Edit Event",
+    deleteEvent: "Delete Event",
+    deleteEventConfirmTitle: "Delete Event?",
+    deleteEventConfirmDesc: "Are you sure you want to delete this event? This action cannot be undone.",
   },
   am: {
     home: "መነሻ",
@@ -404,6 +408,10 @@ export const translations = {
     alerts: "ማስጠንቀቂያዎች",
     notesOptional: "ማስታወሻ (አማራጭ)",
     notesPlaceholder: "ተጨማሪ ዝርዝሮች፣ ቦታ ወይም ማስታወሻ...",
+    editEvent: "ክስተት አድስ",
+    deleteEvent: "ክስተቱን አጥፋ",
+    deleteEventConfirmTitle: "ክስተቱ ይጥፋ?",
+    deleteEventConfirmDesc: "ይህን ክስተት መሰረዝ ይፈልጋሉ? ይህ እርምጃ ሊመለስ አይችልም።",
   },
   om: {
     home: "Fuula Duraa",
@@ -606,6 +614,10 @@ export const translations = {
     alerts: "Beeksisoota",
     notesOptional: "Yaadannoo (Filannoo)",
     notesPlaceholder: "Bakka, qophii yookiin odeeffannoo dabalataa...",
+    editEvent: "Qophii Sirreessi",
+    deleteEvent: "Qophii Haqi",
+    deleteEventConfirmTitle: "Qophiin haquu?",
+    deleteEventConfirmDesc: "Qophii kana haquu barbaadduu? Tarkanfiin kun duubatti hin deebi'u.",
   },
 } as const;
 

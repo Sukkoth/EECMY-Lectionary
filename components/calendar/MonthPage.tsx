@@ -50,6 +50,7 @@ export type CalendarFeedItem =
       reminderCount?: number;
       notes?: string;
       displayDay: number;
+      customEvent: CustomEventData;
     };
 
 type MonthPageProps = {
@@ -64,6 +65,7 @@ type MonthPageProps = {
   showSeasonColors: boolean;
   onOpenPicker?: (year: number, month: number) => void;
   onOpenAddEvent?: (year: number, month: number, day?: number) => void;
+  onOpenEditEvent?: (event: CustomEventData) => void;
 };
 
 export const MonthPage = React.memo(function MonthPage({
@@ -78,6 +80,7 @@ export const MonthPage = React.memo(function MonthPage({
   showSeasonColors,
   onOpenPicker,
   onOpenAddEvent,
+  onOpenEditEvent,
 }: MonthPageProps) {
   const { t, lang } = useTranslation();
   const isDark = useIsDark();
@@ -118,11 +121,12 @@ export const MonthPage = React.memo(function MonthPage({
           title: e.title,
           tagLabel: getCategoryNameById(e.category, lang),
           tagColor: e.categoryColor,
-          time: e.reminderTime,
+          time: e.hasReminder ? e.reminderTime : undefined,
           hasReminder: e.hasReminder,
           reminderCount: e.reminderOffsets?.length ?? (e.hasReminder ? 1 : 0),
           notes: e.notes,
           displayDay: day,
+          customEvent: e,
         };
       });
 
@@ -148,11 +152,11 @@ export const MonthPage = React.memo(function MonthPage({
           : `${item.displayDay}`;
 
         return (
-          <View className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50">
+          <View className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-start justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50">
             {/* Left: Accent Line + Feast Info */}
-            <View className="flex-1 flex-row items-center gap-3 pr-3">
+            <View className="flex-1 flex-row items-stretch gap-3 pr-3">
               <View
-                className="h-10 w-1.5 rounded-full"
+                className="w-1.5 self-stretch rounded-full my-0.5"
                 style={{ backgroundColor: item.themeColor }}
               />
               <View className="flex-1">
@@ -160,7 +164,6 @@ export const MonthPage = React.memo(function MonthPage({
                   maxFontSizeMultiplier={1.2}
                   className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
                   style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                  numberOfLines={1}
                 >
                   {item.title}
                 </Text>
@@ -192,12 +195,16 @@ export const MonthPage = React.memo(function MonthPage({
       // User Custom Event
       const accentColor = item.tagColor || "#3b82f6";
       return (
-        <View className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 rounded-2xl border border-stone-200/60 p-4 dark:border-stone-800/60">
+        <TouchableOpacity
+          onPress={() => onOpenEditEvent?.(item.customEvent)}
+          activeOpacity={0.7}
+          className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 rounded-2xl border border-stone-200/60 p-4 dark:border-stone-800/60"
+        >
           <View className="flex-row items-start justify-between">
             {/* Left: Custom Tag Accent Bar + Event Content */}
-            <View className="flex-1 flex-row items-start gap-3 pr-3">
+            <View className="flex-1 flex-row items-stretch gap-3 pr-3">
               <View
-                className="mt-0.5 h-10 w-1.5 rounded-full"
+                className="w-1.5 self-stretch rounded-full my-0.5"
                 style={{ backgroundColor: accentColor }}
               />
 
@@ -207,7 +214,6 @@ export const MonthPage = React.memo(function MonthPage({
                   maxFontSizeMultiplier={1.2}
                   className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
                   style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                  numberOfLines={1}
                 >
                   {item.title}
                 </Text>
@@ -289,10 +295,10 @@ export const MonthPage = React.memo(function MonthPage({
               {item.displayDay}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
       );
     },
-    [isDark],
+    [isDark, onOpenEditEvent],
   );
 
   const feedKeyExtractor = useCallback(

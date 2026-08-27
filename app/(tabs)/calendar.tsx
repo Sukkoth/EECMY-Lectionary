@@ -43,6 +43,7 @@ export default function CalendarScreen() {
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
   const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
   const [userEvents, setUserEvents] = useState<CustomEventData[]>([]);
+  const [editingEvent, setEditingEvent] = useState<CustomEventData | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [addEventInitialDay, setAddEventInitialDay] = useState<number | undefined>(undefined);
@@ -51,8 +52,20 @@ export default function CalendarScreen() {
   const addEventSheetRef = useRef<BottomSheetModal>(null);
   const navigation = useNavigation();
 
-  const handleSaveEvent = useCallback((event: CustomEventData) => {
-    setUserEvents((prev) => [event, ...prev]);
+  const handleSaveEvent = useCallback((savedEvent: CustomEventData) => {
+    setUserEvents((prev) => {
+      const exists = prev.some((e) => e.id === savedEvent.id);
+      if (exists) {
+        return prev.map((e) => (e.id === savedEvent.id ? savedEvent : e));
+      }
+      return [savedEvent, ...prev];
+    });
+    setEditingEvent(null);
+  }, []);
+
+  const handleDeleteEvent = useCallback((eventId: string) => {
+    setUserEvents((prev) => prev.filter((e) => e.id !== eventId));
+    setEditingEvent(null);
   }, []);
 
   // Handle hardware back press on Android when picker bottom sheet is open
@@ -122,6 +135,7 @@ export default function CalendarScreen() {
 
   const handleOpenAddEvent = useCallback(
     (year: number, month: number, day?: number) => {
+      setEditingEvent(null);
       setPickerSelected({ year, month });
       if (day != null) {
         setAddEventInitialDay(day);
@@ -140,6 +154,21 @@ export default function CalendarScreen() {
       addEventSheetRef.current?.present();
     },
     [isEth, ethToday, today],
+  );
+
+  const handleOpenEditEvent = useCallback(
+    (event: CustomEventData) => {
+      setEditingEvent(event);
+      const parts = event.date.split("-");
+      const yr = parseInt(parts[0], 10) || current.year;
+      const mo = (parseInt(parts[1], 10) || 1) - 1;
+      const dy = parseInt(parts[2], 10) || 1;
+      setPickerSelected({ year: yr, month: mo });
+      setAddEventInitialDay(dy);
+      setIsAddEventOpen(true);
+      addEventSheetRef.current?.present();
+    },
+    [current],
   );
 
   const handleMonthChange = useCallback((year: number, month: number) => {
@@ -237,6 +266,7 @@ export default function CalendarScreen() {
           onMonthChange={handleMonthChange}
           onOpenPicker={handleOpenPicker}
           onOpenAddEvent={handleOpenAddEvent}
+          onOpenEditEvent={handleOpenEditEvent}
         />
       </View>
 
@@ -260,12 +290,15 @@ export default function CalendarScreen() {
         selectedMonth={pickerSelected.month}
         isEth={isEth}
         initialDay={addEventInitialDay}
+        eventToEdit={editingEvent}
         onSave={handleSaveEvent}
+        onDeleteEvent={handleDeleteEvent}
         onChange={(idx: number) => {
           setIsAddEventOpen(idx >= 0);
         }}
         onDismiss={() => {
           setIsAddEventOpen(false);
+          setEditingEvent(null);
         }}
       />
     </SafeAreaView>

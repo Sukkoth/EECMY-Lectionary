@@ -53,6 +53,7 @@ type CalendarSwiperProps = {
   onMonthChange: (year: number, month: number) => void;
   onOpenPicker?: (year: number, month: number) => void;
   onOpenAddEvent?: (year: number, month: number, day?: number) => void;
+  onOpenEditEvent?: (event: CustomEventData) => void;
 };
 
 // Hoisted static styles — avoids creating new objects every render (rendering-hoist-jsx)
@@ -87,6 +88,7 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
       onMonthChange,
       onOpenPicker,
       onOpenAddEvent,
+      onOpenEditEvent,
     },
     ref,
   ) {
@@ -269,6 +271,7 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
                     showSeasonColors={showSeasonColors}
                     onOpenPicker={onOpenPicker}
                     onOpenAddEvent={onOpenAddEvent}
+                    onOpenEditEvent={onOpenEditEvent}
                   />
                 </View>
               );
