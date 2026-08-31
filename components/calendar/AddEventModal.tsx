@@ -59,14 +59,7 @@ export const REMINDER_OFFSETS: {
   { id: "1_week", labelKey: "offset1Week" },
 ];
 
-export function getOffsetLabel(
-  offset: (typeof REMINDER_OFFSETS)[number],
-  t: (key: TranslationKey) => string,
-): string {
-  return t(offset.labelKey);
-}
-
-export function getDefaultEventReminderDate(): Date {
+function getDefaultEventReminderDate(): Date {
   const d = new Date();
   d.setMinutes(d.getMinutes() + 2, 0, 0);
   return d;
