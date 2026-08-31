@@ -1,6 +1,7 @@
 import React, {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -48,7 +49,6 @@ type CalendarSwiperProps = {
   holidayIndex?: HolidayIndex;
   dayInfoIndex?: DayInfoIndex;
   eventIndex?: EventIndex;
-  userEvents?: CustomEventData[];
   screenWidth: number;
   calendarStyle: CalendarStyle;
   showSeasonColors: boolean;
@@ -84,7 +84,6 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
       holidayIndex,
       dayInfoIndex,
       eventIndex,
-      userEvents,
       screenWidth,
       calendarStyle,
       showSeasonColors,
@@ -115,7 +114,9 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
 
     // Must be a shared value (not useRef) because it's read inside worklets
     const screenWidthSV = useSharedValue(screenWidth);
-    screenWidthSV.value = screenWidth;
+    useEffect(() => {
+      screenWidthSV.value = screenWidth;
+    }, [screenWidth, screenWidthSV]);
 
     const onSettle = useCallback(
       (newTargetOffset: number) => {
@@ -269,7 +270,6 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
                     holidayIndex={holidayIndex}
                     dayInfoIndex={dayInfoIndex}
                     eventIndex={eventIndex}
-                    userEvents={userEvents}
                     screenWidth={screenWidth}
                     calendarStyle={calendarStyle}
                     showSeasonColors={showSeasonColors}

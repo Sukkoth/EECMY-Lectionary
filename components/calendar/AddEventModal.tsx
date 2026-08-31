@@ -7,6 +7,7 @@ import {
   Platform,
   Modal,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,13 +19,14 @@ import {
   BottomSheetTextInput,
   type BottomSheetBackdropProps,
 } from "@gorhom/bottom-sheet";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
 import {
   formatMonth,
   getDaysInEthiopianMonth,
   ethiopianToGregorian,
   gregorianYmdToEthiopian,
+  getShortWeekdayNames,
 } from "@/lib/ethiopianCalendar";
 import { isDevice24Hour, formatTimeSlot } from "@/lib/timeFormat";
 import { useTags, useCreateTag, useDeleteTag } from "@/lib/hooks/useTags";
@@ -33,16 +35,7 @@ import {
   useUpdateEvent,
   useDeleteEvent,
 } from "@/lib/hooks/useEvents";
-
-export type CategoryItem = {
-  id: string;
-  labelEn: string;
-  labelAm: string;
-  labelOm?: string;
-  color: string;
-  icon?: keyof typeof Ionicons.glyphMap;
-  isCustom?: boolean;
-};
+import { ensurePermissions, parseTimeString } from "@/lib/NotificationService";
 
 export type ReminderOffset =
   | "at_time"
@@ -55,44 +48,41 @@ export type ReminderOffset =
 
 export const REMINDER_OFFSETS: {
   id: ReminderOffset;
-  labelEn: string;
-  labelAm: string;
-  labelOm: string;
+  labelKey: TranslationKey;
 }[] = [
-  { id: "at_time", labelEn: "At time of event", labelAm: "በሰዓቱ", labelOm: "Yeroo qophiitti" },
-  { id: "30_min", labelEn: "30 min before", labelAm: "30 ደ/ቅ በፊት", labelOm: "Daqiiqaa 30 dura" },
-  { id: "1_hour", labelEn: "1 hour before", labelAm: "1 ሰዓት በፊት", labelOm: "Sa'aatii 1 dura" },
-  { id: "2_hours", labelEn: "2 hours before", labelAm: "2 ሰዓት በፊት", labelOm: "Sa'aatii 2 dura" },
-  { id: "1_day", labelEn: "1 day before", labelAm: "1 ቀን በፊት", labelOm: "Guyyaa 1 dura" },
-  { id: "2_days", labelEn: "2 days before", labelAm: "2 ቀናት በፊት", labelOm: "Guyyoota 2 dura" },
-  { id: "1_week", labelEn: "1 week before", labelAm: "1 ሳምንት በፊት", labelOm: "Torban 1 dura" },
+  { id: "at_time", labelKey: "offsetAtTime" },
+  { id: "30_min", labelKey: "offset30Min" },
+  { id: "1_hour", labelKey: "offset1Hour" },
+  { id: "2_hours", labelKey: "offset2Hours" },
+  { id: "1_day", labelKey: "offset1Day" },
+  { id: "2_days", labelKey: "offset2Days" },
+  { id: "1_week", labelKey: "offset1Week" },
 ];
 
-export function getCategoryLabel(cat: CategoryItem, lang: string): string {
-  if (lang === "om") return cat.labelOm || cat.labelEn;
-  if (lang === "am") return cat.labelAm;
-  return cat.labelEn;
+export function getOffsetLabel(
+  offset: (typeof REMINDER_OFFSETS)[number],
+  t: (key: TranslationKey) => string,
+): string {
+  return t(offset.labelKey);
 }
 
-export function getOffsetLabel(offset: (typeof REMINDER_OFFSETS)[number], lang: string): string {
-  if (lang === "om") return offset.labelOm || offset.labelEn;
-  if (lang === "am") return offset.labelAm;
-  return offset.labelEn;
+export function getDefaultEventReminderDate(): Date {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() + 2, 0, 0);
+  return d;
 }
 
 export type CustomEventData = {
   id: string;
   title: string;
-  category?: string | null;
-  categoryColor?: string | null;
+  tagId?: string | null;
+  tagName?: string | null;
+  tagColor?: string | null;
   date: string; // YYYY-MM-DD (canonical GC)
   hasReminder: boolean;
   reminderTime?: string;
   reminderOffsets?: ReminderOffset[];
-  reminderOffset?: ReminderOffset;
   notes?: string;
-  tagName?: string | null;
-  tagColor?: string | null;
 };
 
 type AddEventModalProps = {
@@ -151,27 +141,14 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
     const { mutateAsync: deleteEventAsync, isPending: isDeleting } = useDeleteEvent();
     const isSubmitting = isCreating || isUpdating;
 
-    const categories: CategoryItem[] = useMemo(
-      () =>
-        dbTags.map((t) => ({
-          id: t.id,
-          labelEn: t.name,
-          labelAm: t.name,
-          labelOm: t.name,
-          color: t.color,
-          isCustom: true,
-        })),
-      [dbTags],
-    );
-
     const titleRef = useRef(eventToEdit?.title || "");
     const notesRef = useRef(eventToEdit?.notes || "");
     const newTagNameRef = useRef("");
     const newTagInputRef = useRef<any>(null);
     const scrollViewRef = useRef<any>(null);
 
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(
-      eventToEdit?.category ?? null,
+    const [selectedTagId, setSelectedTagId] = useState<string | null>(
+      eventToEdit?.tagId ?? null,
     );
     const [isCreatingTag, setIsCreatingTag] = useState(false);
     const [newTagColor, setNewTagColor] = useState(PALETTE_COLORS[0]);
@@ -198,22 +175,19 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       if (eventToEdit?.reminderOffsets && eventToEdit.reminderOffsets.length > 0) {
         return eventToEdit.reminderOffsets;
       }
-      if (eventToEdit?.reminderOffset) {
-        return [eventToEdit.reminderOffset];
-      }
       return ["at_time"];
     });
 
     const is24H = useMemo(() => isDevice24Hour(), []);
     const [reminderDate, setReminderDate] = useState(() => {
-      const d = new Date();
-      d.setHours(7, 0, 0, 0);
-      return d;
+      return getDefaultEventReminderDate();
     });
     const [showTimePicker, setShowTimePicker] = useState(false);
-    const [selectedTime, setSelectedTime] = useState(
-      () => eventToEdit?.reminderTime || formatTimeSlot(7, 0, isDevice24Hour()),
-    );
+    const [selectedTime, setSelectedTime] = useState(() => {
+      if (eventToEdit?.reminderTime) return eventToEdit.reminderTime;
+      const d = getDefaultEventReminderDate();
+      return formatTimeSlot(d.getHours(), d.getMinutes(), isDevice24Hour());
+    });
 
     const handleTimeChange = (_event: DateTimePickerEvent, date?: Date) => {
       if (Platform.OS === "android") {
@@ -249,29 +223,27 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         titleRef.current = eventToEdit.title;
         notesRef.current = eventToEdit.notes || "";
         setIsTitleFilled(eventToEdit.title.trim().length > 0);
-        setSelectedCategory(eventToEdit.category ?? null);
+        setSelectedTagId(eventToEdit.tagId ?? null);
         setHasReminder(eventToEdit.hasReminder);
 
         if (eventToEdit.reminderOffsets && eventToEdit.reminderOffsets.length > 0) {
           setReminderOffsets(eventToEdit.reminderOffsets);
-        } else if (eventToEdit.reminderOffset) {
-          setReminderOffsets([eventToEdit.reminderOffset]);
         } else {
           setReminderOffsets(["at_time"]);
         }
 
         if (eventToEdit.reminderTime) {
           setSelectedTime(eventToEdit.reminderTime);
-          const parts = eventToEdit.reminderTime.split(":");
-          if (parts.length >= 2) {
-            const h = parseInt(parts[0], 10);
-            const m = parseInt(parts[1], 10);
-            if (!isNaN(h) && !isNaN(m)) {
-              const d = new Date();
-              d.setHours(h, m, 0, 0);
-              setReminderDate(d);
-            }
+          const parsed = parseTimeString(eventToEdit.reminderTime);
+          if (parsed) {
+            const d = new Date();
+            d.setHours(parsed.hours, parsed.minutes, 0, 0);
+            setReminderDate(d);
           }
+        } else {
+          const d = getDefaultEventReminderDate();
+          setSelectedTime(formatTimeSlot(d.getHours(), d.getMinutes(), is24H));
+          setReminderDate(d);
         }
 
         if (eventToEdit.date) {
@@ -287,12 +259,11 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         titleRef.current = "";
         notesRef.current = "";
         setIsTitleFilled(false);
-        setSelectedCategory(null);
+        setSelectedTagId(null);
         setHasReminder(false);
         setReminderOffsets(["at_time"]);
-        setSelectedTime(formatTimeSlot(7, 0, is24H));
-        const d = new Date();
-        d.setHours(7, 0, 0, 0);
+        const d = getDefaultEventReminderDate();
+        setSelectedTime(formatTimeSlot(d.getHours(), d.getMinutes(), is24H));
         setReminderDate(d);
         if (initialDay && initialDay >= 1 && initialDay <= daysInMonth) {
           setSelectedDay(initialDay);
@@ -304,9 +275,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
 
     const daysList = useMemo(() => {
       const list: { day: number; weekdayName: string; isSunday: boolean }[] = [];
-      const weekdayShortAm = ["እሁድ", "ሰኞ", "ማክሰ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ"];
-      const weekdayShortEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const weekdayShortOm = ["Dil", "Wix", "Kib", "Roob", "Kami", "Jim", "San"];
+      const shortWeekdays = getShortWeekdayNames(lang);
 
       for (let d = 1; d <= daysInMonth; d++) {
         let weekdayIndex = 0;
@@ -317,13 +286,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
           weekdayIndex = new Date(selectedYear, selectedMonth, d).getDay();
         }
 
-        const weekdayName =
-          lang === "om"
-            ? weekdayShortOm[weekdayIndex]
-            : lang === "en"
-            ? weekdayShortEn[weekdayIndex]
-            : weekdayShortAm[weekdayIndex];
-
+        const weekdayName = shortWeekdays[weekdayIndex] || "";
         list.push({ day: d, weekdayName, isSunday: weekdayIndex === 0 });
       }
       return list;
@@ -337,7 +300,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
           setIsCreatingTag(false);
           setShowTimePicker(false);
           setReminderOffsets(["at_time"]);
-          setSelectedCategory(null);
+          setSelectedTagId(null);
           setHasReminder(false);
           setIsTitleFilled(false);
           newTagNameRef.current = "";
@@ -352,7 +315,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       setIsCreatingTag(false);
       setShowTimePicker(false);
       setReminderOffsets(["at_time"]);
-      setSelectedCategory(null);
+      setSelectedTagId(null);
       setHasReminder(false);
       setIsTitleFilled(false);
       newTagNameRef.current = "";
@@ -365,12 +328,26 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       return `${mName} ${selectedDay}, ${selectedYear}`;
     }, [selectedMonth, selectedDay, selectedYear, isEth, lang]);
 
+    const isPastDate = useMemo(() => {
+      let gcYear = selectedYear;
+      let gcMonth = selectedMonth;
+      let gcDay = selectedDay;
+      if (isEth) {
+        const gc = ethiopianToGregorian(selectedYear, selectedMonth, selectedDay);
+        gcYear = gc.year;
+        gcMonth = gc.month;
+        gcDay = gc.day;
+      }
+      const endOfSelectedDay = new Date(gcYear, gcMonth, gcDay, 23, 59, 59, 999);
+      return endOfSelectedDay.getTime() < Date.now();
+    }, [selectedYear, selectedMonth, selectedDay, isEth]);
+
     const handleSave = async () => {
       const enteredTitle = titleRef.current.trim();
       if (!enteredTitle || isSubmitting) return;
 
-      const activeCat = selectedCategory
-        ? categories.find((c) => c.id === selectedCategory)
+      const activeTag = selectedTagId
+        ? dbTags.find((t) => t.id === selectedTagId)
         : null;
 
       let canonicalGcDate: string;
@@ -381,47 +358,64 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         canonicalGcDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
       }
 
+      const effectiveHasReminder = !isPastDate && hasReminder;
+
+      if (effectiveHasReminder) {
+        const { granted } = await ensurePermissions();
+        if (!granted) {
+          console.warn("[AddEventModal] Reminder notifications not granted by system.");
+        }
+      }
+
       const eventPayload: CustomEventData = {
         id: eventToEdit ? eventToEdit.id : String(Date.now()),
         title: enteredTitle,
-        category: selectedCategory ?? undefined,
-        categoryColor: activeCat?.color,
-        tagName: activeCat ? getCategoryLabel(activeCat, lang) : undefined,
-        tagColor: activeCat?.color,
+        tagId: selectedTagId ?? undefined,
+        tagName: activeTag?.name,
+        tagColor: activeTag?.color,
         date: canonicalGcDate,
-        hasReminder,
-        reminderTime: hasReminder ? selectedTime : undefined,
-        reminderOffsets: hasReminder ? reminderOffsets : undefined,
-        reminderOffset: hasReminder && reminderOffsets.length > 0 ? reminderOffsets[0] : undefined,
+        hasReminder: effectiveHasReminder,
+        reminderTime: effectiveHasReminder ? selectedTime : undefined,
+        reminderOffsets: effectiveHasReminder ? reminderOffsets : undefined,
         notes: notesRef.current.trim() || undefined,
       };
 
       try {
-        if (eventToEdit) {
-          await updateEventAsync({
-            id: eventPayload.id,
-            title: eventPayload.title,
-            date: eventPayload.date,
-            reminderTime: eventPayload.reminderTime,
-            notes: eventPayload.notes,
-            tagId: eventPayload.category ?? null,
-            tagName: eventPayload.tagName ?? null,
-            tagColor: eventPayload.tagColor ?? null,
-            reminderOffsets: eventPayload.reminderOffsets,
-          });
-        } else {
-          await createEventAsync({
-            id: eventPayload.id,
-            title: eventPayload.title,
-            date: eventPayload.date,
-            reminderTime: eventPayload.reminderTime,
-            notes: eventPayload.notes,
-            tagId: eventPayload.category ?? null,
-            tagName: eventPayload.tagName ?? null,
-            tagColor: eventPayload.tagColor ?? null,
-            reminderOffsets: eventPayload.reminderOffsets,
-          });
-        }
+        let timeoutHandle: any;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutHandle = setTimeout(() => {
+            reject(new Error("SAVE_TIMEOUT"));
+          }, 5000);
+          timeoutHandle?.unref?.();
+        });
+
+        const mutationPromise = eventToEdit
+          ? updateEventAsync({
+              id: eventPayload.id,
+              title: eventPayload.title,
+              date: eventPayload.date,
+              reminderTime: eventPayload.reminderTime,
+              notes: eventPayload.notes,
+              tagId: eventPayload.tagId ?? null,
+              tagName: eventPayload.tagName ?? null,
+              tagColor: eventPayload.tagColor ?? null,
+              reminderOffsets: eventPayload.reminderOffsets,
+            })
+          : createEventAsync({
+              id: eventPayload.id,
+              title: eventPayload.title,
+              date: eventPayload.date,
+              reminderTime: eventPayload.reminderTime,
+              notes: eventPayload.notes,
+              tagId: eventPayload.tagId ?? null,
+              tagName: eventPayload.tagName ?? null,
+              tagColor: eventPayload.tagColor ?? null,
+              reminderOffsets: eventPayload.reminderOffsets,
+            });
+
+        await Promise.race([mutationPromise, timeoutPromise]).finally(() => {
+          clearTimeout(timeoutHandle);
+        });
 
         onSave?.(eventPayload);
 
@@ -433,7 +427,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         setIsCreatingTag(false);
         setShowTimePicker(false);
         setReminderOffsets(["at_time"]);
-        setSelectedCategory(null);
+        setSelectedTagId(null);
         setHasReminder(false);
         setIsTitleFilled(false);
         setShowDeleteEventConfirm(false);
@@ -441,7 +435,12 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
         onClose?.();
       } catch (err) {
-        console.warn("Failed to persist event:", err);
+        console.warn("[AddEventModal] Failed to persist event:", err);
+        Alert.alert(
+          t("notificationTimeoutTitle"),
+          t("notificationTimeoutDesc"),
+          [{ text: "OK" }],
+        );
       }
     };
 
@@ -453,7 +452,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       setIsCreatingTag(false);
       setShowTimePicker(false);
       setReminderOffsets(["at_time"]);
-      setSelectedCategory(null);
+      setSelectedTagId(null);
       setHasReminder(false);
       setIsTitleFilled(false);
       setShowDeleteEventConfirm(false);
@@ -472,6 +471,22 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       } catch (err) {
         console.warn("Failed to delete event:", err);
       }
+    };
+
+    const handleToggleReminder = async (value: boolean) => {
+      if (value) {
+        if (!eventToEdit?.reminderTime) {
+          const d = getDefaultEventReminderDate();
+          setSelectedTime(formatTimeSlot(d.getHours(), d.getMinutes(), is24H));
+          setReminderDate(d);
+        }
+        const { granted } = await ensurePermissions();
+        if (!granted) {
+          setHasReminder(false);
+          return;
+        }
+      }
+      setHasReminder(value);
     };
 
     const handleToggleOffset = (offsetId: ReminderOffset) => {
@@ -495,24 +510,23 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         name: enteredName,
         color: newTagColor,
       });
-      setSelectedCategory(tagId);
+      setSelectedTagId(tagId);
       newTagNameRef.current = "";
       newTagInputRef.current?.clear();
       setIsCreatingTag(false);
     };
 
     const handleDeleteCustomTag = (tagId: string) => {
-      const targetTag = categories.find((c) => c.id === tagId);
-      const tagName = targetTag ? getCategoryLabel(targetTag, lang) : "";
-      setTagToDelete({ id: tagId, name: tagName });
+      const targetTag = dbTags.find((t) => t.id === tagId);
+      setTagToDelete({ id: tagId, name: targetTag?.name || "" });
     };
 
     const confirmDeleteTag = () => {
       if (!tagToDelete) return;
       const tagId = tagToDelete.id;
       deleteTagMutation(tagId);
-      if (selectedCategory === tagId) {
-        setSelectedCategory(null);
+      if (selectedTagId === tagId) {
+        setSelectedTagId(null);
       }
       setTagToDelete(null);
     };
@@ -627,7 +641,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             placeholder={t("eventTitlePlaceholder")}
             placeholderTextColor={isDark ? "#8A8480" : "#A8A29E"}
             className="mb-4 rounded-2xl border border-stone-200/90 bg-[#F5F2EB] px-4 py-3.5 text-base text-[#2D2A24] dark:border-stone-700/60 dark:bg-[#25221E] dark:text-[#F3EFE6]"
-            style={{ fontFamily: "ReadingFont" }}
+            style={{ fontFamily: "ReadingFont", paddingHorizontal: 16, paddingVertical: 14 }}
           />
 
           {/* Date Summary Card */}
@@ -746,7 +760,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
                 placeholder={t("newTagPlaceholder")}
                 placeholderTextColor={isDark ? "#8A8480" : "#A8A29E"}
                 className="mb-3 rounded-xl border border-stone-200/90 bg-white px-3.5 py-2.5 text-sm text-[#2D2A24] dark:border-stone-700/60 dark:bg-[#1A1815] dark:text-[#F3EFE6]"
-                style={{ fontFamily: "ReadingFont" }}
+                style={{ fontFamily: "ReadingFont", paddingHorizontal: 14, paddingVertical: 10 }}
               />
 
               <Text
@@ -859,13 +873,13 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
               </Text>
             </TouchableOpacity>
 
-            {/* Existing and Custom Categories */}
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
+            {/* User Custom Tags */}
+            {dbTags.map((tag) => {
+              const isSelected = selectedTagId === tag.id;
               return (
                 <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => setSelectedCategory((prev) => (prev === cat.id ? null : cat.id))}
+                  key={tag.id}
+                  onPress={() => setSelectedTagId((prev) => (prev === tag.id ? null : tag.id))}
                   activeOpacity={0.7}
                   className={`h-9 mr-2 flex-row items-center gap-1.5 rounded-full border px-3.5 ${
                     isSelected
@@ -875,7 +889,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
                 >
                   <View
                     className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: cat.color }}
+                    style={{ backgroundColor: tag.color }}
                   />
                   <Text
                     allowFontScaling={false}
@@ -886,183 +900,183 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
                     }`}
                     style={{ fontFamily: "ReadingFont" }}
                   >
-                    {getCategoryLabel(cat, lang)}
+                    {tag.name}
                   </Text>
 
-                  {cat.isCustom && (
-                    <TouchableOpacity
-                      onPress={() => handleDeleteCustomTag(cat.id)}
-                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                      className="ml-0.5"
-                    >
-                      <Ionicons
-                        name="close-circle"
-                        size={14}
-                        color={isDark ? "#8A8480" : "#A8A29E"}
-                      />
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity
+                    onPress={() => handleDeleteCustomTag(tag.id)}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    className="ml-0.5"
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={14}
+                      color={isDark ? "#8A8480" : "#A8A29E"}
+                    />
+                  </TouchableOpacity>
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
 
-          {/* Reminder Section (Inset-Grouped Card) */}
-          <View className="mb-4 overflow-hidden rounded-2xl border border-stone-200/90 bg-[#F5F2EB] dark:border-stone-700/60 dark:bg-[#25221E]">
-            {/* Row 1: Enable Reminder Switch */}
-            <View className="flex-row items-center justify-between p-4">
-              <View className="flex-1 pr-2 flex-row items-center gap-3">
-                <View className="h-9 w-9 items-center justify-center rounded-xl bg-white dark:bg-[#1A1815] border border-stone-200/80 dark:border-stone-700/50">
-                  <Ionicons
-                    name={hasReminder ? "notifications" : "notifications-off-outline"}
-                    size={18}
-                    color={hasReminder ? "#3b82f6" : "#8A8480"}
-                  />
-                </View>
-                <View className="flex-1">
-                  <Text
-                    allowFontScaling={false}
-                    className="text-sm font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    {t("reminder")}
-                  </Text>
-                  <Text
-                    allowFontScaling={false}
-                    className="text-xs text-muted dark:text-muted-dark mt-0.5"
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    {t("sendAlertForEvent")}
-                  </Text>
-                </View>
-              </View>
-
-              <Switch
-                value={hasReminder}
-                onValueChange={setHasReminder}
-                trackColor={{ false: isDark ? "#3A3530" : "#D1D1D6", true: "#3b82f6" }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
-
-            {hasReminder && (
-              <>
-                {/* Divider */}
-                <View className="h-[1px] bg-stone-200/80 dark:bg-stone-700/50" />
-
-                {/* Row 2: Event Time Picker Trigger */}
-                <TouchableOpacity
-                  onPress={() => setShowTimePicker(true)}
-                  activeOpacity={0.7}
-                  className="flex-row items-center justify-between px-4 py-3.5"
-                >
-                  <View className="flex-row items-center gap-2.5">
-                    <Ionicons name="time-outline" size={17} color={isDark ? "#E8E4DC" : "#2D2A24"} />
-                    <Text
-                      allowFontScaling={false}
-                      className="text-sm font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {t("eventTime")}
-                    </Text>
-                  </View>
-
-                  <View className="h-9 flex-row items-center gap-1.5 rounded-xl border border-stone-200/90 bg-white px-3 dark:border-stone-700/60 dark:bg-[#1A1815]">
-                    <Text
-                      allowFontScaling={false}
-                      className="text-sm font-semibold text-[#2D2A24] dark:text-[#F3EFE6]"
-                      style={{ fontFamily: "ReadingFont" }}
-                    >
-                      {selectedTime}
-                    </Text>
+          {/* Reminder Section (Inset-Grouped Card) - Omitted if selected date is in the past */}
+          {!isPastDate && (
+            <View className="mb-4 overflow-hidden rounded-2xl border border-stone-200/90 bg-[#F5F2EB] dark:border-stone-700/60 dark:bg-[#25221E]">
+              {/* Row 1: Enable Reminder Switch */}
+              <View className="flex-row items-center justify-between p-4">
+                <View className="flex-1 pr-2 flex-row items-center gap-3">
+                  <View className="h-9 w-9 items-center justify-center rounded-xl bg-white dark:bg-[#1A1815] border border-stone-200/80 dark:border-stone-700/50">
                     <Ionicons
-                      name="chevron-forward"
-                      size={13}
-                      color={isDark ? "#8A8480" : "#A8A29E"}
+                      name={hasReminder ? "notifications" : "notifications-off-outline"}
+                      size={18}
+                      color={hasReminder ? "#3b82f6" : "#8A8480"}
                     />
                   </View>
-                </TouchableOpacity>
+                  <View className="flex-1">
+                    <Text
+                      allowFontScaling={false}
+                      className="text-sm font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      {t("reminder")}
+                    </Text>
+                    <Text
+                      allowFontScaling={false}
+                      className="text-xs text-muted dark:text-muted-dark mt-0.5"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      {t("sendAlertForEvent")}
+                    </Text>
+                  </View>
+                </View>
 
-                {/* Divider */}
-                <View className="h-[1px] bg-stone-200/80 dark:bg-stone-700/50" />
+                <Switch
+                  value={hasReminder}
+                  onValueChange={handleToggleReminder}
+                  trackColor={{ false: isDark ? "#3A3530" : "#D1D1D6", true: "#3b82f6" }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
 
-                {/* Row 3: Alert Timing (When to Notify) */}
-                <View className="px-4 py-3.5">
-                  <View className="mb-2.5 flex-row items-center justify-between pr-1">
-                    <View className="flex-row items-center gap-2">
-                      <Ionicons name="alarm-outline" size={16} color={isDark ? "#E8E4DC" : "#2D2A24"} />
+              {hasReminder && (
+                <>
+                  {/* Divider */}
+                  <View className="h-[1px] bg-stone-200/80 dark:bg-stone-700/50" />
+
+                  {/* Row 2: Event Time Picker Trigger */}
+                  <TouchableOpacity
+                    onPress={() => setShowTimePicker(true)}
+                    activeOpacity={0.7}
+                    className="flex-row items-center justify-between px-4 py-3.5"
+                  >
+                    <View className="flex-row items-center gap-2.5">
+                      <Ionicons name="time-outline" size={17} color={isDark ? "#E8E4DC" : "#2D2A24"} />
                       <Text
                         allowFontScaling={false}
                         className="text-sm font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
                         style={{ fontFamily: "ReadingFont" }}
                       >
-                        {t("alerts")}
+                        {t("eventTime")}
                       </Text>
                     </View>
-                    {reminderOffsets.length > 0 && (
-                      <View className="bg-primary/10 rounded-full px-2 py-0.5">
+
+                    <View className="h-9 flex-row items-center gap-1.5 rounded-xl border border-stone-200/90 bg-white px-3 dark:border-stone-700/60 dark:bg-[#1A1815]">
+                      <Text
+                        allowFontScaling={false}
+                        className="text-sm font-semibold text-[#2D2A24] dark:text-[#F3EFE6]"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {selectedTime}
+                      </Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={13}
+                        color={isDark ? "#8A8480" : "#A8A29E"}
+                      />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Divider */}
+                  <View className="h-[1px] bg-stone-200/80 dark:bg-stone-700/50" />
+
+                  {/* Row 3: Alert Timing (When to Notify) */}
+                  <View className="px-4 py-3.5">
+                    <View className="mb-2.5 flex-row items-center justify-between pr-1">
+                      <View className="flex-row items-center gap-2">
+                        <Ionicons name="alarm-outline" size={16} color={isDark ? "#E8E4DC" : "#2D2A24"} />
                         <Text
                           allowFontScaling={false}
-                          className="text-primary text-[11px] font-semibold"
+                          className="text-sm font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
                           style={{ fontFamily: "ReadingFont" }}
                         >
-                          {reminderOffsets.length}/3
+                          {t("alerts")}
                         </Text>
                       </View>
-                    )}
-                  </View>
-
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyboardShouldPersistTaps="always"
-                    contentContainerStyle={{ paddingRight: 8 }}
-                  >
-                    {REMINDER_OFFSETS.map((offset) => {
-                      const isOffsetSelected = reminderOffsets.includes(offset.id);
-                      const isMaxReached = reminderOffsets.length >= 3 && !isOffsetSelected;
-                      return (
-                        <TouchableOpacity
-                          key={offset.id}
-                          onPress={() => handleToggleOffset(offset.id)}
-                          activeOpacity={0.7}
-                          className={`h-9 mr-2 items-center justify-center rounded-xl border px-3.5 ${
-                            isOffsetSelected
-                              ? "border-primary bg-primary"
-                              : isMaxReached
-                                ? "border-stone-200/50 bg-white/50 opacity-40 dark:border-stone-800 dark:bg-[#1A1815]/50"
-                                : "border-stone-200/90 bg-white dark:border-stone-700/60 dark:bg-[#1A1815]"
-                          }`}
-                        >
+                      {reminderOffsets.length > 0 && (
+                        <View className="bg-primary/10 rounded-full px-2 py-0.5">
                           <Text
                             allowFontScaling={false}
-                            className={`text-xs ${
-                              isOffsetSelected
-                                ? "font-semibold text-white"
-                                : "font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
-                            }`}
+                            className="text-primary text-[11px] font-semibold"
                             style={{ fontFamily: "ReadingFont" }}
                           >
-                            {getOffsetLabel(offset, lang)}
+                            {reminderOffsets.length}/3
                           </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
+                        </View>
+                      )}
+                    </View>
 
-                {showTimePicker && (
-                  <DateTimePicker
-                    value={reminderDate}
-                    mode="time"
-                    is24Hour={is24H}
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    onChange={handleTimeChange}
-                  />
-                )}
-              </>
-            )}
-          </View>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      keyboardShouldPersistTaps="always"
+                      contentContainerStyle={{ paddingRight: 8 }}
+                    >
+                      {REMINDER_OFFSETS.map((offset) => {
+                        const isOffsetSelected = reminderOffsets.includes(offset.id);
+                        const isMaxReached = reminderOffsets.length >= 3 && !isOffsetSelected;
+                        return (
+                          <TouchableOpacity
+                            key={offset.id}
+                            onPress={() => handleToggleOffset(offset.id)}
+                            activeOpacity={0.7}
+                            className={`h-9 mr-2 items-center justify-center rounded-xl border px-3.5 ${
+                              isOffsetSelected
+                                ? "border-primary bg-primary"
+                                : isMaxReached
+                                  ? "border-stone-200/50 bg-white/50 opacity-40 dark:border-stone-800 dark:bg-[#1A1815]/50"
+                                  : "border-stone-200/90 bg-white dark:border-stone-700/60 dark:bg-[#1A1815]"
+                            }`}
+                          >
+                            <Text
+                              allowFontScaling={false}
+                              className={`text-xs ${
+                                isOffsetSelected
+                                  ? "font-semibold text-white"
+                                  : "font-medium text-[#2D2A24] dark:text-[#E8E4DC]"
+                              }`}
+                              style={{ fontFamily: "ReadingFont" }}
+                            >
+                              {t(offset.labelKey)}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+
+                  {showTimePicker && (
+                    <DateTimePicker
+                      value={reminderDate}
+                      mode="time"
+                      is24Hour={is24H}
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
+                      onChange={handleTimeChange}
+                    />
+                  )}
+                </>
+              )}
+            </View>
+          )}
 
           {/* Notes (Optional) */}
           <Text
@@ -1083,7 +1097,14 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             placeholder={t("notesPlaceholder")}
             placeholderTextColor={isDark ? "#8A8480" : "#A8A29E"}
             className="rounded-2xl border border-stone-200/90 bg-[#F5F2EB] px-4 py-3.5 text-sm text-[#2D2A24] dark:border-stone-700/60 dark:bg-[#25221E] dark:text-[#F3EFE6]"
-            style={{ fontFamily: "ReadingFont", minHeight: 110, textAlignVertical: "top" }}
+            style={{
+              fontFamily: "ReadingFont",
+              paddingHorizontal: 16,
+              paddingTop: 14,
+              paddingBottom: 14,
+              minHeight: 110,
+              textAlignVertical: "top",
+            }}
           />
 
           {/* Edit Mode: Delete Event Action Button / Inline Confirmation */}

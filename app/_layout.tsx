@@ -104,8 +104,18 @@ function AppContent() {
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const targetUrl = response.notification.request.content.data?.url;
-      if (targetUrl) {
+      const data = response.notification.request.content.data;
+      const targetUrl = data?.url;
+      if (targetUrl === "/calendar") {
+        router.push({
+          pathname: "/calendar",
+          params: {
+            date: data?.date,
+            eventId: data?.eventId,
+            ts: String(Date.now()),
+          },
+        } as any);
+      } else if (targetUrl) {
         router.push(targetUrl as any);
       } else {
         router.push("/reading" as any);
@@ -113,6 +123,24 @@ function AppContent() {
     });
     return () => subscription.remove();
   }, [router]);
+
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    if (lastNotificationResponse) {
+      const data = lastNotificationResponse.notification.request.content.data;
+      const targetUrl = data?.url;
+      if (targetUrl === "/calendar") {
+        router.push({
+          pathname: "/calendar",
+          params: {
+            date: data?.date,
+            eventId: data?.eventId,
+            ts: String(Date.now()),
+          },
+        } as any);
+      }
+    }
+  }, [lastNotificationResponse, router]);
 
   if (loading) {
     return (

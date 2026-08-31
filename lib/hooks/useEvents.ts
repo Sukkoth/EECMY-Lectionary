@@ -116,7 +116,6 @@ export function useCreateEvent() {
         tagName: tagName ?? undefined,
         tagColor: tagColor ?? undefined,
         reminderOffsets: input.reminderOffsets,
-        reminderOffset: input.reminderOffsets?.[0],
         hasReminder: Boolean(input.reminderTime),
       };
 

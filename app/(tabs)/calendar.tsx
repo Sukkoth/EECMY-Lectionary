@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   BackHandler,
 } from "react-native";
-import { useNavigation } from "expo-router";
+import { useNavigation, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
 import { AddEventModal, type CustomEventData } from "@/components/calendar/AddEventModal";
@@ -58,14 +58,36 @@ export default function CalendarScreen() {
   const pickerSheetRef = useRef<BottomSheetModal>(null);
   const addEventSheetRef = useRef<BottomSheetModal>(null);
   const navigation = useNavigation();
+  const { date: targetDate, ts } = useLocalSearchParams<{
+    date?: string;
+    eventId?: string;
+    ts?: string;
+  }>();
 
-  const handleSaveEvent = useCallback((_savedEvent: CustomEventData) => {
-    setEditingEvent(null);
-  }, []);
+  const lastNavigatedRef = useRef<string | null>(null);
 
-  const handleDeleteEvent = useCallback((_eventId: string) => {
-    setEditingEvent(null);
-  }, []);
+  // Jump to event's month when navigated via notification deep link
+  useEffect(() => {
+    if (!targetDate) return;
+    const navKey = `${targetDate}-${ts || ""}`;
+    if (lastNavigatedRef.current === navKey) return;
+    lastNavigatedRef.current = navKey;
+
+    const [gcY, gcM, gcD] = targetDate.split("-").map(Number);
+    if (isNaN(gcY) || isNaN(gcM) || isNaN(gcD)) return;
+
+    let targetMonth: { year: number; month: number };
+    if (isEth) {
+      const eth = gregorianYmdToEthiopian(gcY, gcM - 1, gcD);
+      targetMonth = { year: eth.year, month: eth.month };
+    } else {
+      targetMonth = { year: gcY, month: gcM - 1 };
+    }
+
+    setCurrent(targetMonth);
+    setPickerSelected(targetMonth);
+    swiperRef.current?.jumpTo(targetMonth);
+  }, [targetDate, ts, isEth]);
 
   // Handle hardware back press on Android when picker bottom sheet is open
   useEffect(() => {
@@ -102,10 +124,6 @@ export default function CalendarScreen() {
     return unsubscribe;
   }, [navigation, isPickerOpen, isAddEventOpen]);
 
-  // Compute today once per render cycle (stable within a render)
-  const today = useMemo(() => new Date(), []);
-  const ethToday = useMemo(() => gregorianToEthiopian(today), [today]);
-
   const handleToggleCalendarStyle = useCallback(
     (newStyle: "ethiopian" | "gregorian") => {
       if (newStyle === settings.calendarStyle) return;
@@ -139,20 +157,22 @@ export default function CalendarScreen() {
       if (day != null) {
         setAddEventInitialDay(day);
       } else {
+        const now = new Date();
+        const ethNow = gregorianToEthiopian(now);
         const isThisMonthToday = isEth
-          ? year === ethToday.year && month === ethToday.month
-          : year === today.getFullYear() && month === today.getMonth();
+          ? year === ethNow.year && month === ethNow.month
+          : year === now.getFullYear() && month === now.getMonth();
         const defaultDay = isThisMonthToday
           ? isEth
-            ? ethToday.day
-            : today.getDate()
+            ? ethNow.day
+            : now.getDate()
           : 1;
         setAddEventInitialDay(defaultDay);
       }
       setIsAddEventOpen(true);
       addEventSheetRef.current?.present();
     },
-    [isEth, ethToday, today],
+    [isEth],
   );
 
   const handleOpenEditEvent = useCallback(
@@ -187,9 +207,11 @@ export default function CalendarScreen() {
   const { data: holidayIndex } = useHolidays(lang, settings.language);
   const { data: dayInfoIndex } = useDayInfo(lang, settings.language);
 
+  const now = new Date();
+  const ethNow = gregorianToEthiopian(now);
   const isCurrentTodayMonth = isEth
-    ? current.year === ethToday.year && current.month === ethToday.month
-    : current.year === today.getFullYear() && current.month === today.getMonth();
+    ? current.year === ethNow.year && current.month === ethNow.month
+    : current.year === now.getFullYear() && current.month === now.getMonth();
 
   return (
     <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
@@ -293,8 +315,6 @@ export default function CalendarScreen() {
         isEth={isEth}
         initialDay={addEventInitialDay}
         eventToEdit={editingEvent}
-        onSave={handleSaveEvent}
-        onDeleteEvent={handleDeleteEvent}
         onChange={(idx: number) => {
           setIsAddEventOpen(idx >= 0);
         }}
