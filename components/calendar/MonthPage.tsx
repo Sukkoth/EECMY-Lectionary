@@ -11,7 +11,7 @@ import type { EventIndex } from "@/lib/hooks/useEvents";
 import { getEventsForActiveMonth } from "@/lib/hooks/useEvents";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
-import { HOLIDAY_COLORS } from "@/constants";
+import { HOLIDAY_COLORS, DEFAULT_CUSTOM_EVENT_COLOR } from "@/constants";
 import type { CalendarStyle } from "@/lib/settings";
 import {
   formatMonth,
@@ -62,7 +62,6 @@ type MonthPageProps = {
   holidayIndex?: HolidayIndex;
   dayInfoIndex?: DayInfoIndex;
   eventIndex?: EventIndex;
-  userEvents?: CustomEventData[];
   screenWidth: number;
   calendarStyle: CalendarStyle;
   showSeasonColors: boolean;
@@ -78,7 +77,6 @@ export const MonthPage = React.memo(function MonthPage({
   holidayIndex,
   dayInfoIndex,
   eventIndex,
-  userEvents = [],
   screenWidth,
   calendarStyle,
   showSeasonColors,
@@ -130,51 +128,31 @@ export const MonthPage = React.memo(function MonthPage({
         displayDay,
         customEvent: e,
       }));
-    } else if (userEvents.length > 0) {
-      for (const e of userEvents) {
-        const [gcY, gcM, gcD] = e.date.split("-").map(Number);
-        if (isEth) {
-          const eth = gregorianYmdToEthiopian(gcY, gcM - 1, gcD);
-          if (eth.year === year && eth.month === month) {
-            userEventFeed.push({
-              kind: "custom_event",
-              id: e.id,
-              title: e.title,
-              tagLabel: e.tagName || e.category,
-              tagColor: e.tagColor || e.categoryColor,
-              time: e.hasReminder ? e.reminderTime : undefined,
-              hasReminder: e.hasReminder,
-              reminderCount: e.reminderOffsets?.length ?? (e.hasReminder ? 1 : 0),
-              notes: e.notes,
-              displayDay: eth.day,
-              customEvent: e,
-            });
-          }
-        } else {
-          const targetPrefix = `${year}-${String(month + 1).padStart(2, "0")}-`;
-          if (e.date.startsWith(targetPrefix)) {
-            userEventFeed.push({
-              kind: "custom_event",
-              id: e.id,
-              title: e.title,
-              tagLabel: e.tagName || e.category,
-              tagColor: e.tagColor || e.categoryColor,
-              time: e.hasReminder ? e.reminderTime : undefined,
-              hasReminder: e.hasReminder,
-              reminderCount: e.reminderOffsets?.length ?? (e.hasReminder ? 1 : 0),
-              notes: e.notes,
-              displayDay: gcD,
-              customEvent: e,
-            });
-          }
-        }
-      }
     }
 
     return [...holidayFeed, ...userEventFeed].sort(
       (a, b) => a.displayDay - b.displayDay,
     );
-  }, [holidays, eventIndex, userEvents, year, month, isEth]);
+  }, [holidays, eventIndex, year, month, isEth]);
+
+  const customEventsMap = useMemo(() => {
+    const map = new Map<number, string[]>();
+    for (const item of feedItems) {
+      if (item.kind === "custom_event") {
+        const day = item.displayDay;
+        const color = item.tagColor || DEFAULT_CUSTOM_EVENT_COLOR;
+        let list = map.get(day);
+        if (!list) {
+          list = [];
+          map.set(day, list);
+        }
+        if (!list.includes(color)) {
+          list.push(color);
+        }
+      }
+    }
+    return map;
+  }, [feedItems]);
 
   const dayInfoMap = useMemo(() => {
     return getDayInfoForActiveMonth(dayInfoIndex, year, month, isEth);
@@ -234,22 +212,13 @@ export const MonthPage = React.memo(function MonthPage({
       }
 
       // User Custom Event
-      const accentColor = item.tagColor || "#3b82f6";
-      const metaParts: string[] = [];
-      if (item.tagLabel) metaParts.push(item.tagLabel);
-      if (item.time) metaParts.push(item.time);
-      if (item.hasReminder && item.reminderCount) {
-        const alertLabel =
-          item.reminderCount === 1 ? t("alert") : t("alerts");
-        metaParts.push(`${item.reminderCount} ${alertLabel.toLowerCase()}`);
-      }
-      const metaText = metaParts.join(" • ");
+      const accentColor = item.tagColor || DEFAULT_CUSTOM_EVENT_COLOR;
 
       return (
         <TouchableOpacity
           onPress={() => onOpenEditEvent?.(item.customEvent)}
           activeOpacity={0.7}
-          className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-start justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
+          className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/60 p-4 dark:border-stone-800/60"
         >
           {/* Left: Custom Tag Accent Bar + Event Content */}
           <View className="flex-1 flex-row items-stretch gap-3 pr-3">
@@ -268,16 +237,45 @@ export const MonthPage = React.memo(function MonthPage({
                 {item.title}
               </Text>
 
-              {/* Subtitle Line (matches Feast Subtitle style) */}
-              {Boolean(metaText) && (
-                <Text
-                  maxFontSizeMultiplier={1.2}
-                  className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
-                  style={{ fontFamily: "ReadingFont" }}
-                  numberOfLines={1}
-                >
-                  {metaText}
-                </Text>
+              {/* Meta Chips: Tag & Reminder Time */}
+              {(item.tagLabel || item.time) && (
+                <View className="mt-1.5 flex-row flex-wrap items-center gap-1.5">
+                  {item.tagLabel ? (
+                    <View
+                      className="flex-row items-center gap-1 rounded-full px-2 py-0.5"
+                      style={{ backgroundColor: `${accentColor}18` }}
+                    >
+                      <View
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: accentColor }}
+                      />
+                      <Text
+                        allowFontScaling={false}
+                        className="text-[11px] font-semibold"
+                        style={{ color: accentColor, fontFamily: "ReadingFont" }}
+                      >
+                        {item.tagLabel}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {item.time ? (
+                    <View className="flex-row items-center gap-1 rounded-full bg-stone-200/50 dark:bg-stone-800/50 px-2 py-0.5">
+                      <Ionicons
+                        name={item.hasReminder ? "notifications-outline" : "time-outline"}
+                        size={11}
+                        color={isDark ? "#A8A29E" : "#78716C"}
+                      />
+                      <Text
+                        allowFontScaling={false}
+                        className="text-muted dark:text-muted-dark text-[11px] font-medium"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {item.time}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
               )}
 
               {/* Optional Notes Preview */}
@@ -293,17 +291,27 @@ export const MonthPage = React.memo(function MonthPage({
             </View>
           </View>
 
-          {/* Right: Date Number */}
-          <Text
-            allowFontScaling={false}
-            className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-            style={{
-              fontFamily: "ReadingFont",
-              fontWeight: "600",
-            }}
-          >
-            {item.displayDay}
-          </Text>
+          {/* Right: Date Number & Edit Affordance */}
+          <View className="items-end justify-center pl-1 gap-1">
+            <Text
+              allowFontScaling={false}
+              className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+              style={{
+                fontFamily: "ReadingFont",
+                fontWeight: "600",
+              }}
+            >
+              {item.displayDay}
+            </Text>
+
+            <View className="h-6 w-6 items-center justify-center rounded-full bg-stone-200/60 dark:bg-stone-800/60">
+              <Ionicons
+                name="pencil-sharp"
+                size={11}
+                color={isDark ? "#A8A29E" : "#78716C"}
+              />
+            </View>
+          </View>
         </TouchableOpacity>
       );
     },
@@ -360,6 +368,7 @@ export const MonthPage = React.memo(function MonthPage({
         year={year}
         month={month}
         holidays={holidayMap}
+        customEvents={customEventsMap}
         dayInfoMap={dayInfoMap}
         width={screenWidth}
         calendarStyle={calendarStyle}

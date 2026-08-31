@@ -1,4 +1,5 @@
 import type { HolidayRow, DayInfoRow } from "@/lib/types";
+import { HOLIDAY_COLORS } from "@/constants";
 import {
   getEthiopianWeeks,
   ethiopianToGregorian,
@@ -22,7 +23,7 @@ export type GridCell =
       subLabel: string;
       showSubMonthLabel: boolean;
       today: boolean;
-      types: string[];
+      dotColors: string[];
       seasonColor?: string;
       seasonStyle?: any;
       isSunday: boolean;
@@ -105,6 +106,7 @@ export function buildMonthGridMatrix(params: {
   gcShorts: readonly string[];
   ethShorts: readonly string[];
   holidays: Map<number, HolidayRow[]>;
+  customEvents?: Map<number, string[]>;
   dayInfoMap?: Map<number, DayInfoRow>;
   showSeasonColors: boolean;
 }): GridCell[][] {
@@ -118,6 +120,7 @@ export function buildMonthGridMatrix(params: {
     gcShorts,
     ethShorts,
     holidays,
+    customEvents,
     dayInfoMap,
     showSeasonColors,
   } = params;
@@ -156,9 +159,18 @@ export function buildMonthGridMatrix(params: {
       const subLabel = showSubMonthLabel ? `${subAbbr} ${subDay}` : `${subDay}`;
 
       const dayHolidays = holidays.get(day) ?? [];
-      const types: string[] = [];
+      const dotColors: string[] = [];
+
       for (const h of dayHolidays) {
-        if (!types.includes(h.type)) types.push(h.type);
+        const color = (HOLIDAY_COLORS as Record<string, string>)[h.type] || "#3b82f6";
+        if (!dotColors.includes(color)) dotColors.push(color);
+      }
+
+      const dayCustomColors = customEvents?.get(day) ?? [];
+      for (const c of dayCustomColors) {
+        if (!dotColors.includes(c)) {
+          dotColors.push(c);
+        }
       }
 
       const dayInfo = dayInfoMap?.get(day);
@@ -175,7 +187,7 @@ export function buildMonthGridMatrix(params: {
         subLabel,
         showSubMonthLabel,
         today,
-        types,
+        dotColors,
         seasonColor,
         seasonStyle,
         isSunday,

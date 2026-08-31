@@ -20,17 +20,13 @@ type MonthGridProps = {
   year: number;
   month: number;
   holidays: Map<number, HolidayRow[]>;
+  customEvents?: Map<number, string[]>;
   dayInfoMap?: Map<number, DayInfoRow>;
   width: number;
   calendarStyle?: CalendarStyle;
   showSeasonColors?: boolean;
   onLongPressDay?: (day: number) => void;
 };
-
-// Hoist today computation to module level — it doesn't change during a session
-const _now = new Date();
-const MODULE_ETH_TODAY = gregorianToEthiopian(_now);
-const MODULE_GC_TODAY = { year: _now.getFullYear(), month: _now.getMonth(), day: _now.getDate() };
 
 // Hoisted static style for the dot indicator
 const DOT_WHITE_BG = { backgroundColor: "#ffffff" };
@@ -131,15 +127,15 @@ const DayCell = React.memo(function DayCell({
         </Text>
 
         {/* Event Indicator Dots */}
-        {cell.types.length > 0 && (
+        {cell.dotColors && cell.dotColors.length > 0 && (
           <View className="absolute bottom-1 flex-row items-center justify-center gap-1">
-            {cell.types.map((type, i) => (
+            {cell.dotColors.slice(0, 3).map((color, i) => (
               <View
                 key={i}
                 style={
                   cell.today
                     ? DOT_WHITE_BG
-                    : { backgroundColor: (HOLIDAY_COLORS as Record<string, string>)[type] || "#3b82f6" }
+                    : { backgroundColor: color }
                 }
                 className="h-1 w-1 rounded-full"
               />
@@ -159,6 +155,7 @@ function MonthGridComponent({
   year,
   month,
   holidays,
+  customEvents,
   dayInfoMap,
   width,
   calendarStyle = "ethiopian",
@@ -176,21 +173,25 @@ function MonthGridComponent({
 
   const gridRows = useMemo(() => {
     const weeks = isEth ? getEthiopianWeeks(year, month) : getGregorianWeeks(year, month);
+    const now = new Date();
+    const ethToday = gregorianToEthiopian(now);
+    const gcToday = { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
 
     return buildMonthGridMatrix({
       weeks,
       year,
       month,
       isEth,
-      ethToday: MODULE_ETH_TODAY,
-      gcToday: MODULE_GC_TODAY,
+      ethToday,
+      gcToday,
       gcShorts: monthShorts.gcShorts,
       ethShorts: monthShorts.ethShorts,
       holidays,
+      customEvents,
       dayInfoMap,
       showSeasonColors,
     });
-  }, [year, month, isEth, monthShorts, holidays, dayInfoMap, showSeasonColors]);
+  }, [year, month, isEth, monthShorts, holidays, customEvents, dayInfoMap, showSeasonColors]);
 
   return (
     <View style={{ width }} className="px-3">
