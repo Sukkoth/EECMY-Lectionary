@@ -38,6 +38,7 @@ export type AppSettings = {
   reminderTime: string; // "HH:mm" format, e.g. "07:00"
   timeFormat: TimeFormat;
   versionUsageCount: Record<string, number>;
+  batteryOptimizationDismissed: boolean;
 };
 
 const KEYS = {
@@ -58,6 +59,7 @@ const KEYS = {
   timeFormat: "yeilet_time_format",
   versionUsageCount: "yeilet_version_usage_count",
   onboardingComplete: "yeilet_onboarding_complete",
+  batteryOptimizationDismissed: "yeilet_battery_optimization_dismissed",
 };
 
 const DEFAULTS: AppSettings = {
@@ -77,6 +79,7 @@ const DEFAULTS: AppSettings = {
   reminderTime: "08:30",
   timeFormat: "24h",
   versionUsageCount: {},
+  batteryOptimizationDismissed: false,
 };
 
 export async function loadSettings(): Promise<AppSettings> {
@@ -98,6 +101,7 @@ export async function loadSettings(): Promise<AppSettings> {
       reminderTime,
       timeFormat,
       rawUsageCount,
+      batteryOptimizationDismissed,
     ] = await Promise.all([
       SecureStore.getItemAsync(KEYS.language),
       SecureStore.getItemAsync(KEYS.appLanguage),
@@ -115,6 +119,7 @@ export async function loadSettings(): Promise<AppSettings> {
       SecureStore.getItemAsync(KEYS.reminderTime),
       SecureStore.getItemAsync(KEYS.timeFormat),
       SecureStore.getItemAsync(KEYS.versionUsageCount),
+      SecureStore.getItemAsync(KEYS.batteryOptimizationDismissed),
     ]);
 
     const systemTheme = Appearance.getColorScheme() === "dark" ? "dark" : "light";
@@ -142,6 +147,7 @@ export async function loadSettings(): Promise<AppSettings> {
       reminderTime: reminderTime ?? DEFAULTS.reminderTime,
       timeFormat: timeFormat === "24h" ? "24h" : "12h",
       versionUsageCount,
+      batteryOptimizationDismissed: batteryOptimizationDismissed === "true",
     };
   } catch {
     return { ...DEFAULTS };
@@ -166,6 +172,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
     SecureStore.setItemAsync(KEYS.reminderTime, settings.reminderTime),
     SecureStore.setItemAsync(KEYS.timeFormat, settings.timeFormat),
     SecureStore.setItemAsync(KEYS.versionUsageCount, JSON.stringify(settings.versionUsageCount ?? {})),
+    SecureStore.setItemAsync(KEYS.batteryOptimizationDismissed, String(settings.batteryOptimizationDismissed ?? false)),
   ]);
 }
 

@@ -1,4 +1,9 @@
 import type { SQLiteDatabase } from "expo-sqlite";
+import {
+  scheduleEventNotification,
+  cancelEventNotification,
+  cancelAllEventNotifications,
+} from "./NotificationService";
 
 export type ReminderOffset =
   | "at_time"
@@ -44,7 +49,6 @@ export type HydratedEvent = {
   tagName?: string | null;
   tagColor?: string | null;
   reminderOffsets?: ReminderOffset[];
-  reminderOffset?: ReminderOffset;
   hasReminder: boolean;
 };
 
@@ -93,12 +97,15 @@ export async function createTag(
   return { id, name: tag.name.trim(), color: tag.color, createdAt: now };
 }
 
-/** Delete a tag by its ID */
+/** Delete a tag by its ID and uncategorize associated events */
 export async function deleteTag(
   db: SQLiteDatabase,
   tagId: string,
 ): Promise<void> {
-  await db.runAsync(`DELETE FROM Tag WHERE id = ?`, [tagId]);
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(`UPDATE Event SET tagId = NULL WHERE tagId = ?`, [tagId]);
+    await db.runAsync(`DELETE FROM Tag WHERE id = ?`, [tagId]);
+  });
 }
 
 /** Fetch all events joined with tags and alerts */
@@ -144,10 +151,9 @@ export async function getAllEvents(db: SQLiteDatabase): Promise<HydratedEvent[]>
       reminderTime: e.reminderTime ?? undefined,
       notes: e.notes ?? undefined,
       tagId: e.tagId,
-      tagName: e.tagName,
-      tagColor: e.tagColor,
+      tagName: e.tagName ?? undefined,
+      tagColor: e.tagColor ?? undefined,
       reminderOffsets: eventAlerts.length > 0 ? eventAlerts : undefined,
-      reminderOffset: eventAlerts.length > 0 ? eventAlerts[0] : undefined,
       hasReminder,
     };
   });
@@ -164,6 +170,16 @@ export async function createEvent(
   const notes = input.notes?.trim() || null;
   const tagId = input.tagId || null;
 
+  const alertRecords: { id: string; offset: ReminderOffset }[] = [];
+  if (reminderTime && input.reminderOffsets && input.reminderOffsets.length > 0) {
+    for (const offset of input.reminderOffsets) {
+      alertRecords.push({
+        id: `alt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        offset,
+      });
+    }
+  }
+
   await db.withTransactionAsync(async () => {
     await db.runAsync(
       `INSERT INTO Event (id, title, date, reminderTime, notes, tagId, createdAt, updatedAt)
@@ -171,17 +187,43 @@ export async function createEvent(
       [id, input.title.trim(), input.date, reminderTime, notes, tagId, now, now],
     );
 
-    if (reminderTime && input.reminderOffsets && input.reminderOffsets.length > 0) {
-      for (const offset of input.reminderOffsets) {
-        const alertId = `alt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        await db.runAsync(
-          `INSERT OR IGNORE INTO EventAlert (id, eventId, offset, notificationId)
-           VALUES (?, ?, ?, NULL)`,
-          [alertId, id, offset],
-        );
-      }
+    for (const alert of alertRecords) {
+      await db.runAsync(
+        `INSERT OR IGNORE INTO EventAlert (id, eventId, offset, notificationId)
+         VALUES (?, ?, ?, NULL)`,
+        [alert.id, id, alert.offset],
+      );
     }
   });
+
+  // Schedule notifications non-blocking outside transaction
+  if (reminderTime && alertRecords.length > 0) {
+    console.log(
+      `[EventRepository] ➕ Created event "${input.title}" (${id}), scheduling ${alertRecords.length} reminder(s)...`,
+    );
+    for (const alert of alertRecords) {
+      scheduleEventNotification(
+        { id, title: input.title.trim(), date: input.date, reminderTime, notes },
+        alert.offset,
+      )
+        .then((notificationId) => {
+          if (notificationId) {
+            console.log(
+              `[EventRepository] 💾 Linked notification "${notificationId}" to alert "${alert.id}"`,
+            );
+            db.runAsync(
+              `UPDATE EventAlert SET notificationId = ? WHERE id = ?`,
+              [notificationId, alert.id],
+            ).catch(() => {});
+          }
+        })
+        .catch((err) => {
+          console.warn("[EventRepository] Failed to schedule reminder alert:", err);
+        });
+    }
+  } else {
+    console.log(`[EventRepository] ➕ Created event "${input.title}" (${id}) with no reminders.`);
+  }
 
   return {
     id,
@@ -193,7 +235,6 @@ export async function createEvent(
     tagName: input.tagName ?? undefined,
     tagColor: input.tagColor ?? undefined,
     reminderOffsets: input.reminderOffsets,
-    reminderOffset: input.reminderOffsets?.[0],
     hasReminder: Boolean(reminderTime),
   };
 }
@@ -208,6 +249,21 @@ export async function updateEvent(
   const notes = input.notes?.trim() || null;
   const tagId = input.tagId || null;
 
+  const alertRecords: { id: string; offset: ReminderOffset }[] = [];
+  if (reminderTime && input.reminderOffsets && input.reminderOffsets.length > 0) {
+    for (const offset of input.reminderOffsets) {
+      alertRecords.push({
+        id: `alt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        offset,
+      });
+    }
+  }
+
+  // Cancel any previous scheduled notifications for this event and await completion
+  await cancelAllEventNotifications(input.id).catch((err) => {
+    console.warn(`[EventRepository] Error canceling notifications for event ${input.id}:`, err);
+  });
+
   await db.withTransactionAsync(async () => {
     await db.runAsync(
       `UPDATE Event
@@ -219,17 +275,43 @@ export async function updateEvent(
     // Delete existing alerts and re-insert new ones
     await db.runAsync(`DELETE FROM EventAlert WHERE eventId = ?`, [input.id]);
 
-    if (reminderTime && input.reminderOffsets && input.reminderOffsets.length > 0) {
-      for (const offset of input.reminderOffsets) {
-        const alertId = `alt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        await db.runAsync(
-          `INSERT OR IGNORE INTO EventAlert (id, eventId, offset, notificationId)
-           VALUES (?, ?, ?, NULL)`,
-          [alertId, input.id, offset],
-        );
-      }
+    for (const alert of alertRecords) {
+      await db.runAsync(
+        `INSERT OR IGNORE INTO EventAlert (id, eventId, offset, notificationId)
+         VALUES (?, ?, ?, NULL)`,
+        [alert.id, input.id, alert.offset],
+      );
     }
   });
+
+  // Schedule new notifications non-blocking outside transaction
+  if (reminderTime && alertRecords.length > 0) {
+    console.log(
+      `[EventRepository] ✏️ Updated event "${input.title}" (${input.id}), scheduling ${alertRecords.length} reminder(s)...`,
+    );
+    for (const alert of alertRecords) {
+      scheduleEventNotification(
+        { id: input.id, title: input.title.trim(), date: input.date, reminderTime, notes },
+        alert.offset,
+      )
+        .then((notificationId) => {
+          if (notificationId) {
+            console.log(
+              `[EventRepository] 💾 Linked notification "${notificationId}" to alert "${alert.id}"`,
+            );
+            db.runAsync(
+              `UPDATE EventAlert SET notificationId = ? WHERE id = ?`,
+              [notificationId, alert.id],
+            ).catch(() => {});
+          }
+        })
+        .catch((err) => {
+          console.warn("[EventRepository] Failed to schedule reminder alert on update:", err);
+        });
+    }
+  } else {
+    console.log(`[EventRepository] ✏️ Updated event "${input.title}" (${input.id}) with no reminders.`);
+  }
 }
 
 /** Delete an event and its associated alerts inside a transaction */
@@ -237,6 +319,11 @@ export async function deleteEvent(
   db: SQLiteDatabase,
   eventId: string,
 ): Promise<void> {
+  // Cancel all scheduled notifications for this event
+  await cancelAllEventNotifications(eventId).catch((err) => {
+    console.warn(`[EventRepository] Error canceling notifications for event ${eventId}:`, err);
+  });
+
   await db.withTransactionAsync(async () => {
     await db.runAsync(`DELETE FROM EventAlert WHERE eventId = ?`, [eventId]);
     await db.runAsync(`DELETE FROM Event WHERE id = ?`, [eventId]);

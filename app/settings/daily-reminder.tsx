@@ -25,6 +25,7 @@ import {
   cancelDailyReminder,
   ensurePermissions,
   openNotificationSettings,
+  openBatteryOptimizationSettings,
 } from "@/lib/NotificationService";
 import { ReadingsDB, type DayData } from "@/lib/database";
 
@@ -293,6 +294,73 @@ export default function DailyReminderScreen() {
             </View>
           </View>
         )}
+
+        {/* Android Battery Optimization / Reliability Tip */}
+        {Platform.OS === "android" &&
+          settings.reminderEnabled &&
+          !settings.batteryOptimizationDismissed && (
+            <View className="mt-4 rounded-2xl border border-stone-200/70 bg-[#F5F2EB] p-4 dark:border-stone-800 dark:bg-[#25221E]">
+              <View className="flex-row items-start gap-3">
+                <View className="h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-400/10">
+                  <Ionicons name="battery-charging-outline" size={18} color="#D97706" />
+                </View>
+                <View className="flex-1">
+                  <View className="flex-row items-center justify-between">
+                    <Text
+                      className="text-xs font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      Reliable Notification Delivery
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => void updateSetting("batteryOptimizationDismissed", true)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      activeOpacity={0.6}
+                    >
+                      <Ionicons name="close" size={16} color={isDark ? "#8A8480" : "#A8A29E"} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text
+                    className="mt-1 text-[11px] leading-relaxed text-muted dark:text-muted-dark"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    To ensure reminders arrive on time when the device is idle, set App Battery Usage to "Unrestricted" in system settings.
+                  </Text>
+
+                  <View className="mt-2.5 flex-row items-center gap-3">
+                    <TouchableOpacity
+                      onPress={async () => {
+                        await openBatteryOptimizationSettings();
+                        await updateSetting("batteryOptimizationDismissed", true);
+                      }}
+                      activeOpacity={0.7}
+                      className="rounded-xl border border-stone-300/80 bg-white px-3 py-1.5 dark:border-stone-700/80 dark:bg-[#1A1815]"
+                    >
+                      <Text
+                        className="text-xs font-medium text-primary"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        Adjust Battery Optimization →
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => void updateSetting("batteryOptimizationDismissed", true)}
+                      activeOpacity={0.6}
+                    >
+                      <Text
+                        className="text-xs text-muted dark:text-muted-dark"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        Already Done
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
       </ScrollView>
 
       {/* Time Picker Component */}

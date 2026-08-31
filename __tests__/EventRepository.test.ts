@@ -13,8 +13,8 @@ describe("EventRepository", () => {
 
   beforeEach(() => {
     mockDb = {
-      getAllAsync: jest.fn(),
-      runAsync: jest.fn(),
+      getAllAsync: jest.fn().mockResolvedValue([]),
+      runAsync: jest.fn().mockResolvedValue({}),
       withTransactionAsync: jest.fn(async (callback: () => Promise<any>) => callback()),
     };
   });
