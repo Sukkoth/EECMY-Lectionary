@@ -247,10 +247,18 @@ export function getEthiopianWeeks(ethYear: number, monthIndex: number): (number 
   return weeks;
 }
 
-const WEEKDAY_NAMES_AM = ["እሑድ", "ሰኞ", "ማክሰኞ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ"] as const;
-const WEEKDAY_NAMES_OM = ["Dilbata", "Wiixata", "Qibxata", "Roobii", "Kamiisa", "Jimaata", "Sanbata"] as const;
-const WEEKDAY_NAMES_SHORT_OM = ["Dil", "Wix", "Qib", "Roob", "Kam", "Jim", "San"] as const;
-const WEEKDAY_NAMES_SHORT_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+export const WEEKDAY_NAMES_AM = ["እሑድ", "ሰኞ", "ማክሰኞ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ"] as const;
+export const WEEKDAY_NAMES_OM = ["Dilbata", "Wiixata", "Qibxata", "Roobii", "Kamiisa", "Jimaata", "Sanbata"] as const;
+export const WEEKDAY_NAMES_SHORT_AM = ["እሑድ", "ሰኞ", "ማክሰ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ"] as const;
+export const WEEKDAY_NAMES_SHORT_OM = ["Dil", "Wix", "Qib", "Roob", "Kam", "Jim", "San"] as const;
+export const WEEKDAY_NAMES_SHORT_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+/** Returns the 7 localized short weekday names (Sun..Sat) for the given language */
+export function getShortWeekdayNames(lang: string = "en"): readonly string[] {
+  if (lang === "om") return WEEKDAY_NAMES_SHORT_OM;
+  if (lang === "am") return WEEKDAY_NAMES_SHORT_AM;
+  return WEEKDAY_NAMES_SHORT_EN;
+}
 
 /** Formats a Date object into a readable date string according to the selected calendar style */
 export function formatDisplayDate(
