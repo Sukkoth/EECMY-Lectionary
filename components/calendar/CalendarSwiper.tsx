@@ -104,13 +104,14 @@ export const CalendarSwiper = forwardRef<CalendarSwiperRef, CalendarSwiperProps>
     // Store callbacks in refs so the gesture/animation closures always
     // call the latest version without needing to recreate the gesture (rerender-use-ref-transient-values)
     const onMonthChangeRef = useRef(onMonthChange);
-    onMonthChangeRef.current = onMonthChange;
-
     const baseDateRef = useRef(baseDate);
-    baseDateRef.current = baseDate;
-
     const isEthRef = useRef(isEth);
-    isEthRef.current = isEth;
+
+    useEffect(() => {
+      onMonthChangeRef.current = onMonthChange;
+      baseDateRef.current = baseDate;
+      isEthRef.current = isEth;
+    });
 
     // Must be a shared value (not useRef) because it's read inside worklets
     const screenWidthSV = useSharedValue(screenWidth);
