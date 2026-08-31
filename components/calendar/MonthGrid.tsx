@@ -131,7 +131,7 @@ const DayCell = React.memo(function DayCell({
           <View className="absolute bottom-1 flex-row items-center justify-center gap-1">
             {cell.dotColors.slice(0, 3).map((color, i) => (
               <View
-                key={i}
+                key={`${cell.key}-dot-${color}-${i}`}
                 style={
                   cell.today
                     ? DOT_WHITE_BG
@@ -203,7 +203,7 @@ function MonthGridComponent({
             const isWeekend = index === 0 || index === 6;
             return (
               <View
-                key={`header-day-${index}`}
+                key={`header-weekday-${label}-${index}`}
                 style={{ width: cellWidth }}
                 className="items-center justify-center"
               >
