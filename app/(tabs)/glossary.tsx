@@ -1,6 +1,6 @@
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { router, type Href } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "@/lib/i18n";
 
@@ -40,12 +40,12 @@ export default function GlossaryScreen() {
   ];
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: 24,
-          paddingTop: 48,
+          paddingTop: 8,
           paddingBottom: scrollBottomPadding,
         }}
         showsVerticalScrollIndicator={false}

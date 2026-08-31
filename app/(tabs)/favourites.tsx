@@ -7,12 +7,11 @@ import {
   Modal,
   Share,
   ActivityIndicator,
-  SafeAreaView,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Octicons from "@expo/vector-icons/Octicons";
 import { router, useFocusEffect } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "@/lib/SettingsContext";
 import {
   useHydratedFavourites,
@@ -87,8 +86,8 @@ export default function FavouritesScreen() {
   // ─── Empty State ─────────────────────────────────────────────
   if (favourites.length === 0) {
     return (
-      <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-        <View className="flex-1 px-6 pt-12 items-center justify-center">
+      <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+        <View className="flex-1 px-6 pt-2 items-center justify-center">
           <View className="bg-surface dark:bg-surface-dark border border-stone-200/60 dark:border-stone-800/60 mb-5 rounded-full p-6 shadow-sm">
             <Ionicons name="star-outline" size={40} color="#3b82f6" />
           </View>
@@ -126,9 +125,9 @@ export default function FavouritesScreen() {
 
   // ─── Favourites List ─────────────────────────────────────────
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
-        className="flex-1 px-6 pt-12"
+        className="flex-1 px-6 pt-2"
         contentContainerStyle={{ paddingBottom: scrollBottomPadding }}
         showsVerticalScrollIndicator={false}
       >

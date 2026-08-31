@@ -1,4 +1,5 @@
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "@/lib/SettingsContext";
@@ -16,9 +17,9 @@ export default function AppLanguageSettingsScreen() {
   ] as const;
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       {/* Header with back button */}
-      <View className="border-b border-stone-200 px-6 pb-4 pt-12 dark:border-stone-800">
+      <View className="border-b border-stone-200 px-6 pb-4 pt-3 dark:border-stone-800">
         <View className="flex-row items-center gap-4">
           <TouchableOpacity
             onPress={() => router.back()}

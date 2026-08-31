@@ -3,7 +3,6 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   useColorScheme,
   ActivityIndicator,
   Appearance,
@@ -13,7 +12,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useEffect, useRef } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
 import { useStreak } from "@/lib/hooks/useStreak";
@@ -134,10 +133,10 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <View
         style={{ paddingBottom: bottomGap }}
-        className="flex-1 px-6 pt-12"
+        className="flex-1 px-6 pt-2"
       >
         {/* HEADER */}
         <View className="mb-4 flex-row items-center justify-between">

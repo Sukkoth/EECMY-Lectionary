@@ -2,7 +2,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  SafeAreaView,
   Switch,
   Platform,
   Modal,
@@ -10,6 +9,7 @@ import {
   Pressable,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState, useEffect, useMemo } from "react";
@@ -135,9 +135,9 @@ export default function DailyReminderScreen() {
   };
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
-        className="flex-1 px-6 pt-12"
+        className="flex-1 px-6 pt-2"
         contentContainerStyle={{ paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >

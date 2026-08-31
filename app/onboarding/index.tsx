@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { View, Text, TouchableOpacity, useColorScheme, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, useColorScheme } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
   FadeInDown,
   FadeIn,
@@ -30,7 +31,7 @@ export default function WelcomeScreen() {
   }));
 
   return (
-    <SafeAreaView className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
+    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
       <View className="flex-1 items-center justify-center px-8">
         {/* App Icon with entrance animation */}
         <Animated.View

@@ -4,9 +4,9 @@ import {
   TouchableOpacity,
   View,
   useWindowDimensions,
-  SafeAreaView,
   BackHandler,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
@@ -214,9 +214,9 @@ export default function CalendarScreen() {
     : current.year === now.getFullYear() && current.month === now.getMonth();
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       {/* Top Fixed Control Bar */}
-      <View className="flex-row items-center justify-between px-6 pt-11 pb-2">
+      <View className="flex-row items-center justify-between px-6 pt-2 pb-2">
         {/* Left: Calendar System Segmented Toggle */}
         <CalendarStyleToggle
           isEth={isEth}

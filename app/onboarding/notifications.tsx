@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSQLiteContext } from "expo-sqlite";
@@ -51,8 +52,8 @@ export default function OnboardingNotificationScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
-      <View className="flex-1 justify-between px-6 pt-16 pb-8">
+    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
+      <View className="flex-1 justify-between px-6 pt-6 pb-8">
         <View className="items-center">
           {/* Visual Bell Icon */}
           <View className="mb-6 h-20 w-20 items-center justify-center rounded-full bg-primary/10">

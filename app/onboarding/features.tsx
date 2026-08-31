@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { View, Text, TouchableOpacity, useColorScheme, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, useColorScheme } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import PagerView from "react-native-pager-view";
@@ -67,7 +68,7 @@ export default function FeaturesScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
+    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
       {/* Skip Button */}
       <View className="absolute right-6 top-12 z-10">
         <TouchableOpacity onPress={handleSkip} activeOpacity={0.7}>
