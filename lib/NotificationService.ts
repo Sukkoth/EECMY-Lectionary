@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Linking from "expo-linking";
 import * as IntentLauncher from "expo-intent-launcher";
+import Constants from "expo-constants";
 import type { SQLiteDatabase } from "expo-sqlite";
 import { ReadingsDB, type DayData } from "./database";
 import { stripFormattedTags } from "./formatText";
@@ -148,7 +149,7 @@ export async function openNotificationSettings(): Promise<void> {
  */
 export async function openBatteryOptimizationSettings(): Promise<void> {
   if (Platform.OS === "android") {
-    const pkgName = "com.sukkoth.eecmylectionary";
+    const pkgName = Constants.expoConfig?.android?.package ?? "com.sukkoth.eecmylectionary";
     try {
       // Direct intent requesting ignore battery optimization for this app
       await IntentLauncher.startActivityAsync(
