@@ -4,7 +4,10 @@ import {
   formatEventNotificationBody,
   scheduleEventNotification,
   cancelEventNotification,
+  pinEventNotification,
+  unpinEventNotification,
   EVENTS_CHANNEL_ID,
+  PINNED_EVENTS_CHANNEL_ID,
 } from "../lib/NotificationService";
 import * as Notifications from "expo-notifications";
 
@@ -15,15 +18,22 @@ jest.mock("expo-notifications", () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ status: "granted", canAskAgain: true }),
   scheduleNotificationAsync: jest.fn().mockResolvedValue("eecmy-event-evt_1-at_time"),
   cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined),
+  dismissNotificationAsync: jest.fn().mockResolvedValue(undefined),
   getAllScheduledNotificationsAsync: jest.fn().mockResolvedValue([]),
   SchedulableTriggerInputTypes: {
     DATE: "date",
   },
   AndroidImportance: {
+    DEFAULT: 3,
     HIGH: 4,
   },
   AndroidNotificationVisibility: {
     PUBLIC: 1,
+  },
+  PermissionStatus: {
+    GRANTED: "granted",
+    DENIED: "denied",
+    UNDETERMINED: "undetermined",
   },
 }));
 
@@ -143,6 +153,38 @@ describe("Event Notifications", () => {
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
         "eecmy-event-evt_1-30_min",
       );
+    });
+  });
+
+  describe("pinEventNotification & unpinEventNotification", () => {
+    it("pins event notification immediately with sticky and ongoing attributes", async () => {
+      const pinId = await pinEventNotification({
+        id: "evt_pin_1",
+        title: "Important Board Meeting",
+        date: "2026-09-20",
+        reminderTime: "10:00 AM",
+        notes: "Conference Room A",
+      });
+
+      expect(pinId).toBe("eecmy-pinned-evt_pin_1");
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: "eecmy-pinned-evt_pin_1",
+          content: expect.objectContaining({
+            title: "📌 Important Board Meeting",
+            body: expect.stringContaining("2026-09-20 at 10:00 AM • Conference Room A"),
+            sticky: true,
+            autoDismiss: false,
+          }),
+          trigger: null,
+        }),
+      );
+    });
+
+    it("unpins event notification by dismissing and canceling", async () => {
+      await unpinEventNotification("evt_pin_1");
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith("eecmy-pinned-evt_pin_1");
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith("eecmy-pinned-evt_pin_1");
     });
   });
 });

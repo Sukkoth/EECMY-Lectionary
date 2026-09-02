@@ -6,7 +6,34 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
+  toggleEventPin,
 } from "../lib/EventRepository";
+
+jest.mock("expo-notifications", () => ({
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(),
+  getPermissionsAsync: jest.fn().mockResolvedValue({ status: "granted", canAskAgain: true }),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({ status: "granted", canAskAgain: true }),
+  scheduleNotificationAsync: jest.fn().mockResolvedValue("eecmy-event-evt_1-at_time"),
+  cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined),
+  dismissNotificationAsync: jest.fn().mockResolvedValue(undefined),
+  getAllScheduledNotificationsAsync: jest.fn().mockResolvedValue([]),
+  SchedulableTriggerInputTypes: {
+    DATE: "date",
+  },
+  AndroidImportance: {
+    DEFAULT: 3,
+    HIGH: 4,
+  },
+  AndroidNotificationVisibility: {
+    PUBLIC: 1,
+  },
+  PermissionStatus: {
+    GRANTED: "granted",
+    DENIED: "denied",
+    UNDETERMINED: "undetermined",
+  },
+}));
 
 describe("EventRepository", () => {
   let mockDb: any;
@@ -15,6 +42,7 @@ describe("EventRepository", () => {
     mockDb = {
       getAllAsync: jest.fn().mockResolvedValue([]),
       runAsync: jest.fn().mockResolvedValue({}),
+      execAsync: jest.fn().mockResolvedValue({}),
       withTransactionAsync: jest.fn(async (callback: () => Promise<any>) => callback()),
     };
   });
@@ -163,6 +191,48 @@ describe("EventRepository", () => {
         expect.stringContaining("DELETE FROM Event WHERE id = ?"),
         ["evt_new"],
       );
+    });
+
+    it("toggles event pin status in SQLite", async () => {
+      mockDb.runAsync.mockResolvedValue({});
+
+      await toggleEventPin(
+        mockDb,
+        {
+          id: "evt_pinned_1",
+          title: "Pinned Prayer Meeting",
+          date: "2026-09-15",
+          hasReminder: false,
+        },
+        true,
+      );
+
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE Event SET isPinned = ?, updatedAt = ? WHERE id = ?"),
+        [1, expect.any(String), "evt_pinned_1"],
+      );
+    });
+
+    it("triggers pinEventNotification in background when isPinned is true", async () => {
+      mockDb.runAsync.mockResolvedValue({});
+
+      const NotificationService = require("../lib/NotificationService");
+      const originalPin = NotificationService.pinEventNotification;
+      NotificationService.pinEventNotification = jest.fn().mockResolvedValue("eecmy-pinned-evt_pin_ok");
+
+      const created = await createEvent(mockDb, {
+        id: "evt_pin_ok",
+        title: "Pinned Event",
+        date: "2026-09-15",
+        isPinned: true,
+      });
+
+      expect(created.isPinned).toBe(true);
+      expect(NotificationService.pinEventNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "evt_pin_ok" }),
+      );
+
+      NotificationService.pinEventNotification = originalPin;
     });
   });
 });

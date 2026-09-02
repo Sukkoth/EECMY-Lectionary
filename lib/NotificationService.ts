@@ -10,6 +10,8 @@ export const NOTIFICATION_PREFIX = "eecmy-daily-";
 export const DAILY_CHANNEL_ID = "daily";
 export const EVENT_NOTIFICATION_PREFIX = "eecmy-event-";
 export const EVENTS_CHANNEL_ID = "events";
+export const PINNED_EVENT_NOTIFICATION_PREFIX = "eecmy-pinned-";
+export const PINNED_EVENTS_CHANNEL_ID = "pinned_events";
 
 // Configure notification behavior when app is in foreground
 Notifications.setNotificationHandler({
@@ -33,32 +35,59 @@ export function toDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+let channelsConfigured = false;
+
 export async function setupNotificationChannels(): Promise<void> {
-  if (Platform.OS !== "android") return;
+  if (Platform.OS !== "android" || channelsConfigured) return;
   try {
-    await Notifications.setNotificationChannelAsync(DAILY_CHANNEL_ID, {
-      name: "Daily Lectionary Reminders",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#3b82f6",
-      sound: "default",
-      showBadge: true,
-      enableLights: true,
-      enableVibrate: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    let timeoutId: any;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error("Channel setup timeout")), 1500);
+      timeoutId?.unref?.();
     });
-    await Notifications.setNotificationChannelAsync(EVENTS_CHANNEL_ID, {
-      name: "Calendar Event Reminders",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#3b82f6",
-      sound: "default",
-      showBadge: true,
-      enableLights: true,
-      enableVibrate: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+
+    await Promise.race([
+      Promise.all([
+        Notifications.setNotificationChannelAsync(DAILY_CHANNEL_ID, {
+          name: "Daily Lectionary Reminders",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#3b82f6",
+          sound: "default",
+          showBadge: true,
+          enableLights: true,
+          enableVibrate: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        }),
+        Notifications.setNotificationChannelAsync(EVENTS_CHANNEL_ID, {
+          name: "Calendar Event Reminders",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#3b82f6",
+          sound: "default",
+          showBadge: true,
+          enableLights: true,
+          enableVibrate: true,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        }),
+        Notifications.setNotificationChannelAsync(PINNED_EVENTS_CHANNEL_ID, {
+          name: "Pinned Calendar Events",
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 100],
+          lightColor: "#3b82f6",
+          showBadge: true,
+          enableLights: true,
+          enableVibrate: false,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        }),
+      ]),
+      timeoutPromise,
+    ]).finally(() => {
+      clearTimeout(timeoutId);
     });
-    console.log(`[NotificationService] Channels '${DAILY_CHANNEL_ID}' and '${EVENTS_CHANNEL_ID}' configured successfully.`);
+
+    channelsConfigured = true;
+    console.log(`[NotificationService] Notification channels configured successfully.`);
   } catch (err) {
     console.warn("[NotificationService] Warning setting notification channels:", err);
   }
@@ -168,16 +197,49 @@ export async function isDailyReminderScheduled(): Promise<boolean> {
   return count > 0;
 }
 
+/** Safe wrapper for scheduleNotificationAsync with per-call timeout to prevent native bridge hangs */
+export async function safeScheduleNotification(
+  options: Notifications.NotificationRequestInput,
+  timeoutMs = 1500,
+): Promise<string | null> {
+  let timeoutId: any;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("SCHEDULE_TIMEOUT")), timeoutMs);
+    timeoutId?.unref?.();
+  });
+
+  try {
+    const id = await Promise.race([
+      Notifications.scheduleNotificationAsync(options),
+      timeoutPromise,
+    ]);
+    return id;
+  } catch (err) {
+    console.warn("[NotificationService] Notification schedule call failed or timed out:", err);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export async function cancelDailyReminder(): Promise<void> {
   try {
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    const matching = scheduled.filter((n) => n.identifier.startsWith(NOTIFICATION_PREFIX));
-    await Promise.all(
-      matching.map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})),
-    );
-    console.log(`[NotificationService] Cancelled ${matching.length} daily reminders.`);
+    console.log("[DailyReminder] 🧹 Cancelling existing daily reminders...");
+    const now = new Date();
+    // Directly cancel known identifier range without slow getAllScheduledNotificationsAsync
+    for (let i = -2; i <= 14; i++) {
+      const d = new Date();
+      d.setDate(now.getDate() + i);
+      const identifier = `${NOTIFICATION_PREFIX}${toDateKey(d)}`;
+      try {
+        await Notifications.cancelScheduledNotificationAsync(identifier);
+      } catch {
+        // Ignore individual cancellation failures
+      }
+    }
+    console.log("[DailyReminder] ✓ Previous daily reminders cleared.");
   } catch (err) {
-    console.warn("[NotificationService] Warning cancelling reminders:", err);
+    console.warn("[DailyReminder] Warning cancelling reminders:", err);
   }
 }
 
@@ -194,13 +256,15 @@ export async function scheduleDailyReminder(
   appTitle: string = "EECMY Lectionary",
   daysAhead: number = 14,
 ): Promise<boolean> {
-  console.log(`[Notify] ▶ Starting schedule — ${hour}:${String(minute).padStart(2, "0")}, lang=${language}, ver=${version}, days=${daysAhead}`);
+  const timeFormatted = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  console.log(`[DailyReminder] 🚀 Starting schedule — Target Time: ${timeFormatted}, Lang: ${language}, Version: ${version}, Days: ${daysAhead}`);
 
   const { granted } = await ensurePermissions();
   if (!granted) {
-    console.warn("[Notify] ✗ Failed — permission not granted");
+    console.warn("[DailyReminder] ❌ Aborted — Notification permission not granted by user.");
     return false;
   }
+  console.log("[DailyReminder] ✅ Notification permission confirmed.");
 
   // Cancel any existing reminders to avoid stale content (e.g. after language/version change)
   await cancelDailyReminder();
@@ -215,6 +279,8 @@ export async function scheduleDailyReminder(
   const targetDays = Math.min(Math.max(1, daysAhead), 14);
   const itemsToSchedule: Array<{ dateKey: string; targetDate: Date; body: string }> = [];
 
+  console.log(`[DailyReminder] 📖 Loading lectionary passages for the next ${targetDays} days...`);
+
   // Phase 1: Pre-fetch all readings first from SQLite
   for (let i = 0; i < targetDays; i++) {
     const targetDate = new Date();
@@ -225,7 +291,7 @@ export async function scheduleDailyReminder(
 
     // Skip if target time for today has already passed
     if (targetDate.getTime() <= now.getTime()) {
-      console.log(`[Notify] ⏭ Skip ${dateKey} — time already passed`);
+      console.log(`[DailyReminder] ⏭️ Skipping ${dateKey} — ${timeFormatted} has already passed for today.`);
       continue;
     }
 
@@ -235,7 +301,6 @@ export async function scheduleDailyReminder(
       try {
         const dayData: DayData | null = await readingsDB.getReadingsForDate(targetDate, language, version);
         if (dayData && dayData.readings.length > 0) {
-          console.log(`[Notify] 📖 Fetched ${dateKey} — ${dayData.readings.length} reading(s)`);
           if (dayData.readings.length === 1) {
             const reading = dayData.readings[0];
             const rawText = reading.text?.trim() ?? "";
@@ -256,51 +321,51 @@ export async function scheduleDailyReminder(
               body = `${references} [${verUpper}]`;
             }
           }
-        } else {
-          console.log(`[Notify] 📖 Fetched ${dateKey} — no readings found`);
         }
       } catch (err) {
-        console.warn(`[Notify] ✗ Failed to fetch ${dateKey}:`, err);
+        console.warn(`[DailyReminder] Warning reading DB for ${dateKey}:`, err);
       }
-    } else {
-      console.log(`[Notify] 📖 Fetched ${dateKey} — no DB available, using fallback`);
     }
 
     if (!body) {
       body = "Open the app to read today's lectionary passage.";
     }
 
-    console.log(`[Notify] ＋ Adding ${dateKey}`);
     itemsToSchedule.push({ dateKey, targetDate, body });
   }
 
-  // Phase 2: Schedule each day with unique identifier
+  console.log(`[DailyReminder] ⏰ Scheduling ${itemsToSchedule.length} days into system alarms...`);
+
+  // Phase 2: Schedule each day sequentially with safe timeout wrapper
   let scheduledSuccess = 0;
-  for (const item of itemsToSchedule) {
+  for (let i = 0; i < itemsToSchedule.length; i++) {
+    const item = itemsToSchedule[i];
     const identifier = `${NOTIFICATION_PREFIX}${item.dateKey}`;
-    try {
-      await Notifications.scheduleNotificationAsync({
-        identifier,
-        content: {
-          title: appTitle,
-          body: item.body,
-          sound: true,
-          data: { url: "/reading", date: item.dateKey },
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: item.targetDate,
-          channelId: DAILY_CHANNEL_ID,
-        },
-      });
-      console.log(`[Notify] ✓ Scheduled ${item.dateKey}`);
+    const res = await safeScheduleNotification({
+      identifier,
+      content: {
+        title: appTitle,
+        body: item.body,
+        sound: true,
+        data: { url: "/reading", date: item.dateKey },
+        ...(Platform.OS === "android" ? { channelId: DAILY_CHANNEL_ID } : {}),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: item.targetDate,
+        ...(Platform.OS === "android" ? { channelId: DAILY_CHANNEL_ID } : {}),
+      } as any,
+    });
+
+    if (res) {
+      console.log(`[DailyReminder] ✅ [${i + 1}/${itemsToSchedule.length}] Scheduled for ${item.dateKey} at ${timeFormatted}`);
       scheduledSuccess++;
-    } catch (err) {
-      console.warn(`[Notify] ✗ Failed to schedule ${item.dateKey}:`, err);
+    } else {
+      console.warn(`[DailyReminder] ⚠️ [${i + 1}/${itemsToSchedule.length}] Failed to schedule for ${item.dateKey}`);
     }
   }
 
-  console.log(`[Notify] ■ Done — ${scheduledSuccess}/${itemsToSchedule.length} scheduled`);
+  console.log(`[DailyReminder] 🎉 Summary: ${scheduledSuccess}/${itemsToSchedule.length} daily reminders active in system alarms!`);
   return scheduledSuccess > 0;
 }
 
@@ -442,44 +507,27 @@ export async function scheduleEventNotification(
     `[NotificationService] 🔔 Scheduling notification: "${event.title}" | offset: ${offset} | trigger: ${triggerDate.toLocaleString()} | id: ${identifier}`,
   );
 
-  try {
-    const triggerInput: any = {
+  const res = await safeScheduleNotification({
+    identifier,
+    content: {
+      title: event.title,
+      body,
+      sound: true,
+      data: { url: "/calendar", eventId: event.id, date: event.date },
+      ...(Platform.OS === "android" ? { channelId: EVENTS_CHANNEL_ID } : {}),
+    },
+    trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: triggerDate,
-    };
-    if (Platform.OS === "android") {
-      triggerInput.channelId = EVENTS_CHANNEL_ID;
-    }
+      ...(Platform.OS === "android" ? { channelId: EVENTS_CHANNEL_ID } : {}),
+    } as any,
+  }, 1500);
 
-    let timeoutId: any;
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error("Notification scheduling timeout")), 3500);
-      timeoutId?.unref?.();
-    });
-
-    await Promise.race([
-      Notifications.scheduleNotificationAsync({
-        identifier,
-        content: {
-          title: event.title,
-          body,
-          sound: true,
-          data: { url: "/calendar", eventId: event.id, date: event.date },
-          ...(Platform.OS === "android" ? { channelId: EVENTS_CHANNEL_ID } : {}),
-        },
-        trigger: triggerInput,
-      }),
-      timeoutPromise,
-    ]).finally(() => {
-      clearTimeout(timeoutId);
-    });
-
+  if (res) {
     console.log(`[NotificationService] ✓ Event notification scheduled successfully: ${identifier}`);
     return identifier;
-  } catch (err) {
-    console.warn(`[NotificationService] ✗ Failed to schedule event notification ${identifier}:`, err);
-    return null;
   }
+  return null;
 }
 
 /** Cancel a scheduled notification by identifier */
@@ -488,7 +536,7 @@ export async function cancelEventNotification(notificationId: string): Promise<v
     console.log(`[NotificationService] 🚫 Canceling notification: ${notificationId}`);
     let timeoutId: any;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error("Cancel notification timeout")), 2500);
+      timeoutId = setTimeout(() => reject(new Error("Cancel notification timeout")), 1000);
       timeoutId?.unref?.();
     });
     await Promise.race([
@@ -500,26 +548,82 @@ export async function cancelEventNotification(notificationId: string): Promise<v
   }
 }
 
-/** Cancel all potential scheduled notifications for a given event ID across all possible offsets */
+/** Cancel all potential scheduled notifications for a given event ID across all possible offsets, including pinned notifications */
 export async function cancelAllEventNotifications(eventId: string): Promise<void> {
   const offsets = Object.keys(REMINDER_OFFSET_MILLIS) as EventReminderOffset[];
-  let timeoutId: any;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error("Cancel all notifications timeout")), 3000);
-    timeoutId?.unref?.();
-  });
+  for (const offset of offsets) {
+    const identifier = `${EVENT_NOTIFICATION_PREFIX}${eventId}-${offset}`;
+    await cancelEventNotification(identifier);
+  }
+  await unpinEventNotification(eventId);
+}
 
+/** Pin a custom event directly to the status bar (persistent ongoing notification) */
+export async function pinEventNotification(event: {
+  id: string;
+  title: string;
+  date: string;
+  reminderTime?: string | null;
+  notes?: string | null;
+}): Promise<string> {
+  const perm = await getPermissionStatus();
+  if (!perm.granted) {
+    console.warn("[NotificationService] Notification permissions not granted for pinning.");
+    throw new Error("PERMISSION_DENIED");
+  }
+
+  const identifier = `${PINNED_EVENT_NOTIFICATION_PREFIX}${event.id}`;
+  let body = event.date;
+  if (event.reminderTime) {
+    body += ` at ${event.reminderTime}`;
+  }
+  if (event.notes) {
+    body += ` • ${event.notes}`;
+  }
+
+  console.log(
+    `[NotificationService] 📌 Pinning event to status bar: "${event.title}" | id: ${identifier}`,
+  );
+
+  const res = await safeScheduleNotification({
+    identifier,
+    content: {
+      title: `📌 ${event.title}`,
+      body,
+      sound: false,
+      sticky: true,
+      autoDismiss: false,
+      data: { url: "/calendar", eventId: event.id, date: event.date, isPinned: true },
+      ...(Platform.OS === "android" ? { channelId: PINNED_EVENTS_CHANNEL_ID } : {}),
+    },
+    trigger: null, // Display immediately in status bar
+  }, 1500);
+
+  if (res) {
+    console.log(`[NotificationService] ✓ Event pinned to status bar successfully: ${identifier}`);
+    return identifier;
+  }
+  throw new Error("PIN_TIMEOUT");
+}
+
+/** Unpin an event notification from the status bar */
+export async function unpinEventNotification(eventId: string): Promise<void> {
+  const identifier = `${PINNED_EVENT_NOTIFICATION_PREFIX}${eventId}`;
+  console.log(`[NotificationService] 📍 Unpinning event notification: ${identifier}`);
   try {
+    let timeoutId: any;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error("Unpin notification timeout")), 1000);
+      timeoutId?.unref?.();
+    });
     await Promise.race([
-      Promise.allSettled(
-        offsets.map((offset) => {
-          const identifier = `${EVENT_NOTIFICATION_PREFIX}${eventId}-${offset}`;
-          return cancelEventNotification(identifier);
-        }),
-      ),
+      (async () => {
+        await Notifications.dismissNotificationAsync(identifier).catch(() => {});
+        await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {});
+      })(),
       timeoutPromise,
     ]).finally(() => clearTimeout(timeoutId));
   } catch (err) {
-    console.warn(`[NotificationService] ✗ Batch cancellation timed out for event ${eventId}:`, err);
+    console.warn(`[NotificationService] ✗ Failed to unpin notification ${identifier}:`, err);
   }
 }

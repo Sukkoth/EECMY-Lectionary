@@ -96,10 +96,12 @@ export default function DailyReminderScreen() {
       const hStr = String(hour).padStart(2, "0");
       const mStr = String(minute).padStart(2, "0");
       const newTime = `${hStr}:${mStr}`;
+      console.log(`[DailyReminderScreen] ⏱️ Reminder time changed to: ${newTime}`);
 
       await updateSetting("reminderTime", newTime);
 
       if (settings.reminderEnabled) {
+        console.log(`[DailyReminderScreen] 🔄 Rescheduling reminders for updated time ${newTime}...`);
         void scheduleDailyReminder(
           hour,
           minute,
@@ -119,10 +121,12 @@ export default function DailyReminderScreen() {
     const hStr = String(hour).padStart(2, "0");
     const mStr = String(minute).padStart(2, "0");
     const newTime = `${hStr}:${mStr}`;
+    console.log(`[DailyReminderScreen] ⏱️ Reminder time set to: ${newTime}`);
 
     await updateSetting("reminderTime", newTime);
 
     if (settings.reminderEnabled) {
+      console.log(`[DailyReminderScreen] 🔄 Rescheduling reminders for updated time ${newTime}...`);
       void scheduleDailyReminder(
         hour,
         minute,
@@ -188,9 +192,11 @@ export default function DailyReminderScreen() {
             <Switch
               value={settings.reminderEnabled}
               onValueChange={async (value) => {
+                console.log(`[DailyReminderScreen] 🔘 Toggle switch changed to: ${value ? "ON" : "OFF"}`);
                 if (value) {
                   const { granted, canAskAgain } = await ensurePermissions();
                   if (!granted) {
+                    console.warn("[DailyReminderScreen] ❌ Permission not granted by user.");
                     if (!canAskAgain) {
                       Alert.alert(
                         "Notifications Disabled",
@@ -208,6 +214,7 @@ export default function DailyReminderScreen() {
                   const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
                   const hour = parseInt(hStr, 10) || 8;
                   const minute = parseInt(mStr, 10) || 30;
+                  console.log(`[DailyReminderScreen] 📅 Triggering reminder schedule for ${hour}:${minute}...`);
                   void scheduleDailyReminder(
                     hour,
                     minute,
@@ -217,6 +224,7 @@ export default function DailyReminderScreen() {
                     t("appTitle"),
                   );
                 } else {
+                  console.log("[DailyReminderScreen] 🔕 Disabling reminder and clearing system alarms...");
                   await updateSetting("reminderEnabled", false);
                   void cancelDailyReminder();
                 }

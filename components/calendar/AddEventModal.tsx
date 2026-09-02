@@ -7,7 +7,6 @@ import {
   Platform,
   Modal,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
@@ -76,6 +75,7 @@ export type CustomEventData = {
   reminderTime?: string;
   reminderOffsets?: ReminderOffset[];
   notes?: string;
+  isPinned?: boolean;
 };
 
 type AddEventModalProps = {
@@ -161,6 +161,8 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
     });
 
     const [hasReminder, setHasReminder] = useState(eventToEdit?.hasReminder ?? false);
+    const [isPinned, setIsPinned] = useState(eventToEdit?.isPinned ?? false);
+    const [alertModal, setAlertModal] = useState<{ title: string; message: string } | null>(null);
     const [isTitleFilled, setIsTitleFilled] = useState(
       Boolean(eventToEdit?.title && eventToEdit.title.trim().length > 0),
     );
@@ -218,6 +220,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         setIsTitleFilled(eventToEdit.title.trim().length > 0);
         setSelectedTagId(eventToEdit.tagId ?? null);
         setHasReminder(eventToEdit.hasReminder);
+        setIsPinned(eventToEdit.isPinned ?? false);
 
         if (eventToEdit.reminderOffsets && eventToEdit.reminderOffsets.length > 0) {
           setReminderOffsets(eventToEdit.reminderOffsets);
@@ -254,6 +257,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         setIsTitleFilled(false);
         setSelectedTagId(null);
         setHasReminder(false);
+        setIsPinned(false);
         setReminderOffsets(["at_time"]);
         const d = getDefaultEventReminderDate();
         setSelectedTime(formatTimeSlot(d.getHours(), d.getMinutes(), is24H));
@@ -295,6 +299,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
           setReminderOffsets(["at_time"]);
           setSelectedTagId(null);
           setHasReminder(false);
+          setIsPinned(false);
           setIsTitleFilled(false);
           newTagNameRef.current = "";
           newTagInputRef.current?.clear();
@@ -310,6 +315,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       setReminderOffsets(["at_time"]);
       setSelectedTagId(null);
       setHasReminder(false);
+      setIsPinned(false);
       setIsTitleFilled(false);
       newTagNameRef.current = "";
       newTagInputRef.current?.clear();
@@ -322,17 +328,27 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
     }, [selectedMonth, selectedDay, selectedYear, isEth, lang]);
 
     const isPastDate = useMemo(() => {
-      let gcYear = selectedYear;
-      let gcMonth = selectedMonth;
-      let gcDay = selectedDay;
+      const today = new Date();
+      const todayY = today.getFullYear();
+      const todayM = today.getMonth();
+      const todayD = today.getDate();
+
+      let targetDate: Date;
       if (isEth) {
         const gc = ethiopianToGregorian(selectedYear, selectedMonth, selectedDay);
-        gcYear = gc.year;
-        gcMonth = gc.month;
-        gcDay = gc.day;
+        targetDate = new Date(gc.year, gc.month, gc.day);
+      } else {
+        targetDate = new Date(selectedYear, selectedMonth, selectedDay);
       }
-      const endOfSelectedDay = new Date(gcYear, gcMonth, gcDay, 23, 59, 59, 999);
-      return endOfSelectedDay.getTime() < Date.now();
+
+      const todayMidnight = new Date(todayY, todayM, todayD).getTime();
+      const targetMidnight = new Date(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate(),
+      ).getTime();
+
+      return targetMidnight < todayMidnight;
     }, [selectedYear, selectedMonth, selectedDay, isEth]);
 
     const handleSave = async () => {
@@ -353,10 +369,10 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
 
       const effectiveHasReminder = !isPastDate && hasReminder;
 
-      if (effectiveHasReminder) {
+      if (effectiveHasReminder || isPinned) {
         const { granted } = await ensurePermissions();
         if (!granted) {
-          console.warn("[AddEventModal] Reminder notifications not granted by system.");
+          console.warn("[AddEventModal] Notifications not granted by system.");
         }
       }
 
@@ -371,6 +387,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         reminderTime: effectiveHasReminder ? selectedTime : undefined,
         reminderOffsets: effectiveHasReminder ? reminderOffsets : undefined,
         notes: notesRef.current.trim() || undefined,
+        isPinned,
       };
 
       try {
@@ -392,6 +409,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
               tagId: eventPayload.tagId ?? null,
               tagName: eventPayload.tagName ?? null,
               tagColor: eventPayload.tagColor ?? null,
+              isPinned: eventPayload.isPinned,
               reminderOffsets: eventPayload.reminderOffsets,
             })
           : createEventAsync({
@@ -403,6 +421,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
               tagId: eventPayload.tagId ?? null,
               tagName: eventPayload.tagName ?? null,
               tagColor: eventPayload.tagColor ?? null,
+              isPinned: eventPayload.isPinned,
               reminderOffsets: eventPayload.reminderOffsets,
             });
 
@@ -422,18 +441,25 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
         setReminderOffsets(["at_time"]);
         setSelectedTagId(null);
         setHasReminder(false);
+        setIsPinned(false);
         setIsTitleFilled(false);
         setShowDeleteEventConfirm(false);
 
         (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
         onClose?.();
-      } catch (err) {
+      } catch (err: any) {
         console.warn("[AddEventModal] Failed to persist event:", err);
-        Alert.alert(
-          t("notificationTimeoutTitle"),
-          t("notificationTimeoutDesc"),
-          [{ text: "OK" }],
-        );
+        if (err?.message === "PIN_FAILED" || isPinned) {
+          setAlertModal({
+            title: t("pinFailedTitle"),
+            message: t("pinFailedDesc"),
+          });
+        } else {
+          setAlertModal({
+            title: t("notificationTimeoutTitle"),
+            message: t("notificationTimeoutDesc"),
+          });
+        }
       }
     };
 
@@ -447,6 +473,7 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
       setReminderOffsets(["at_time"]);
       setSelectedTagId(null);
       setHasReminder(false);
+      setIsPinned(false);
       setIsTitleFilled(false);
       setShowDeleteEventConfirm(false);
       (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
@@ -1071,6 +1098,54 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
             </View>
           )}
 
+          {/* Pin to Status Bar Toggle Card */}
+          <View className="mb-5 rounded-2xl border border-stone-200/90 bg-[#F5F2EB] p-4 dark:border-stone-700/60 dark:bg-[#25221E]">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 pr-3">
+                <View className="flex-row items-center gap-2">
+                  <Ionicons
+                    name="pin"
+                    size={17}
+                    color={isPinned ? "#3b82f6" : isDark ? "#E8E4DC" : "#2D2A24"}
+                  />
+                  <Text
+                    allowFontScaling={false}
+                    className="text-sm font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("pinToStatusBar")}
+                  </Text>
+                </View>
+                <Text
+                  allowFontScaling={false}
+                  className="text-xs text-muted dark:text-muted-dark mt-1"
+                  style={{ fontFamily: "ReadingFont" }}
+                >
+                  {t("pinToStatusBarDesc")}
+                </Text>
+              </View>
+              <Switch
+                value={isPinned}
+                onValueChange={async (val) => {
+                  if (val) {
+                    const { granted } = await ensurePermissions();
+                    if (!granted) {
+                      setIsPinned(false);
+                      setAlertModal({
+                        title: t("notificationPermissionRequiredTitle"),
+                        message: t("notificationPermissionRequiredDesc"),
+                      });
+                      return;
+                    }
+                  }
+                  setIsPinned(val);
+                }}
+                trackColor={{ false: isDark ? "#3A3632" : "#D1D1D6", true: "#3b82f6" }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+          </View>
+
           {/* Notes (Optional) */}
           <Text
             allowFontScaling={false}
@@ -1231,6 +1306,48 @@ export const AddEventModal = forwardRef<BottomSheetModal, AddEventModalProps>(
                     style={{ fontFamily: "ReadingFont" }}
                   >
                     {t("delete")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Alert Info Modal (custom UI matching Favourites modal) */}
+        <Modal
+          visible={!!alertModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setAlertModal(null)}
+        >
+          <View className="flex-1 items-center justify-center bg-black/50 px-8">
+            <View className="w-full max-w-sm rounded-2xl bg-white p-6 dark:bg-[#1C1C1C] border border-stone-200/60 dark:border-stone-800/60 shadow-lg">
+              <Text
+                allowFontScaling={false}
+                className="mb-2 text-xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {alertModal?.title}
+              </Text>
+              <Text
+                allowFontScaling={false}
+                className="mb-6 text-sm text-muted dark:text-muted-dark leading-relaxed"
+                style={{ fontFamily: "ReadingFont" }}
+              >
+                {alertModal?.message}
+              </Text>
+              <View className="flex-row justify-end">
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="rounded-xl bg-primary px-6 py-2.5"
+                  onPress={() => setAlertModal(null)}
+                >
+                  <Text
+                    allowFontScaling={false}
+                    className="text-center text-sm font-semibold text-white"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    {t("done")}
                   </Text>
                 </TouchableOpacity>
               </View>

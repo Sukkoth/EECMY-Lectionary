@@ -52,6 +52,7 @@ export type CalendarFeedItem =
       reminderCount?: number;
       notes?: string;
       displayDay: number;
+      isPinned?: boolean;
       customEvent: CustomEventData;
     };
 
@@ -126,6 +127,7 @@ export const MonthPage = React.memo(function MonthPage({
         reminderCount: e.reminderOffsets?.length ?? (e.hasReminder ? 1 : 0),
         notes: e.notes,
         displayDay,
+        isPinned: e.isPinned,
         customEvent: e,
       }));
     }
@@ -237,9 +239,22 @@ export const MonthPage = React.memo(function MonthPage({
                 {item.title}
               </Text>
 
-              {/* Meta Chips: Tag & Reminder Time */}
-              {(item.tagLabel || item.time) && (
+              {/* Meta Chips: Tag, Reminder Time & Pinned Status */}
+              {(item.tagLabel || item.time || item.isPinned) && (
                 <View className="mt-1.5 flex-row flex-wrap items-center gap-1.5">
+                  {item.isPinned ? (
+                    <View className="flex-row items-center gap-1 rounded-full bg-blue-500/15 dark:bg-blue-500/25 px-2 py-0.5">
+                      <Ionicons name="pin" size={11} color="#3b82f6" />
+                      <Text
+                        allowFontScaling={false}
+                        className="text-primary dark:text-blue-400 text-[11px] font-semibold"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        {t("pinned")}
+                      </Text>
+                    </View>
+                  ) : null}
+
                   {item.tagLabel ? (
                     <View
                       className="flex-row items-center gap-1 rounded-full px-2 py-0.5"

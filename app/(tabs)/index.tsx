@@ -17,7 +17,7 @@ import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
 import { useStreak } from "@/lib/hooks/useStreak";
 import { useSQLiteContext } from "expo-sqlite";
-import { scheduleDailyReminder } from "@/lib/NotificationService";
+import { scheduleDailyReminder, getScheduledReminderCount } from "@/lib/NotificationService";
 import { useCheckContentUpdate } from "@/lib/hooks/useCheckContentUpdate";
 import { FormattedText } from "@/lib/formatText";
 import VersionBadge from "@/components/reading/VersionBadge";
@@ -76,17 +76,24 @@ export default function HomeScreen() {
       refetchStreak();
       checkUpdate();
       if (settings.reminderEnabled) {
-        const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
-        const hour = parseInt(hStr, 10) || 8;
-        const minute = parseInt(mStr, 10) || 30;
-        void scheduleDailyReminder(
-          hour,
-          minute,
-          db,
-          settings.language,
-          settings.version,
-          t("appTitle"),
-        );
+        void (async () => {
+          const scheduledCount = await getScheduledReminderCount();
+          console.log(`[HomeScreen] 🔍 Focus Check: ${scheduledCount} daily reminders currently active in system.`);
+          if (scheduledCount < 3) {
+            console.log(`[HomeScreen] 🔄 Active count is low (${scheduledCount} < 3), replenishing next 14 days of reminders...`);
+            const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
+            const hour = parseInt(hStr, 10) || 8;
+            const minute = parseInt(mStr, 10) || 30;
+            await scheduleDailyReminder(
+              hour,
+              minute,
+              db,
+              settings.language,
+              settings.version,
+              t("appTitle"),
+            );
+          }
+        })();
       }
     }, [
       refetchStreak,

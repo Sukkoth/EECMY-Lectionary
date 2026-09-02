@@ -93,6 +93,10 @@ function AppContent() {
   }, [isDark, setColorScheme]);
 
   useEffect(() => {
+    setupNotificationChannels().catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (loading) return;
 
     const inOnboardingGroup = segments[0] === "onboarding";
