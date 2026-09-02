@@ -24,6 +24,8 @@ import { useEvents } from "@/lib/hooks/useEvents";
 import { useTags } from "@/lib/hooks/useTags";
 import "./global.css";
 
+export { RootErrorBoundary as ErrorBoundary } from "@/components/RootErrorBoundary";
+
 import { Lora_400Regular } from "@expo-google-fonts/lora";
 import { Merriweather_400Regular } from "@expo-google-fonts/merriweather";
 import { NotoSerifEthiopic_400Regular } from "@expo-google-fonts/noto-serif-ethiopic";

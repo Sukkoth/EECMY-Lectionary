@@ -4,6 +4,8 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTranslation } from "@/lib/i18n";
 
+export { RootErrorBoundary as ErrorBoundary } from "@/components/RootErrorBoundary";
+
 export default function GlossaryScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";

@@ -149,23 +149,22 @@ export async function openNotificationSettings(): Promise<void> {
  */
 export async function openBatteryOptimizationSettings(): Promise<void> {
   if (Platform.OS === "android") {
-    const pkgName = Constants.expoConfig?.android?.package ?? "com.sukkoth.eecmylectionary";
     try {
-      // Direct intent requesting ignore battery optimization for this app
+      // System battery optimization settings list screen (permissionless)
       await IntentLauncher.startActivityAsync(
-        IntentLauncher.ActivityAction.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-        { data: `package:${pkgName}` }
+        IntentLauncher.ActivityAction.IGNORE_BATTERY_OPTIMIZATION_SETTINGS
       );
       return;
     } catch {
       try {
-        // Fallback to system-wide battery optimization list screen
+        const pkgName = Constants.expoConfig?.android?.package ?? "com.sukkoth.eecmylectionary";
         await IntentLauncher.startActivityAsync(
-          IntentLauncher.ActivityAction.IGNORE_BATTERY_OPTIMIZATION_SETTINGS
+          IntentLauncher.ActivityAction.APPLICATION_DETAILS_SETTINGS,
+          { data: `package:${pkgName}` }
         );
         return;
       } catch (err) {
-        console.warn("[NotificationService] Could not open battery optimization intent:", err);
+        console.warn("[NotificationService] Could not open battery optimization settings:", err);
       }
     }
   }
@@ -174,7 +173,7 @@ export async function openBatteryOptimizationSettings(): Promise<void> {
   try {
     await Linking.openSettings();
   } catch (err) {
-    console.warn("[NotificationService] Could not open app settings:", err);
+    console.warn("[NotificationService] Could not open system settings:", err);
   }
 }
 

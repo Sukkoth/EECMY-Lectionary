@@ -4,6 +4,8 @@ import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
 import { FloatingPillTabBar } from "@/components/navigation/FloatingPillTabBar";
 
+export { RootErrorBoundary as ErrorBoundary } from "@/components/RootErrorBoundary";
+
 export default function TabLayout() {
   const isDark = useIsDark();
   const { t } = useTranslation();
