@@ -365,16 +365,16 @@ export default function HomeScreen() {
                 {dayData.dayInfo?.title ? (
                   <Text
                     allowFontScaling={false}
-                    className="mb-1 text-center text-xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                    className="mb-1.5 text-center text-base leading-tight text-muted dark:text-muted-dark"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
                     {dayData.dayInfo.title}
                   </Text>
                 ) : (
                   <Text
                     allowFontScaling={false}
-                    className="mb-4 text-center text-lg leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                    className="mb-2 text-center text-base leading-tight text-muted dark:text-muted-dark"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
                     Readings For {formatDate(readingDate)}
                   </Text>
@@ -382,32 +382,34 @@ export default function HomeScreen() {
                 {dayData.dayInfo?.description && (
                   <Text
                     allowFontScaling={false}
-                    className="text-muted dark:text-muted-dark mb-4 text-center text-sm leading-[20px]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                    className="mb-6 text-center text-2xl leading-snug font-bold text-[#2D2A24] dark:text-[#E8E4DC]"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
                   >
                     {dayData.dayInfo.description}
                   </Text>
                 )}
 
                 {/* Reading references */}
-                {dayData.readings.map((reading, index) => (
-                  <View key={index} className="mb-5 items-center">
-                    <Text
-                      allowFontScaling={false}
-                      className="text-primary text-center text-xs uppercase tracking-widest"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                    >
-                      {reading.section === "OLD_TESTAMENT" ? t("oldTestament") : reading.section === "EPISTLE" ? t("epistle") : reading.section === "GOSPEL" ? t("gospel") : reading.section}
-                    </Text>
-                    <Text
-                      allowFontScaling={false}
-                      className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                    >
-                      {reading.reference}
-                    </Text>
-                  </View>
-                ))}
+                <View className="gap-7 items-center">
+                  {dayData.readings.map((reading, index) => (
+                    <View key={index} className="items-center">
+                      <Text
+                        allowFontScaling={false}
+                        className="text-primary text-center text-xs uppercase tracking-widest mb-1"
+                        style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                      >
+                        {reading.section === "OLD_TESTAMENT" ? t("oldTestament") : reading.section === "EPISTLE" ? t("epistle") : reading.section === "GOSPEL" ? t("gospel") : reading.section}
+                      </Text>
+                      <Text
+                        allowFontScaling={false}
+                        className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                      >
+                        {reading.reference}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </ScrollView>
             ) : (
               /* SINGLE-READING VIEW (full text + reference) */
@@ -434,6 +436,7 @@ export default function HomeScreen() {
                 </View>
               </ScrollView>
             )}
+
             {/* Tap affordance */}
             <View className="mt-4 flex-row items-center justify-center opacity-70">
               <View className="bg-primary/10 mr-2 rounded-full p-1.5">

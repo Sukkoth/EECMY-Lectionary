@@ -199,7 +199,7 @@ export default function AboutSettingsScreen() {
 
             {/* Email */}
             <TouchableOpacity
-              onPress={() => Linking.openURL("mailto:suukootj@gmail.com").catch(() => {})}
+              onPress={() => Linking.openURL("mailto:lectionary@sukkoth.dev").catch(() => {})}
               activeOpacity={0.7}
               className="flex-row items-center gap-3 py-1"
             >
