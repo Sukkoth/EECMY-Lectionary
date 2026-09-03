@@ -42,7 +42,7 @@ export default function AboutSettingsScreen() {
 
       {/* Content */}
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 56, paddingTop: 28 }}
+        contentContainerStyle={{ paddingBottom: 16, paddingTop: 24 }}
         showsVerticalScrollIndicator={false}
       >
         {/* App Title Section */}
@@ -167,7 +167,7 @@ export default function AboutSettingsScreen() {
         </View>
 
         {/* Contact & Feedback Section */}
-        <View className="mb-8 px-6">
+        <View className="mb-6 px-6">
           <Text
             className="text-primary mb-3 ml-0.5 text-xs uppercase tracking-widest"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
@@ -215,13 +215,24 @@ export default function AboutSettingsScreen() {
         </View>
 
         {/* Footer */}
-        <View className="mt-4 px-6">
-          <Text
-            className="text-muted dark:text-muted-dark text-sm"
-            style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+        <View className="mt-2 px-6 items-center justify-center">
+          <TouchableOpacity
+            onPress={() => Linking.openURL("https://sukkoth.dev").catch(() => {})}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            className="flex-row items-center gap-1.5 py-1"
           >
-            {t("appTitle")}
-          </Text>
+            <Text
+              className="text-muted dark:text-muted-dark text-sm text-center"
+              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+            >
+              Developed By{" "}
+              <Text className="text-primary font-medium underline">
+                Sukkoth
+              </Text>
+            </Text>
+            <Ionicons name="open-outline" size={13} color="#3b82f6" />
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
