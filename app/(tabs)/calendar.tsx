@@ -58,13 +58,14 @@ export default function CalendarScreen() {
   const pickerSheetRef = useRef<BottomSheetModal>(null);
   const addEventSheetRef = useRef<BottomSheetModal>(null);
   const navigation = useNavigation();
-  const { date: targetDate, ts } = useLocalSearchParams<{
+  const { date: targetDate, eventId: targetEventId, ts } = useLocalSearchParams<{
     date?: string;
     eventId?: string;
     ts?: string;
   }>();
 
   const lastNavigatedRef = useRef<string | null>(null);
+  const lastOpenedEventRef = useRef<string | null>(null);
 
   // Jump to event's month when navigated via notification deep link
   useEffect(() => {
@@ -192,6 +193,21 @@ export default function CalendarScreen() {
     },
     [isEth],
   );
+
+  // Open edit event bottom sheet instantly when navigated with a specific eventId
+  useEffect(() => {
+    if (!targetEventId || !eventIndex?.all) return;
+    const openKey = `${targetEventId}-${ts || ""}`;
+    if (lastOpenedEventRef.current === openKey) return;
+
+    const eventToEdit = eventIndex.all.find((e) => e.id === targetEventId);
+    if (eventToEdit) {
+      lastOpenedEventRef.current = openKey;
+      requestAnimationFrame(() => {
+        handleOpenEditEvent(eventToEdit);
+      });
+    }
+  }, [targetEventId, eventIndex, ts, handleOpenEditEvent]);
 
   const handleMonthChange = useCallback((year: number, month: number) => {
     setCurrent({ year, month });

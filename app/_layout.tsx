@@ -3,7 +3,7 @@ import { StatusBar, setStatusBarStyle, setStatusBarBackgroundColor } from "expo-
 import { useColorScheme, ActivityIndicator, View, Platform } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { setBackgroundColorAsync } from "expo-system-ui";
 import { SQLiteProvider } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -108,12 +108,20 @@ function AppContent() {
     }
   }, [isOnboardingComplete, loading, segments, router]);
 
-  useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+  const lastHandledNotificationIdRef = useRef<string | null>(null);
+
+  const handleNotificationResponse = useCallback(
+    (response: Notifications.NotificationResponse) => {
+      const notifId = response.notification.request.identifier;
+      const actionId = response.actionIdentifier;
+      const dedupeKey = `${notifId}-${actionId}`;
+      if (lastHandledNotificationIdRef.current === dedupeKey) return;
+      lastHandledNotificationIdRef.current = dedupeKey;
+
       const data = response.notification.request.content.data;
       const targetUrl = data?.url;
       if (targetUrl === "/calendar") {
-        router.push({
+        router.navigate({
           pathname: "/calendar",
           params: {
             date: data?.date,
@@ -122,31 +130,26 @@ function AppContent() {
           },
         } as any);
       } else if (targetUrl) {
-        router.push(targetUrl as any);
+        router.navigate(targetUrl as any);
       } else {
-        router.push("/reading" as any);
+        router.navigate("/reading" as any);
       }
-    });
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (loading) return;
+    const subscription = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
     return () => subscription.remove();
-  }, [router]);
+  }, [loading, handleNotificationResponse]);
 
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   useEffect(() => {
-    if (lastNotificationResponse) {
-      const data = lastNotificationResponse.notification.request.content.data;
-      const targetUrl = data?.url;
-      if (targetUrl === "/calendar") {
-        router.push({
-          pathname: "/calendar",
-          params: {
-            date: data?.date,
-            eventId: data?.eventId,
-            ts: String(Date.now()),
-          },
-        } as any);
-      }
+    if (!loading && lastNotificationResponse) {
+      handleNotificationResponse(lastNotificationResponse);
     }
-  }, [lastNotificationResponse, router]);
+  }, [loading, lastNotificationResponse, handleNotificationResponse]);
 
   if (loading) {
     return (
