@@ -1,38 +1,34 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  PanResponder,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
-  SafeAreaView,
+  BackHandler,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import MonthGrid from "@/components/calendar/MonthGrid";
 import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
-import type { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { AddEventModal } from "@/components/calendar/AddEventModal";
+import type { CustomEventData } from "@/lib/types";
 import {
-  useHolidays,
-  getHolidaysForActiveMonth,
-} from "@/lib/hooks/useHolidays";
-import { useDayInfo, getDayInfoForActiveMonth } from "@/lib/hooks/useDayInfo";
+  CalendarSwiper,
+  type CalendarSwiperRef,
+} from "@/components/calendar/CalendarSwiper";
+import { CalendarStyleToggle } from "@/components/calendar/CalendarStyleToggle";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { useHolidays } from "@/lib/hooks/useHolidays";
+import { useDayInfo } from "@/lib/hooks/useDayInfo";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
-import { HOLIDAY_COLORS } from "@/constants";
 import {
-  gregorianToEthiopian,
   formatEvangelistYear,
-  getSubMonthSpanString,
-  formatMonth,
+  gregorianToEthiopian,
+  gregorianYmdToEthiopian,
 } from "@/lib/ethiopianCalendar";
-
-function formatYear(year: number, month: number, isEth: boolean, lang: string = "am"): string {
-  const targetEthYear = isEth ? year : gregorianToEthiopian(new Date(year, month, 15)).year;
-  const evText = formatEvangelistYear(targetEthYear, lang);
-  return `${year} • ${evText}`;
-}
+import { useEvents } from "@/lib/hooks/useEvents";
 
 function getInitialCurrent(isEth: boolean) {
   const now = new Date();
@@ -45,119 +41,218 @@ function getInitialCurrent(isEth: boolean) {
 
 export default function CalendarScreen() {
   const { width: screenWidth } = useWindowDimensions();
-  const today = new Date();
   const isDark = useIsDark();
   const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
   const isEth = settings.calendarStyle === "ethiopian";
 
   const [current, setCurrent] = useState(() => getInitialCurrent(isEth));
+  const [pickerSelected, setPickerSelected] = useState(() => getInitialCurrent(isEth));
 
-  // Reset calendar view to today's date when calendar system toggles — runs
-  // before paint so there's no visible flash, and avoids the double-render
-  // caused by setState-during-render.
-  useLayoutEffect(() => {
-    setCurrent(getInitialCurrent(isEth));
+  const { data: eventIndex } = useEvents();
+
+  const [editingEvent, setEditingEvent] = useState<CustomEventData | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [addEventInitialDay, setAddEventInitialDay] = useState<number | undefined>(undefined);
+  const swiperRef = useRef<CalendarSwiperRef>(null);
+  const pickerSheetRef = useRef<BottomSheetModal>(null);
+  const addEventSheetRef = useRef<BottomSheetModal>(null);
+  const navigation = useNavigation();
+  const { date: targetDate, eventId: targetEventId, ts } = useLocalSearchParams<{
+    date?: string;
+    eventId?: string;
+    ts?: string;
+  }>();
+
+  const lastNavigatedRef = useRef<string | null>(null);
+  const lastOpenedEventRef = useRef<string | null>(null);
+
+  // Jump to event's month when navigated via notification deep link
+  useEffect(() => {
+    if (!targetDate) return;
+    const navKey = `${targetDate}-${ts || ""}`;
+    if (lastNavigatedRef.current === navKey) return;
+    lastNavigatedRef.current = navKey;
+
+    const [gcY, gcM, gcD] = targetDate.split("-").map(Number);
+    if (isNaN(gcY) || isNaN(gcM) || isNaN(gcD)) return;
+
+    let targetMonth: { year: number; month: number };
+    if (isEth) {
+      const eth = gregorianYmdToEthiopian(gcY, gcM - 1, gcD);
+      targetMonth = { year: eth.year, month: eth.month };
+    } else {
+      targetMonth = { year: gcY, month: gcM - 1 };
+    }
+
+    setCurrent(targetMonth);
+    setPickerSelected(targetMonth);
+    swiperRef.current?.jumpTo(targetMonth);
+  }, [targetDate, ts, isEth]);
+
+  // Handle hardware back press on Android when picker bottom sheet is open
+  useEffect(() => {
+    if (!isPickerOpen && !isAddEventOpen) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (isAddEventOpen) {
+        addEventSheetRef.current?.dismiss();
+        setIsAddEventOpen(false);
+        return true;
+      }
+      if (isPickerOpen) {
+        pickerSheetRef.current?.dismiss();
+        setIsPickerOpen(false);
+        return true;
+      }
+      return false;
+    });
+    return () => subscription.remove();
+  }, [isPickerOpen, isAddEventOpen]);
+
+  // Handle navigation beforeRemove (e.g. gesture back navigation)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (isAddEventOpen) {
+        e.preventDefault();
+        addEventSheetRef.current?.dismiss();
+        setIsAddEventOpen(false);
+      } else if (isPickerOpen) {
+        e.preventDefault();
+        pickerSheetRef.current?.dismiss();
+        setIsPickerOpen(false);
+      }
+    });
+    return unsubscribe;
+  }, [navigation, isPickerOpen, isAddEventOpen]);
+
+  const handleToggleCalendarStyle = useCallback(
+    (newStyle: "ethiopian" | "gregorian") => {
+      if (newStyle === settings.calendarStyle) return;
+      const newIsEth = newStyle === "ethiopian";
+      const initial = getInitialCurrent(newIsEth);
+      setCurrent(initial);
+      setPickerSelected(initial);
+      updateSetting("calendarStyle", newStyle);
+      swiperRef.current?.jumpTo(initial);
+    },
+    [settings.calendarStyle, updateSetting],
+  );
+
+  const handleJumpToToday = useCallback(() => {
+    const initial = getInitialCurrent(isEth);
+    setCurrent(initial);
+    setPickerSelected(initial);
+    swiperRef.current?.jumpTo(initial);
   }, [isEth]);
 
-  function addMonthDelta(delta: number) {
-    setCurrent((prev) => {
-      const totalMonths = isEth ? 13 : 12;
-      const total = prev.month + delta;
-      const newYear = prev.year + Math.floor(total / totalMonths);
-      const newMonth = ((total % totalMonths) + totalMonths) % totalMonths;
-      return { year: newYear, month: newMonth };
-    });
-  }
+  const handleOpenPicker = useCallback((year: number, month: number) => {
+    setPickerSelected({ year, month });
+    setIsPickerOpen(true);
+    pickerSheetRef.current?.present();
+  }, []);
 
-  function handleJumpToToday() {
-    setCurrent(getInitialCurrent(isEth));
-  }
+  const handleOpenAddEvent = useCallback(
+    (year: number, month: number, day?: number) => {
+      setEditingEvent(null);
+      setPickerSelected({ year, month });
+      if (day != null) {
+        setAddEventInitialDay(day);
+      } else {
+        const now = new Date();
+        const ethNow = gregorianToEthiopian(now);
+        const isThisMonthToday = isEth
+          ? year === ethNow.year && month === ethNow.month
+          : year === now.getFullYear() && month === now.getMonth();
+        const defaultDay = isThisMonthToday
+          ? isEth
+            ? ethNow.day
+            : now.getDate()
+          : 1;
+        setAddEventInitialDay(defaultDay);
+      }
+      setIsAddEventOpen(true);
+      addEventSheetRef.current?.present();
+    },
+    [isEth],
+  );
+
+  const handleOpenEditEvent = useCallback(
+    (event: CustomEventData) => {
+      setEditingEvent(event);
+      const [gcY, gcM, gcD] = event.date.split("-").map(Number);
+      if (isEth) {
+        const eth = gregorianYmdToEthiopian(gcY, gcM - 1, gcD);
+        setPickerSelected({ year: eth.year, month: eth.month });
+        setAddEventInitialDay(eth.day);
+      } else {
+        setPickerSelected({ year: gcY, month: gcM - 1 });
+        setAddEventInitialDay(gcD);
+      }
+      setIsAddEventOpen(true);
+      addEventSheetRef.current?.present();
+    },
+    [isEth],
+  );
+
+  // Open edit event bottom sheet instantly when navigated with a specific eventId
+  useEffect(() => {
+    if (!targetEventId || !eventIndex?.all) return;
+    const openKey = `${targetEventId}-${ts || ""}`;
+    if (lastOpenedEventRef.current === openKey) return;
+
+    const eventToEdit = eventIndex.all.find((e) => e.id === targetEventId);
+    if (eventToEdit) {
+      lastOpenedEventRef.current = openKey;
+      requestAnimationFrame(() => {
+        handleOpenEditEvent(eventToEdit);
+      });
+    }
+  }, [targetEventId, eventIndex, ts, handleOpenEditEvent]);
+
+  const handleMonthChange = useCallback((year: number, month: number) => {
+    setCurrent({ year, month });
+  }, []);
+
+  const handlePickerSelect = useCallback((y: number, m: number) => {
+    const target = { year: y, month: m };
+    setCurrent(target);
+    setPickerSelected(target);
+    swiperRef.current?.jumpTo(target);
+  }, []);
 
   const { data: holidayIndex } = useHolidays(lang, settings.language);
   const { data: dayInfoIndex } = useDayInfo(lang, settings.language);
 
-  // O(1) lookup — index was built once when query data settled
-  const { map: holidayMap, list: holidays } = getHolidaysForActiveMonth(
-    holidayIndex,
-    current.year,
-    current.month,
-    isEth,
-    lang,
-  );
-  const dayInfoMap = getDayInfoForActiveMonth(dayInfoIndex, current.year, current.month, isEth);
-
-  // Keep addMonthDelta stable across renders so the one-time PanResponder
-  // always calls the latest version without being recreated.
-  const addMonthDeltaRef = useRef(addMonthDelta);
-  addMonthDeltaRef.current = addMonthDelta;
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dx) > 10 && Math.abs(gs.dx) > Math.abs(gs.dy),
-      onPanResponderRelease: (_, gs) => {
-        if (Math.abs(gs.dx) > 50) {
-          addMonthDeltaRef.current(gs.dx > 0 ? -1 : 1);
-        }
-      },
-    }),
-  ).current;
-
-  const pickerSheetRef = useRef<BottomSheetModal>(null);
-
-  const ethToday = gregorianToEthiopian(today);
+  const now = new Date();
+  const ethNow = gregorianToEthiopian(now);
   const isCurrentTodayMonth = isEth
-    ? current.year === ethToday.year && current.month === ethToday.month
-    : current.year === today.getFullYear() && current.month === today.getMonth();
+    ? current.year === ethNow.year && current.month === ethNow.month
+    : current.year === now.getFullYear() && current.month === now.getMonth();
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      {/* Top Header Bar */}
-      <View className="flex-row items-center justify-between px-6 pt-11 pb-3">
-        <TouchableOpacity
-          onPress={() => pickerSheetRef.current?.present()}
-          activeOpacity={0.7}
-          className="flex-row items-center gap-2"
-        >
-          <View>
-            <View className="flex-row items-center gap-1.5">
-              <Text
-                className="text-3xl font-semibold tracking-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont" }}
-              >
-                {formatMonth(current.month, isEth, lang)}
-              </Text>
-              <Ionicons
-                name="chevron-down"
-                size={22}
-                color={isDark ? "#E8E4DC" : "#2D2A24"}
-              />
-            </View>
-            <Text
-              className="text-primary mt-1 text-sm font-semibold uppercase tracking-wide"
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              {formatYear(current.year, current.month, isEth, lang)}
-            </Text>
-            <Text
-              className="text-muted dark:text-muted-dark mt-0.5 text-xs font-medium"
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              {getSubMonthSpanString(current.year, current.month, isEth, lang)}
-            </Text>
-          </View>
-        </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+      {/* Top Fixed Control Bar */}
+      <View className="flex-row items-center justify-between px-6 pt-2 pb-2">
+        {/* Left: Calendar System Segmented Toggle */}
+        <CalendarStyleToggle
+          isEth={isEth}
+          onToggle={handleToggleCalendarStyle}
+          ethiopianLabel={t("ethiopian")}
+          gregorianLabel={t("gregorian")}
+        />
 
+        {/* Right: Today Button + Chevron Controls */}
         <View className="flex-row items-center gap-2">
           {!isCurrentTodayMonth && (
             <TouchableOpacity
               onPress={handleJumpToToday}
               activeOpacity={0.75}
-              className="bg-primary/10 flex-row items-center gap-1 rounded-full px-3 py-1.5"
+              className="bg-primary/10 flex-row items-center justify-center gap-1 rounded-full px-3 h-9"
             >
               <Ionicons name="today-outline" size={14} color="#3b82f6" />
               <Text
+                allowFontScaling={false}
                 className="text-primary text-xs font-semibold"
                 style={{ fontFamily: "ReadingFont" }}
               >
@@ -167,10 +262,10 @@ export default function CalendarScreen() {
           )}
 
           {/* Capsule Chevron Controls */}
-          <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-2xl border border-stone-200/60 p-1 dark:border-stone-800/60">
+          <View className="will-change-variable bg-surface dark:bg-surface-dark flex-row items-center rounded-full border border-stone-200/60 px-1 h-9 dark:border-stone-800/60">
             <TouchableOpacity
-              onPress={() => addMonthDelta(-1)}
-              className="p-1.5"
+              onPress={() => swiperRef.current?.goToPrev()}
+              className="h-full justify-center px-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
@@ -182,8 +277,8 @@ export default function CalendarScreen() {
             </TouchableOpacity>
             <View className="mx-0.5 my-auto h-4 w-[1px] bg-stone-200 dark:bg-stone-800" />
             <TouchableOpacity
-              onPress={() => addMonthDelta(1)}
-              className="p-1.5"
+              onPress={() => swiperRef.current?.goToNext()}
+              className="h-full justify-center px-1.5"
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
@@ -197,155 +292,53 @@ export default function CalendarScreen() {
         </View>
       </View>
 
-      {/* Calendar System Segmented Bar */}
-      <View className="mb-2.5 flex-row items-center justify-between px-6">
-        <Text
-          className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-wider"
-          style={{ fontFamily: "ReadingFont" }}
-        >
-          {t("calendarSystem")}
-        </Text>
-
-        <View className="bg-stone-200/60 dark:bg-stone-800/60 flex-row items-center rounded-full p-0.5 border border-stone-200/60 dark:border-stone-800/60">
-          <TouchableOpacity
-            onPress={() => updateSetting("calendarStyle", "ethiopian")}
-            activeOpacity={0.7}
-            className={`rounded-full px-3 py-1 ${isEth ? "bg-primary" : ""}`}
-          >
-            <Text
-              className={`text-xs font-semibold ${isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              {t("ethiopianEC")}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => updateSetting("calendarStyle", "gregorian")}
-            activeOpacity={0.7}
-            className={`rounded-full px-3 py-1 ${!isEth ? "bg-primary" : ""}`}
-          >
-            <Text
-              className={`text-xs font-semibold ${!isEth ? "text-white" : "text-muted dark:text-muted-dark"}`}
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              {t("gregorianGC")}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Swipeable Month Grid */}
-      <View {...panResponder.panHandlers}>
-        <MonthGrid
-          year={current.year}
-          month={current.month}
-          holidays={holidayMap}
-          dayInfoMap={dayInfoMap}
-          width={screenWidth}
+      {/* Swipeable Calendar (Month Header + Grid + Holidays List move together) */}
+      <View className="flex-1 pb-[76px]">
+        <CalendarSwiper
+          ref={swiperRef}
+          initialDate={current}
+          isEth={isEth}
+          holidayIndex={holidayIndex}
+          dayInfoIndex={dayInfoIndex}
+          eventIndex={eventIndex}
+          screenWidth={screenWidth}
           calendarStyle={settings.calendarStyle}
           showSeasonColors={settings.showSeasonColors ?? true}
+          onMonthChange={handleMonthChange}
+          onOpenPicker={handleOpenPicker}
+          onOpenAddEvent={handleOpenAddEvent}
+          onOpenEditEvent={handleOpenEditEvent}
         />
-      </View>
-
-      {/* Section Divider */}
-      <View className="mx-6 my-4 border-b border-stone-200/50 dark:border-stone-800/50" />
-
-      {/* Holidays List */}
-      <View className="flex-1 px-6">
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text
-            className="text-muted dark:text-muted-dark text-xs font-semibold uppercase tracking-widest"
-            style={{ fontFamily: "ReadingFont" }}
-          >
-            {t("holidaysAndEvents")}
-          </Text>
-          <View className="bg-primary/10 rounded-full px-2.5 py-0.5">
-            <Text
-              className="text-primary text-[11px] font-semibold"
-              style={{ fontFamily: "ReadingFont" }}
-            >
-              {holidays.length} {holidays.length === 1 ? t("event") : t("events")}
-            </Text>
-          </View>
-        </View>
-
-        {holidays.length === 0 ? (
-          <View className="will-change-variable bg-surface dark:bg-surface-dark my-2 items-center justify-center rounded-2xl border border-stone-200/40 p-6 dark:border-stone-800/40">
-            <Ionicons name="sparkles-outline" size={22} color="#6b6560" />
-            <Text
-              className="text-muted dark:text-muted-dark mt-2 text-center text-sm"
-              style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-            >
-              {t("noHolidaysThisMonth")}
-            </Text>
-          </View>
-        ) : (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            className="flex-1"
-            contentContainerStyle={{ paddingBottom: 28 }}
-          >
-            {holidays.map((item, i) => {
-              const isSpan =
-                item.displayEndDay && item.displayEndDay !== item.displayDay;
-              const dayText = isSpan
-                ? `${item.displayDay}–${item.displayEndDay}`
-                : `${item.displayDay}`;
-
-              const themeColor = HOLIDAY_COLORS[item.type] ?? "#3b82f6";
-              const key = item.id ?? `${item.date}-${item.name}-${i}`;
-
-              return (
-                <View
-                  key={key}
-                  className="will-change-variable bg-surface dark:bg-surface-dark my-1.5 flex-row items-center justify-between rounded-2xl border border-stone-200/50 p-4 dark:border-stone-800/50"
-                >
-                  {/* Left: Accent Line + Feast Info */}
-                  <View className="flex-1 flex-row items-center gap-3 pr-3">
-                    <View
-                      className="h-10 w-1.5 rounded-full"
-                      style={{ backgroundColor: themeColor }}
-                    />
-                    <View className="flex-1">
-                      <Text
-                        className="text-base font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                      >
-                        {item.name}
-                      </Text>
-                      <Text
-                        className="text-muted dark:text-muted-dark text-xs font-medium capitalize mt-0.5"
-                        style={{ fontFamily: "ReadingFont" }}
-                      >
-                        {item.type}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Right: Large Unboxed Date Number */}
-                  <Text
-                    className="text-2xl font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{
-                      fontFamily: "ReadingFont",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {dayText}
-                  </Text>
-                </View>
-              );
-            })}
-          </ScrollView>
-        )}
       </View>
 
       <MonthYearPickerModal
         ref={pickerSheetRef}
-        selectedYear={current.year}
-        selectedMonth={current.month}
+        selectedYear={pickerSelected.year}
+        selectedMonth={pickerSelected.month}
         isEth={isEth}
-        onSelect={(y, m) => setCurrent({ year: y, month: m })}
+        onChange={(idx) => {
+          setIsPickerOpen(idx >= 0);
+        }}
+        onDismiss={() => {
+          setIsPickerOpen(false);
+        }}
+        onSelect={handlePickerSelect}
+      />
+
+      <AddEventModal
+        ref={addEventSheetRef}
+        selectedYear={pickerSelected.year}
+        selectedMonth={pickerSelected.month}
+        isEth={isEth}
+        initialDay={addEventInitialDay}
+        eventToEdit={editingEvent}
+        onChange={(idx: number) => {
+          setIsAddEventOpen(idx >= 0);
+        }}
+        onDismiss={() => {
+          setIsAddEventOpen(false);
+          setEditingEvent(null);
+        }}
       />
     </SafeAreaView>
   );

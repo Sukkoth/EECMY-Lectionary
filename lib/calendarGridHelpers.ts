@@ -1,4 +1,5 @@
 import type { HolidayRow, DayInfoRow } from "@/lib/types";
+import { HOLIDAY_COLORS } from "@/constants";
 import {
   getEthiopianWeeks,
   ethiopianToGregorian,
@@ -22,7 +23,7 @@ export type GridCell =
       subLabel: string;
       showSubMonthLabel: boolean;
       today: boolean;
-      types: string[];
+      dotColors: string[];
       seasonColor?: string;
       seasonStyle?: any;
       isSunday: boolean;
@@ -82,16 +83,11 @@ function getSeasonContainerStyle(
 ) {
   if (today || !showSeasonColors || !seasonColor) return undefined;
   const sc = seasonColor.trim();
-  if (sc.startsWith("#") && sc.length === 7) {
-    return {
-      borderColor: `${sc}60`,
-      borderWidth: 1,
-      backgroundColor: "transparent",
-    };
-  }
+  const borderColor = sc.startsWith("#") && sc.length === 7 ? `${sc}60` : sc;
   return {
-    borderColor: sc,
+    borderColor,
     borderWidth: 1,
+    borderRadius: 16,
     backgroundColor: "transparent",
   };
 }
@@ -110,6 +106,7 @@ export function buildMonthGridMatrix(params: {
   gcShorts: readonly string[];
   ethShorts: readonly string[];
   holidays: Map<number, HolidayRow[]>;
+  customEvents?: Map<number, string[]>;
   dayInfoMap?: Map<number, DayInfoRow>;
   showSeasonColors: boolean;
 }): GridCell[][] {
@@ -123,6 +120,7 @@ export function buildMonthGridMatrix(params: {
     gcShorts,
     ethShorts,
     holidays,
+    customEvents,
     dayInfoMap,
     showSeasonColors,
   } = params;
@@ -161,7 +159,19 @@ export function buildMonthGridMatrix(params: {
       const subLabel = showSubMonthLabel ? `${subAbbr} ${subDay}` : `${subDay}`;
 
       const dayHolidays = holidays.get(day) ?? [];
-      const types = [...new Set(dayHolidays.map((h) => h.type))];
+      const dotColors: string[] = [];
+
+      for (const h of dayHolidays) {
+        const color = (HOLIDAY_COLORS as Record<string, string>)[h.type] || "#3b82f6";
+        if (!dotColors.includes(color)) dotColors.push(color);
+      }
+
+      const dayCustomColors = customEvents?.get(day) ?? [];
+      for (const c of dayCustomColors) {
+        if (!dotColors.includes(c)) {
+          dotColors.push(c);
+        }
+      }
 
       const dayInfo = dayInfoMap?.get(day);
       const seasonColor = dayInfo?.seasonColor?.trim();
@@ -177,7 +187,7 @@ export function buildMonthGridMatrix(params: {
         subLabel,
         showSubMonthLabel,
         today,
-        types,
+        dotColors,
         seasonColor,
         seasonStyle,
         isSunday,

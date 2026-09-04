@@ -1,9 +1,20 @@
+import { Lora_400Regular } from "@expo-google-fonts/lora";
+import { Merriweather_400Regular } from "@expo-google-fonts/merriweather";
+import { NotoSerifEthiopic_400Regular } from "@expo-google-fonts/noto-serif-ethiopic";
+import { Bitter_400Regular } from "@expo-google-fonts/bitter";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+
 import { Stack, useSegments, useRouter } from "expo-router";
 import { StatusBar, setStatusBarStyle, setStatusBarBackgroundColor } from "expo-status-bar";
 import { useColorScheme, ActivityIndicator, View, Platform } from "react-native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { setBackgroundColorAsync } from "expo-system-ui";
 import { SQLiteProvider } from "expo-sqlite";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -20,18 +31,14 @@ import { OnboardingProvider, useOnboarding } from "@/lib/OnboardingContext";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useIsDark } from "@/lib/useIsDark";
+import { useEvents } from "@/lib/hooks/useEvents";
+import { useTags } from "@/lib/hooks/useTags";
 import "./global.css";
+import { setupNotificationChannels } from "@/lib/NotificationService";
 
-import { Lora_400Regular } from "@expo-google-fonts/lora";
-import { Merriweather_400Regular } from "@expo-google-fonts/merriweather";
-import { NotoSerifEthiopic_400Regular } from "@expo-google-fonts/noto-serif-ethiopic";
-import { Bitter_400Regular } from "@expo-google-fonts/bitter";
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from "@expo-google-fonts/inter";
+
+export { RootErrorBoundary as ErrorBoundary } from "@/components/RootErrorBoundary";
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,7 +64,6 @@ const customLightTheme = {
   },
 };
 
-import { setupNotificationChannels } from "@/lib/NotificationService";
 
 async function setupNotifications() {
   if (Platform.OS === "android") {
@@ -74,6 +80,10 @@ function AppContent() {
   const segments = useSegments();
   const router = useRouter();
 
+  // Pre-load custom events and tags into TanStack cache at app start
+  useEvents();
+  useTags();
+
   useEffect(() => {
     const style = isDark ? "light" : "dark";
     const bgColor = isDark ? "#11100E" : "#F8F6F3";
@@ -87,6 +97,10 @@ function AppContent() {
   }, [isDark, setColorScheme]);
 
   useEffect(() => {
+    setupNotificationChannels().catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (loading) return;
 
     const inOnboardingGroup = segments[0] === "onboarding";
@@ -96,17 +110,48 @@ function AppContent() {
     }
   }, [isOnboardingComplete, loading, segments, router]);
 
-  useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const targetUrl = response.notification.request.content.data?.url;
-      if (targetUrl) {
-        router.push(targetUrl as any);
+  const lastHandledNotificationIdRef = useRef<string | null>(null);
+
+  const handleNotificationResponse = useCallback(
+    (response: Notifications.NotificationResponse) => {
+      const notifId = response.notification.request.identifier;
+      const actionId = response.actionIdentifier;
+      const dedupeKey = `${notifId}-${actionId}`;
+      if (lastHandledNotificationIdRef.current === dedupeKey) return;
+      lastHandledNotificationIdRef.current = dedupeKey;
+
+      const data = response.notification.request.content.data;
+      const targetUrl = data?.url;
+      if (targetUrl === "/calendar") {
+        router.navigate({
+          pathname: "/calendar",
+          params: {
+            date: data?.date,
+            eventId: data?.eventId,
+            ts: String(Date.now()),
+          },
+        } as any);
+      } else if (targetUrl) {
+        router.navigate(targetUrl as any);
       } else {
-        router.push("/reading" as any);
+        router.navigate("/reading" as any);
       }
-    });
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (loading) return;
+    const subscription = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
     return () => subscription.remove();
-  }, [router]);
+  }, [loading, handleNotificationResponse]);
+
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    if (!loading && lastNotificationResponse) {
+      handleNotificationResponse(lastNotificationResponse);
+    }
+  }, [loading, lastNotificationResponse, handleNotificationResponse]);
 
   if (loading) {
     return (

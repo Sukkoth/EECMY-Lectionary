@@ -1,4 +1,4 @@
-import React, { forwardRef, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { forwardRef, useMemo, useCallback, useRef, useEffect, useState } from "react";
 import { Text, TouchableOpacity, View, useColorScheme, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
@@ -8,7 +8,6 @@ import {
   BottomSheetBackdrop,
   type BottomSheetBackdropProps,
 } from "@gorhom/bottom-sheet";
-import * as Haptics from "expo-haptics";
 import {
   ETHIOPIAN_MONTH_NAMES_AM,
   ETHIOPIAN_MONTH_NAMES_EN,
@@ -25,14 +24,25 @@ type MonthYearPickerModalProps = {
   isEth: boolean;
   onSelect: (year: number, month: number) => void;
   onClose?: () => void;
+  onChange?: (index: number) => void;
+  onDismiss?: () => void;
 };
 
 const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalProps>(
-  ({ selectedYear, selectedMonth, isEth, onSelect, onClose }, ref) => {
+  ({ selectedYear, selectedMonth, isEth, onSelect, onClose, onChange, onDismiss }, ref) => {
     const isDark = useColorScheme() === "dark";
     const { width: screenWidth } = useWindowDimensions();
     const { lang, t } = useTranslation();
     const yearScrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
+
+    // Staged selections so calendar doesn't re-render while user is browsing
+    const [tempYear, setTempYear] = useState(selectedYear);
+    const [tempMonth, setTempMonth] = useState(selectedMonth);
+
+    useEffect(() => {
+      setTempYear(selectedYear);
+      setTempMonth(selectedMonth);
+    }, [selectedYear, selectedMonth]);
 
     const monthNames = useMemo(() => {
       if (isEth) {
@@ -58,35 +68,29 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
     }, [isEth]);
 
     const centerSelectedYear = useCallback(
-      (animated = true) => {
-        const index = years.indexOf(selectedYear);
+      (yearToCenter: number, animated = true) => {
+        const index = years.indexOf(yearToCenter);
         if (index >= 0 && yearScrollRef.current) {
-          const itemWidth = 68; // approx width + margin
+          const itemWidth = 68;
           const targetX = index * itemWidth - screenWidth / 2 + itemWidth / 2 + 24;
           yearScrollRef.current.scrollTo({ x: Math.max(0, targetX), animated });
         }
       },
-      [years, selectedYear, screenWidth],
+      [years, screenWidth],
     );
 
     useEffect(() => {
-      const timer = setTimeout(() => centerSelectedYear(true), 100);
+      const timer = setTimeout(() => centerSelectedYear(tempYear, true), 100);
       return () => clearTimeout(timer);
-    }, [selectedYear, centerSelectedYear]);
+    }, [tempYear, centerSelectedYear]);
 
-    const handleMonthPress = (monthIndex: number) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onSelect(selectedYear, monthIndex);
+    const handleApply = () => {
+      onSelect(tempYear, tempMonth);
       (ref as React.RefObject<BottomSheetModal>)?.current?.dismiss();
       onClose?.();
     };
 
-    const handleYearPress = (year: number) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onSelect(year, selectedMonth);
-    };
-
-    const snapPoints = useMemo(() => ["50%"], []);
+    const snapPoints = useMemo(() => ["62%"], []);
 
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -107,7 +111,12 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
         enableDynamicSizing={false}
         index={0}
         onChange={(idx) => {
-          if (idx >= 0) centerSelectedYear(false);
+          if (idx >= 0) centerSelectedYear(tempYear, false);
+          onChange?.(idx);
+        }}
+        onDismiss={() => {
+          onDismiss?.();
+          onClose?.();
         }}
         backdropComponent={renderBackdrop}
         backgroundStyle={{
@@ -118,7 +127,7 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
         }}
       >
         <BottomSheetScrollView
-          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32 }}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 36 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
@@ -153,11 +162,14 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
             contentContainerStyle={{ paddingRight: 16 }}
           >
             {years.map((y) => {
-              const isSelected = y === selectedYear;
+              const isSelected = y === tempYear;
               return (
                 <TouchableOpacity
                   key={y}
-                  onPress={() => handleYearPress(y)}
+                  onPress={() => {
+                    setTempYear(y);
+                    centerSelectedYear(y, true);
+                  }}
                   activeOpacity={0.7}
                   className={`mr-2 rounded-2xl px-4 py-2 border ${
                     isSelected
@@ -166,6 +178,7 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
                   }`}
                 >
                   <Text
+                    allowFontScaling={false}
                     style={{ fontFamily: "ReadingFont" }}
                     className={`text-sm font-semibold ${
                       isSelected
@@ -188,13 +201,13 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
             {t("month")}
           </Text>
 
-          <View className="flex-row flex-wrap justify-between gap-y-2.5">
+          <View className="flex-row flex-wrap justify-between gap-y-2.5 mb-6">
             {monthNames.map((name, index) => {
-              const isSelected = index === selectedMonth;
+              const isSelected = index === tempMonth;
               return (
                 <TouchableOpacity
                   key={name}
-                  onPress={() => handleMonthPress(index)}
+                  onPress={() => setTempMonth(index)}
                   activeOpacity={0.7}
                   className={`w-[31%] items-center justify-center rounded-2xl border py-3.5 ${
                     isSelected
@@ -203,6 +216,7 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
                   }`}
                 >
                   <Text
+                    allowFontScaling={false}
                     numberOfLines={1}
                     style={{ fontFamily: "ReadingFont" }}
                     className={`text-sm font-semibold ${
@@ -217,6 +231,21 @@ const MonthYearPickerModal = forwardRef<BottomSheetModal, MonthYearPickerModalPr
               );
             })}
           </View>
+
+          {/* Confirm / Select Action Button */}
+          <TouchableOpacity
+            onPress={handleApply}
+            activeOpacity={0.8}
+            className="w-full bg-primary py-3.5 rounded-2xl flex-row items-center justify-center gap-2 shadow-sm"
+          >
+            <Ionicons name="checkmark" size={18} color="#ffffff" />
+            <Text
+              className="text-white text-base font-semibold"
+              style={{ fontFamily: "ReadingFont" }}
+            >
+              {t("select")}
+            </Text>
+          </TouchableOpacity>
         </BottomSheetScrollView>
       </BottomSheetModal>
     );

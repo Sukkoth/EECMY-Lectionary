@@ -3,7 +3,6 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   useColorScheme,
   ActivityIndicator,
   Appearance,
@@ -13,11 +12,12 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useCallback, useEffect, useRef } from "react";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTodayReading } from "@/lib/hooks/useTodayReading";
 import { useStreak } from "@/lib/hooks/useStreak";
 import { useSQLiteContext } from "expo-sqlite";
-import { scheduleDailyReminder } from "@/lib/NotificationService";
+import { scheduleDailyReminder, getScheduledReminderCount } from "@/lib/NotificationService";
 import { useCheckContentUpdate } from "@/lib/hooks/useCheckContentUpdate";
 import { FormattedText } from "@/lib/formatText";
 import VersionBadge from "@/components/reading/VersionBadge";
@@ -31,10 +31,13 @@ import { useTranslation, getDayLabels } from "@/lib/i18n";
 
 export default function HomeScreen() {
   const isDark = useColorScheme() === "dark";
+  const insets = useSafeAreaInsets();
   const { settings, updateSetting } = useSettings();
   const { t, lang } = useTranslation();
   const { hasUpdate, checkUpdate, updateInfo } = useCheckContentUpdate();
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  const bottomGap = Math.max(insets.bottom, 12) + 56 + 6 + 16;
 
   useEffect(() => {
     if (hasUpdate) {
@@ -73,17 +76,24 @@ export default function HomeScreen() {
       refetchStreak();
       checkUpdate();
       if (settings.reminderEnabled) {
-        const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
-        const hour = parseInt(hStr, 10) || 8;
-        const minute = parseInt(mStr, 10) || 30;
-        void scheduleDailyReminder(
-          hour,
-          minute,
-          db,
-          settings.language,
-          settings.version,
-          t("appTitle"),
-        );
+        void (async () => {
+          const scheduledCount = await getScheduledReminderCount();
+          console.log(`[HomeScreen] 🔍 Focus Check: ${scheduledCount} daily reminders currently active in system.`);
+          if (scheduledCount < 3) {
+            console.log(`[HomeScreen] 🔄 Active count is low (${scheduledCount} < 3), replenishing next 14 days of reminders...`);
+            const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
+            const hour = parseInt(hStr, 10) || 8;
+            const minute = parseInt(mStr, 10) || 30;
+            await scheduleDailyReminder(
+              hour,
+              minute,
+              db,
+              settings.language,
+              settings.version,
+              t("appTitle"),
+            );
+          }
+        })();
       }
     }, [
       refetchStreak,
@@ -99,19 +109,28 @@ export default function HomeScreen() {
 
   const isMulti = dayData && dayData.readings.length > 1;
 
-  const formatDate = (date: Date): string => {
-    return formatDisplayDate(date, settings.calendarStyle, lang).fullString;
+  const formatDate = (date: Date) => {
+    return formatDisplayDate(date, settings.calendarStyle, lang).dateString;
   };
 
-  const currentWeekStart = getWeekStart(new Date());
-  const rawStreak = streak ?? { current: 0, best: 0, completedDays: [false, false, false, false, false, false, false], weekStartDate: "" };
+  const currentWeekStart = getWeekStart(readingDate);
+  const rawStreak = streak ?? {
+    current: 0,
+    best: 0,
+    completedDays: [false, false, false, false, false, false, false],
+    weekStartDate: "",
+  };
   const safeStreak = {
     ...rawStreak,
-    completedDays: rawStreak.weekStartDate === currentWeekStart
-      ? rawStreak.completedDays
-      : [false, false, false, false, false, false, false],
+    completedDays:
+      rawStreak.weekStartDate === currentWeekStart
+        ? rawStreak.completedDays
+        : [false, false, false, false, false, false, false],
   };
-  const progress = safeStreak.best > 0 ? Math.min(Math.max(safeStreak.current / safeStreak.best, 0), 1) : 0;
+  const progress =
+    safeStreak.best > 0
+      ? Math.min(Math.max(safeStreak.current / safeStreak.best, 0), 1)
+      : 0;
   const progressPercent = `${Math.round(progress * 100)}%`;
 
   const toggleTheme = () => {
@@ -121,11 +140,15 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
-      <View className="flex-1 px-6 pt-12">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+      <View
+        style={{ paddingBottom: bottomGap }}
+        className="flex-1 px-6 pt-2"
+      >
         {/* HEADER */}
-        <View className="mb-6 flex-row items-center justify-between">
+        <View className="mb-4 flex-row items-center justify-between">
           <Text
+            allowFontScaling={false}
             className="flex-1 text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
             style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
           >
@@ -181,12 +204,13 @@ export default function HomeScreen() {
         </View>
 
         {/* DATE CARD */}
-        <View className="bg-surface dark:bg-surface-dark mb-7 flex-row items-center justify-between rounded-2xl px-4 py-3.5">
+        <View className="bg-surface dark:bg-surface-dark mb-4 flex-row items-center justify-between rounded-2xl px-4 py-3.5">
           <View className="flex-1 flex-row items-center">
             <View className="bg-primary-dimmed rounded-lg p-2">
               <Ionicons name="calendar-outline" size={18} color="#3b82f6" />
             </View>
             <Text
+              allowFontScaling={false}
               className="ml-3 text-base text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
               numberOfLines={1}
@@ -196,6 +220,7 @@ export default function HomeScreen() {
           </View>
           <View className="bg-primary/10 ml-2 rounded-full px-3.5 py-1.5">
             <Text
+              allowFontScaling={false}
               className="text-primary text-sm font-semibold"
               style={{ fontFamily: "ReadingFont" }}
             >
@@ -217,7 +242,7 @@ export default function HomeScreen() {
               });
             }}
             activeOpacity={0.8}
-            className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-7 flex-row items-center justify-between"
+            className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl p-4 mb-4 flex-row items-center justify-between"
           >
             <View className="flex-1 flex-row items-center gap-3 pr-2">
               <View className="h-10 w-10 rounded-full items-center justify-center bg-amber-500/20">
@@ -225,6 +250,7 @@ export default function HomeScreen() {
               </View>
               <View className="flex-1">
                 <Text
+                  allowFontScaling={false}
                   className="text-amber-900 dark:text-amber-200 text-sm font-semibold"
                   style={{ fontFamily: "ReadingFont" }}
                 >
@@ -234,6 +260,7 @@ export default function HomeScreen() {
                   )}
                 </Text>
                 <Text
+                  allowFontScaling={false}
                   className="text-amber-700/80 dark:text-amber-400/80 text-xs mt-0.5"
                   style={{ fontFamily: "ReadingFont" }}
                 >
@@ -256,6 +283,7 @@ export default function HomeScreen() {
           <View className="bg-surface dark:bg-surface-dark mb-7 flex-1 items-center justify-center rounded-2xl px-6 py-8">
             <Ionicons name="alert-circle-outline" size={44} color="#ef4444" />
             <Text
+              allowFontScaling={false}
               className="mt-4 text-center text-base text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
@@ -267,6 +295,7 @@ export default function HomeScreen() {
               className="bg-primary mt-6 rounded-xl px-6 py-3"
             >
               <Text
+                allowFontScaling={false}
                 className="text-center text-white"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
@@ -279,12 +308,14 @@ export default function HomeScreen() {
           <View className="bg-surface dark:bg-surface-dark mb-7 flex-1 items-center justify-center rounded-2xl px-6 py-8">
             <Ionicons name="book-outline" size={44} color="#6B6560" />
             <Text
+              allowFontScaling={false}
               className="mt-4 text-center text-lg text-[#2D2A24] dark:text-[#E8E4DC]"
               style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
             >
               No readings available for this period
             </Text>
             <Text
+              allowFontScaling={false}
               className="text-muted dark:text-muted-dark mt-1 text-center text-sm"
               style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
             >
@@ -296,6 +327,7 @@ export default function HomeScreen() {
               className="bg-primary mt-6 rounded-xl px-6 py-3"
             >
               <Text
+                allowFontScaling={false}
                 className="text-center text-white"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
@@ -317,7 +349,7 @@ export default function HomeScreen() {
               })
             }
             activeOpacity={0.7}
-            className="bg-surface dark:bg-surface-dark mb-7 flex-1 justify-center rounded-2xl px-6 py-8"
+            className="bg-surface dark:bg-surface-dark mb-4 flex-1 justify-center rounded-2xl px-6 py-6 border border-stone-200/40 dark:border-stone-800/40"
           >
             {isMulti ? (
               /* MULTI-READING VIEW (references + dayInfo only) */
@@ -332,76 +364,86 @@ export default function HomeScreen() {
                 {/* DayInfo title + description */}
                 {dayData.dayInfo?.title ? (
                   <Text
-                    className="mb-1 text-center text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                    allowFontScaling={false}
+                    className="mb-1.5 text-center text-base leading-tight text-muted dark:text-muted-dark"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
                     {dayData.dayInfo.title}
                   </Text>
                 ) : (
                   <Text
-                    className="mb-5 text-center text-2xl leading-tight text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                    allowFontScaling={false}
+                    className="mb-2 text-center text-base leading-tight text-muted dark:text-muted-dark"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
                   >
                     Readings For {formatDate(readingDate)}
                   </Text>
                 )}
                 {dayData.dayInfo?.description && (
                   <Text
-                    className="text-muted dark:text-muted-dark mb-5 text-center text-sm leading-[20px]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                    allowFontScaling={false}
+                    className="mb-6 text-center text-2xl leading-snug font-bold text-[#2D2A24] dark:text-[#E8E4DC]"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "700" }}
                   >
                     {dayData.dayInfo.description}
                   </Text>
                 )}
 
                 {/* Reading references */}
-                {dayData.readings.map((reading, index) => (
-                  <View key={index} className="mb-8 items-center">
-                    <Text
-                      className="text-primary text-center text-xs uppercase tracking-widest"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                    >
-                      {reading.section === "OLD_TESTAMENT" ? t("oldTestament") : reading.section === "EPISTLE" ? t("epistle") : reading.section === "GOSPEL" ? t("gospel") : reading.section}
-                    </Text>
-                    <Text
-                      className="text-center text-3xl text-[#2D2A24] dark:text-[#E8E4DC]"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
-                    >
-                      {reading.reference}
-                    </Text>
-                  </View>
-                ))}
+                <View className="gap-7 items-center">
+                  {dayData.readings.map((reading, index) => (
+                    <View key={index} className="items-center">
+                      <Text
+                        allowFontScaling={false}
+                        className="text-primary text-center text-xs uppercase tracking-widest mb-1"
+                        style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                      >
+                        {reading.section === "OLD_TESTAMENT" ? t("oldTestament") : reading.section === "EPISTLE" ? t("epistle") : reading.section === "GOSPEL" ? t("gospel") : reading.section}
+                      </Text>
+                      <Text
+                        allowFontScaling={false}
+                        className="text-center text-xl text-[#2D2A24] dark:text-[#E8E4DC]"
+                        style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
+                      >
+                        {reading.reference}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </ScrollView>
             ) : (
               /* SINGLE-READING VIEW (full text + reference) */
-              <>
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
-                >
-                  <FormattedText
-                    text={dayData.readings[0]?.text}
-                    className="text-center text-2xl leading-[28px] text-[#2D2A24] dark:text-[#E8E4DC]"
-                    style={{ fontFamily: "ReadingFont", fontWeight: "400", textAlign: "center" }}
-                  />
-                  <View className="mt-6 items-center">
-                    <Text
-                      className="text-muted dark:text-muted-dark text-center text-xl leading-tight mb-4"
-                      style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
-                    >
-                      {dayData.readings[0]?.reference}
-                    </Text>
-                    <VersionBadge version={dayData.readings[0]?.version} />
-                  </View>
-                </ScrollView>
-              </>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+              >
+                <FormattedText
+                  text={dayData.readings[0]?.text}
+                  allowFontScaling={false}
+                  fontSize={17}
+                  className="text-center text-lg leading-[26px] text-[#2D2A24] dark:text-[#E8E4DC]"
+                  style={{ fontFamily: "ReadingFont", fontWeight: "400", textAlign: "center" }}
+                />
+                <View className="mt-4 items-center">
+                  <Text
+                    allowFontScaling={false}
+                    className="text-muted dark:text-muted-dark text-center text-base leading-tight mb-3"
+                    style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
+                  >
+                    {dayData.readings[0]?.reference}
+                  </Text>
+                  <VersionBadge version={dayData.readings[0]?.version} />
+                </View>
+              </ScrollView>
             )}
+
             {/* Tap affordance */}
             <View className="mt-4 flex-row items-center justify-center opacity-70">
               <View className="bg-primary/10 mr-2 rounded-full p-1.5">
                 <Ionicons name="book-outline" size={12} color="#3b82f6" />
               </View>
               <Text
+                allowFontScaling={false}
                 className="text-primary text-xs tracking-wide"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
@@ -418,7 +460,7 @@ export default function HomeScreen() {
         )}
 
         {/* READING STREAK CARD */}
-        <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl px-5 py-5 border border-stone-200/40 dark:border-stone-800/40">
+        <View className="bg-surface dark:bg-surface-dark rounded-2xl px-5 py-4 border border-stone-200/40 dark:border-stone-800/40">
           {/* Streak header */}
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
@@ -427,12 +469,14 @@ export default function HomeScreen() {
               </View>
               <View>
                 <Text
+                  allowFontScaling={false}
                   className="text-base text-[#2D2A24] dark:text-[#E8E4DC]"
                   style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
                 >
                   {t("readingStreak")}
                 </Text>
                 <Text
+                  allowFontScaling={false}
                   className="text-muted dark:text-muted-dark mt-0.5 text-xs"
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                 >
@@ -443,12 +487,14 @@ export default function HomeScreen() {
 
             <View className="items-end">
               <Text
-                className="text-primary text-3xl font-semibold leading-tight"
+                allowFontScaling={false}
+                className="text-primary text-2xl font-semibold leading-tight"
                 style={{ fontFamily: "ReadingFont", fontWeight: "600" }}
               >
                 {safeStreak.current}
               </Text>
               <Text
+                allowFontScaling={false}
                 className="text-muted dark:text-muted-dark text-[11px] uppercase tracking-wider"
                 style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
               >
@@ -488,6 +534,7 @@ export default function HomeScreen() {
                     />
                   </View>
                   <Text
+                    allowFontScaling={false}
                     className={`mt-1.5 text-xs ${
                       isToday
                         ? "text-primary font-semibold"

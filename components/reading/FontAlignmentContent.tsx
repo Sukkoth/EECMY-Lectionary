@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Feather from "@expo/vector-icons/Feather";
@@ -257,11 +257,13 @@ export default function FontAlignmentContent({
   const align = isSimple ? settings.alignSimple : settings.alignExpanded;
 
   const updateFont = (v: number) => {
-    setAllSettings({
-      ...settings,
-      ...(isSimple
-        ? { fontSizeSimple: Math.min(maxFont, Math.max(FONT_MIN, v)) }
-        : { fontSizeExpanded: Math.min(maxFont, Math.max(FONT_MIN, v)) }),
+    startTransition(() => {
+      setAllSettings({
+        ...settings,
+        ...(isSimple
+          ? { fontSizeSimple: Math.min(maxFont, Math.max(FONT_MIN, v)) }
+          : { fontSizeExpanded: Math.min(maxFont, Math.max(FONT_MIN, v)) }),
+      });
     });
   };
 
@@ -295,14 +297,15 @@ export default function FontAlignmentContent({
         {/* Left: Font Stepper Controls (Substantial Square Buttons) */}
         <View className="flex-row items-center gap-2.5">
           <TouchableOpacity
-            onPress={() =>
-              updateFont(Math.max(FONT_MIN, fontSize - FONT_STEP))
-            }
-            activeOpacity={0.7}
+            onPress={() => {
+              updateFont(Math.max(FONT_MIN, fontSize - FONT_STEP));
+            }}
+            activeOpacity={0.35}
             disabled={fontSize <= FONT_MIN}
             className="h-13 w-13 items-center justify-center rounded-2xl bg-bg-warm/80 dark:bg-bg-warm-dark/80 border border-stone-200/60 dark:border-stone-800/60"
           >
             <Text
+              allowFontScaling={false}
               className="text-lg font-semibold text-center"
               style={{
                 fontFamily: "ReadingFont",
@@ -322,14 +325,15 @@ export default function FontAlignmentContent({
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() =>
-              updateFont(Math.min(maxFont, fontSize + FONT_STEP))
-            }
-            activeOpacity={0.7}
+            onPress={() => {
+              updateFont(Math.min(maxFont, fontSize + FONT_STEP));
+            }}
+            activeOpacity={0.35}
             disabled={fontSize >= maxFont}
             className="h-13 w-13 items-center justify-center rounded-2xl bg-bg-warm/80 dark:bg-bg-warm-dark/80 border border-stone-200/60 dark:border-stone-800/60"
           >
             <Text
+              allowFontScaling={false}
               className="text-2xl font-semibold text-center"
               style={{
                 fontFamily: "ReadingFont",

@@ -23,6 +23,8 @@ export interface FormattedTextProps {
   className?: string;
   fontSize?: number;
   numberOfLines?: number;
+  maxFontSizeMultiplier?: number;
+  allowFontScaling?: boolean;
 }
 
 /**
@@ -35,6 +37,8 @@ export function FormattedText({
   className,
   fontSize = 18,
   numberOfLines,
+  maxFontSizeMultiplier,
+  allowFontScaling,
 }: FormattedTextProps) {
   const isDark = useColorScheme() === "dark";
 
@@ -64,6 +68,8 @@ export function FormattedText({
       parts.push(
         <Text
           key={keyIndex++}
+          allowFontScaling={allowFontScaling}
+          maxFontSizeMultiplier={maxFontSizeMultiplier}
           style={{
             fontSize: verseFontSize,
             fontWeight: "600",
@@ -83,6 +89,8 @@ export function FormattedText({
       parts.push(
         <Text
           key={keyIndex++}
+          allowFontScaling={allowFontScaling}
+          maxFontSizeMultiplier={maxFontSizeMultiplier}
           style={{
             color: redColor,
           }}
@@ -106,6 +114,8 @@ export function FormattedText({
       className={className}
       numberOfLines={numberOfLines}
       textBreakStrategy="simple"
+      allowFontScaling={allowFontScaling}
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
     >
       {parts}
     </Text>

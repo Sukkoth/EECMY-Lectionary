@@ -3,11 +3,11 @@ import {
   View,
   TouchableOpacity,
   Pressable,
-  SafeAreaView,
   Appearance,
   ScrollView,
   Switch,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSettings } from "@/lib/SettingsContext";
@@ -19,6 +19,8 @@ export default function SettingsScreen() {
   const isDark = useIsDark();
   const { settings, updateSetting } = useSettings();
   const { t } = useTranslation();
+
+  const scrollBottomPadding = 168;
 
   const toggleTheme = () => {
     const newTheme = isDark ? "light" : "dark";
@@ -40,10 +42,10 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
-        className="flex-1 px-6 pt-12"
-        contentContainerStyle={{ paddingBottom: 60 }}
+        className="flex-1 px-6 pt-2"
+        contentContainerStyle={{ paddingBottom: scrollBottomPadding }}
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
@@ -314,7 +316,7 @@ export default function SettingsScreen() {
                   style={{ fontFamily: "ReadingFont", fontWeight: "400" }}
                 >
                   {settings.reminderEnabled
-                    ? formatTimeString(settings.reminderTime || "07:00", settings.timeFormat || "12h")
+                    ? formatTimeString(settings.reminderTime || "07:00")
                     : "Off"}
                 </Text>
               </View>
@@ -362,7 +364,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Group 6: About App */}
-        <View className="bg-surface dark:bg-surface-dark mb-8 rounded-2xl overflow-hidden border border-stone-200/50 dark:border-stone-800/50">
+        <View className="bg-surface dark:bg-surface-dark mb-0 rounded-2xl overflow-hidden border border-stone-200/50 dark:border-stone-800/50">
           <TouchableOpacity
             onPress={() => router.push("/settings/about")}
             activeOpacity={0.7}

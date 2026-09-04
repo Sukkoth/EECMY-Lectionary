@@ -1,4 +1,5 @@
-import { View, Text, SafeAreaView } from "react-native";
+import { View, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import OnboardingLanguagePicker from "@/components/onboarding/OnboardingLanguagePicker";
 
@@ -8,8 +9,8 @@ export default function LanguageSelectionScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
-      <View className="flex-1 pt-12">
+    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-bg-warm dark:bg-bg-warm-dark">
+      <View className="flex-1 pt-3">
         {/* Header */}
         <View className="mb-6 px-6">
           <Text

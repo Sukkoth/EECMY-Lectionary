@@ -2,7 +2,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  SafeAreaView,
   Switch,
   Platform,
   Modal,
@@ -10,20 +9,23 @@ import {
   Pressable,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useSettings } from "@/lib/SettingsContext";
 import { useTranslation } from "@/lib/i18n";
 import { useIsDark } from "@/lib/useIsDark";
 import { formatTimeString } from "@/lib/settings";
+import { isDevice24Hour } from "@/lib/timeFormat";
 import {
   scheduleDailyReminder,
   cancelDailyReminder,
   ensurePermissions,
   openNotificationSettings,
+  openBatteryOptimizationSettings,
 } from "@/lib/NotificationService";
 import { ReadingsDB, type DayData } from "@/lib/database";
 
@@ -32,6 +34,7 @@ export default function DailyReminderScreen() {
   const { settings, updateSetting } = useSettings();
   const { t } = useTranslation();
   const db = useSQLiteContext();
+  const is24H = useMemo(() => isDevice24Hour(), []);
 
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [previewBody, setPreviewBody] = useState<string>("");
@@ -93,10 +96,12 @@ export default function DailyReminderScreen() {
       const hStr = String(hour).padStart(2, "0");
       const mStr = String(minute).padStart(2, "0");
       const newTime = `${hStr}:${mStr}`;
+      console.log(`[DailyReminderScreen] ⏱️ Reminder time changed to: ${newTime}`);
 
       await updateSetting("reminderTime", newTime);
 
       if (settings.reminderEnabled) {
+        console.log(`[DailyReminderScreen] 🔄 Rescheduling reminders for updated time ${newTime}...`);
         void scheduleDailyReminder(
           hour,
           minute,
@@ -116,10 +121,12 @@ export default function DailyReminderScreen() {
     const hStr = String(hour).padStart(2, "0");
     const mStr = String(minute).padStart(2, "0");
     const newTime = `${hStr}:${mStr}`;
+    console.log(`[DailyReminderScreen] ⏱️ Reminder time set to: ${newTime}`);
 
     await updateSetting("reminderTime", newTime);
 
     if (settings.reminderEnabled) {
+      console.log(`[DailyReminderScreen] 🔄 Rescheduling reminders for updated time ${newTime}...`);
       void scheduleDailyReminder(
         hour,
         minute,
@@ -132,9 +139,9 @@ export default function DailyReminderScreen() {
   };
 
   return (
-    <SafeAreaView className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
+    <SafeAreaView style={{ flex: 1 }} className="bg-bg-warm dark:bg-bg-warm-dark flex-1">
       <ScrollView
-        className="flex-1 px-6 pt-12"
+        className="flex-1 px-6 pt-2"
         contentContainerStyle={{ paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >
@@ -185,9 +192,11 @@ export default function DailyReminderScreen() {
             <Switch
               value={settings.reminderEnabled}
               onValueChange={async (value) => {
+                console.log(`[DailyReminderScreen] 🔘 Toggle switch changed to: ${value ? "ON" : "OFF"}`);
                 if (value) {
                   const { granted, canAskAgain } = await ensurePermissions();
                   if (!granted) {
+                    console.warn("[DailyReminderScreen] ❌ Permission not granted by user.");
                     if (!canAskAgain) {
                       Alert.alert(
                         "Notifications Disabled",
@@ -205,6 +214,7 @@ export default function DailyReminderScreen() {
                   const [hStr, mStr] = (settings.reminderTime || "08:30").split(":");
                   const hour = parseInt(hStr, 10) || 8;
                   const minute = parseInt(mStr, 10) || 30;
+                  console.log(`[DailyReminderScreen] 📅 Triggering reminder schedule for ${hour}:${minute}...`);
                   void scheduleDailyReminder(
                     hour,
                     minute,
@@ -214,6 +224,7 @@ export default function DailyReminderScreen() {
                     t("appTitle"),
                   );
                 } else {
+                  console.log("[DailyReminderScreen] 🔕 Disabling reminder and clearing system alarms...");
                   await updateSetting("reminderEnabled", false);
                   void cancelDailyReminder();
                 }
@@ -243,69 +254,10 @@ export default function DailyReminderScreen() {
                   className="text-primary text-sm font-semibold"
                   style={{ fontFamily: "ReadingFont" }}
                 >
-                  {formatTimeString(
-                    settings.reminderTime || "07:00",
-                    settings.timeFormat || "12h",
-                  )}
+                  {formatTimeString(settings.reminderTime || "07:00")}
                 </Text>
               </View>
             </TouchableOpacity>
-          )}
-
-          {/* Row 3: Time Format Switch (when enabled) */}
-          {settings.reminderEnabled && (
-            <View className="border-t border-stone-200/60 dark:border-stone-800/60 mt-3.5 flex-row items-center justify-between pt-3.5">
-              <Text
-                className="text-sm text-[#2D2A24] dark:text-[#E8E4DC]"
-                style={{ fontFamily: "ReadingFont", fontWeight: "500" }}
-              >
-                {t("timeFormat")}
-              </Text>
-
-              <View className="bg-bg-warm dark:bg-bg-warm-dark p-1 rounded-xl flex-row items-center gap-1 border border-stone-200/60 dark:border-stone-800/60">
-                <TouchableOpacity
-                  onPress={() => updateSetting("timeFormat", "12h")}
-                  activeOpacity={0.8}
-                  className={`px-3 py-1 rounded-lg ${
-                    settings.timeFormat !== "24h"
-                      ? "bg-primary"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-semibold ${
-                      settings.timeFormat !== "24h"
-                        ? "text-white"
-                        : "text-muted dark:text-muted-dark"
-                    }`}
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    12h (AM/PM)
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => updateSetting("timeFormat", "24h")}
-                  activeOpacity={0.8}
-                  className={`px-3 py-1 rounded-lg ${
-                    settings.timeFormat === "24h"
-                      ? "bg-primary"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-semibold ${
-                      settings.timeFormat === "24h"
-                        ? "text-white"
-                        : "text-muted dark:text-muted-dark"
-                    }`}
-                    style={{ fontFamily: "ReadingFont" }}
-                  >
-                    24h
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
           )}
         </View>
 
@@ -336,10 +288,7 @@ export default function DailyReminderScreen() {
                   className="text-[10px] text-muted dark:text-muted-dark"
                   style={{ fontFamily: "ReadingFont" }}
                 >
-                  {formatTimeString(
-                    settings.reminderTime || "07:00",
-                    settings.timeFormat || "12h",
-                  )}
+                  {formatTimeString(settings.reminderTime || "07:00")}
                 </Text>
               </View>
 
@@ -353,6 +302,73 @@ export default function DailyReminderScreen() {
             </View>
           </View>
         )}
+
+        {/* Android Battery Optimization / Reliability Tip */}
+        {Platform.OS === "android" &&
+          settings.reminderEnabled &&
+          !settings.batteryOptimizationDismissed && (
+            <View className="mt-4 rounded-2xl border border-stone-200/70 bg-[#F5F2EB] p-4 dark:border-stone-800 dark:bg-[#25221E]">
+              <View className="flex-row items-start gap-3">
+                <View className="h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-400/10">
+                  <Ionicons name="battery-charging-outline" size={18} color="#D97706" />
+                </View>
+                <View className="flex-1">
+                  <View className="flex-row items-center justify-between">
+                    <Text
+                      className="text-xs font-semibold text-[#2D2A24] dark:text-[#E8E4DC]"
+                      style={{ fontFamily: "ReadingFont" }}
+                    >
+                      Reliable Notification Delivery
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => void updateSetting("batteryOptimizationDismissed", true)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      activeOpacity={0.6}
+                    >
+                      <Ionicons name="close" size={16} color={isDark ? "#8A8480" : "#A8A29E"} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text
+                    className="mt-1 text-[11px] leading-relaxed text-muted dark:text-muted-dark"
+                    style={{ fontFamily: "ReadingFont" }}
+                  >
+                    To ensure reminders arrive on time when the device is idle, set App Battery Usage to "Unrestricted" in system settings.
+                  </Text>
+
+                  <View className="mt-2.5 flex-row items-center gap-3">
+                    <TouchableOpacity
+                      onPress={async () => {
+                        await openBatteryOptimizationSettings();
+                        await updateSetting("batteryOptimizationDismissed", true);
+                      }}
+                      activeOpacity={0.7}
+                      className="rounded-xl border border-stone-300/80 bg-white px-3 py-1.5 dark:border-stone-700/80 dark:bg-[#1A1815]"
+                    >
+                      <Text
+                        className="text-xs font-medium text-primary"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        Adjust Battery Optimization →
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => void updateSetting("batteryOptimizationDismissed", true)}
+                      activeOpacity={0.6}
+                    >
+                      <Text
+                        className="text-xs text-muted dark:text-muted-dark"
+                        style={{ fontFamily: "ReadingFont" }}
+                      >
+                        Already Done
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
       </ScrollView>
 
       {/* Time Picker Component */}
@@ -395,7 +411,7 @@ export default function DailyReminderScreen() {
                 <DateTimePicker
                   value={getReminderDate()}
                   mode="time"
-                  is24Hour={settings.timeFormat === "24h"}
+                  is24Hour={is24H}
                   display="spinner"
                   textColor={isDark ? "#E8E4DC" : "#2D2A24"}
                   themeVariant={isDark ? "dark" : "light"}
@@ -408,7 +424,7 @@ export default function DailyReminderScreen() {
           <DateTimePicker
             value={getReminderDate()}
             mode="time"
-            is24Hour={settings.timeFormat === "24h"}
+            is24Hour={is24H}
             display="clock"
             onChange={handleTimeChange}
           />
