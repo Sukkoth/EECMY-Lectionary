@@ -1,3 +1,14 @@
+import { Lora_400Regular } from "@expo-google-fonts/lora";
+import { Merriweather_400Regular } from "@expo-google-fonts/merriweather";
+import { NotoSerifEthiopic_400Regular } from "@expo-google-fonts/noto-serif-ethiopic";
+import { Bitter_400Regular } from "@expo-google-fonts/bitter";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+
 import { Stack, useSegments, useRouter } from "expo-router";
 import { StatusBar, setStatusBarStyle, setStatusBarBackgroundColor } from "expo-status-bar";
 import { useColorScheme, ActivityIndicator, View, Platform } from "react-native";
@@ -23,19 +34,11 @@ import { useIsDark } from "@/lib/useIsDark";
 import { useEvents } from "@/lib/hooks/useEvents";
 import { useTags } from "@/lib/hooks/useTags";
 import "./global.css";
+import { setupNotificationChannels } from "@/lib/NotificationService";
+
 
 export { RootErrorBoundary as ErrorBoundary } from "@/components/RootErrorBoundary";
 
-import { Lora_400Regular } from "@expo-google-fonts/lora";
-import { Merriweather_400Regular } from "@expo-google-fonts/merriweather";
-import { NotoSerifEthiopic_400Regular } from "@expo-google-fonts/noto-serif-ethiopic";
-import { Bitter_400Regular } from "@expo-google-fonts/bitter";
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from "@expo-google-fonts/inter";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -61,7 +64,6 @@ const customLightTheme = {
   },
 };
 
-import { setupNotificationChannels } from "@/lib/NotificationService";
 
 async function setupNotifications() {
   if (Platform.OS === "android") {
