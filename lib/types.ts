@@ -11,7 +11,7 @@ export type HolidayRow = {
   language: string;
   date: string;
   endDate?: string | null;
-  type: "eecmy" | "christian" | "others";
+  type: "eecmy" | "christian" | "other";
   name: string;
 };
 

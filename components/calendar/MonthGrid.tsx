@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { Text, Pressable, View } from "react-native";
 import { router } from "expo-router";
 import type { HolidayRow, DayInfoRow } from "@/lib/types";
-import { HOLIDAY_COLORS } from "@/constants";
 import type { CalendarStyle } from "@/lib/settings";
 import { useTranslation, getDayLabels } from "@/lib/i18n";
 import {
