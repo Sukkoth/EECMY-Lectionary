@@ -6,14 +6,8 @@ import {
   unpinEventNotification,
 } from "./NotificationService";
 
-export type ReminderOffset =
-  | "at_time"
-  | "30_min"
-  | "1_hour"
-  | "2_hours"
-  | "1_day"
-  | "2_days"
-  | "1_week";
+import type { ReminderOffset } from "./types";
+export type { ReminderOffset };
 
 export type TagRow = {
   id: string;

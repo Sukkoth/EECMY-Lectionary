@@ -10,7 +10,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MonthYearPickerModal from "@/components/calendar/MonthYearPickerModal";
-import { AddEventModal, type CustomEventData } from "@/components/calendar/AddEventModal";
+import { AddEventModal } from "@/components/calendar/AddEventModal";
+import type { CustomEventData } from "@/lib/types";
 import {
   CalendarSwiper,
   type CalendarSwiperRef,

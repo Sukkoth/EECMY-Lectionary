@@ -21,7 +21,7 @@ import {
   gregorianYmdToEthiopian,
 } from "@/lib/ethiopianCalendar";
 
-import type { CustomEventData } from "@/components/calendar/AddEventModal";
+import type { CustomEventData } from "@/lib/types";
 
 const HOLIDAY_LIST_CONTENT_STYLE = { paddingBottom: 130 };
 

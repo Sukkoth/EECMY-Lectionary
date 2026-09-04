@@ -23,7 +23,7 @@ import type { DayInfoIndex } from "@/lib/hooks/useDayInfo";
 import type { EventIndex } from "@/lib/hooks/useEvents";
 import type { CalendarStyle } from "@/lib/settings";
 
-import type { CustomEventData } from "@/components/calendar/AddEventModal";
+import type { CustomEventData } from "@/lib/types";
 
 export function getOffsetMonth(
   curr: { year: number; month: number },

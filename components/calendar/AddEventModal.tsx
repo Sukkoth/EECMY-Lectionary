@@ -35,17 +35,9 @@ import {
   useDeleteEvent,
 } from "@/lib/hooks/useEvents";
 import { ensurePermissions, parseTimeString } from "@/lib/NotificationService";
+import type { ReminderOffset, CustomEventData } from "@/lib/types";
 
-export type ReminderOffset =
-  | "at_time"
-  | "30_min"
-  | "1_hour"
-  | "2_hours"
-  | "1_day"
-  | "2_days"
-  | "1_week";
-
-export const REMINDER_OFFSETS: {
+const REMINDER_OFFSETS: {
   id: ReminderOffset;
   labelKey: TranslationKey;
 }[] = [
@@ -63,20 +55,6 @@ function getDefaultEventReminderDate(): Date {
   d.setMinutes(d.getMinutes() + 2, 0, 0);
   return d;
 }
-
-export type CustomEventData = {
-  id: string;
-  title: string;
-  tagId?: string | null;
-  tagName?: string | null;
-  tagColor?: string | null;
-  date: string; // YYYY-MM-DD (canonical GC)
-  hasReminder: boolean;
-  reminderTime?: string;
-  reminderOffsets?: ReminderOffset[];
-  notes?: string;
-  isPinned?: boolean;
-};
 
 type AddEventModalProps = {
   selectedYear: number;
